@@ -1,0 +1,281 @@
+<?php
+/**
+ * Settings API integration.
+ *
+ * @package ADAM_Comunidade
+ */
+
+namespace ADAM\Comunidade;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Registers and validates plugin settings.
+ */
+final class Settings {
+	public const OPTION_NAME = 'adam_comunidade_settings';
+
+	/**
+	 * Registers settings hooks.
+	 *
+	 * @return void
+	 */
+	public function register(): void {
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_post_adam_comunidade_reset_cache', array( $this, 'reset_cache' ) );
+		add_action( 'update_option_' . self::OPTION_NAME, array( $this, 'settings_updated' ), 10, 2 );
+	}
+
+	/**
+	 * Registers fields and sections through the Settings API.
+	 *
+	 * @return void
+	 */
+	public function register_settings(): void {
+		register_setting(
+			'adam_comunidade_settings_group',
+			self::OPTION_NAME,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( $this, 'sanitize' ),
+				'default'           => self::defaults(),
+			)
+		);
+
+		add_settings_section(
+			'adam_comunidade_general',
+			__( 'General', 'adam-comunidade' ),
+			'__return_false',
+			'adam-comunidade-settings'
+		);
+		$this->add_field(
+			'plugin_version',
+			__( 'Plugin Version', 'adam-comunidade' ),
+			'render_plugin_version',
+			'adam_comunidade_general'
+		);
+		$this->add_field(
+			'debug_mode',
+			__( 'Debug Mode', 'adam-comunidade' ),
+			'render_checkbox',
+			'adam_comunidade_general',
+			array( 'key' => 'debug_mode' )
+		);
+		$this->add_field(
+			'enable_logs',
+			__( 'Enable Logs', 'adam-comunidade' ),
+			'render_checkbox',
+			'adam_comunidade_general',
+			array( 'key' => 'enable_logs' )
+		);
+
+		add_settings_section(
+			'adam_comunidade_appearance',
+			__( 'Appearance', 'adam-comunidade' ),
+			'__return_false',
+			'adam-comunidade-settings'
+		);
+		$this->add_field(
+			'primary_colour',
+			__( 'Primary Colour', 'adam-comunidade' ),
+			'render_colour',
+			'adam_comunidade_appearance',
+			array( 'key' => 'primary_colour' )
+		);
+		$this->add_field(
+			'secondary_colour',
+			__( 'Secondary Colour', 'adam-comunidade' ),
+			'render_colour',
+			'adam_comunidade_appearance',
+			array( 'key' => 'secondary_colour' )
+		);
+		$this->add_field(
+			'accent_colour',
+			__( 'Accent Colour', 'adam-comunidade' ),
+			'render_colour',
+			'adam_comunidade_appearance',
+			array( 'key' => 'accent_colour' )
+		);
+
+		add_settings_section(
+			'adam_comunidade_advanced',
+			__( 'Advanced', 'adam-comunidade' ),
+			'__return_false',
+			'adam-comunidade-settings'
+		);
+		$this->add_field(
+			'data_version',
+			__( 'Plugin Data Version', 'adam-comunidade' ),
+			'render_data_version',
+			'adam_comunidade_advanced'
+		);
+	}
+
+	/**
+	 * Adds a field to the plugin settings page.
+	 *
+	 * @param string               $id       Field identifier.
+	 * @param string               $title    Field label.
+	 * @param string               $callback Renderer method.
+	 * @param string               $section  Section identifier.
+	 * @param array<string,string> $args     Renderer arguments.
+	 * @return void
+	 */
+	private function add_field(
+		string $id,
+		string $title,
+		string $callback,
+		string $section,
+		array $args = array()
+	): void {
+		add_settings_field(
+			$id,
+			$title,
+			array( $this, $callback ),
+			'adam-comunidade-settings',
+			$section,
+			$args
+		);
+	}
+
+	/**
+	 * Sanitizes the settings collection.
+	 *
+	 * @param mixed $input Untrusted settings input.
+	 * @return array<string,string|int>
+	 */
+	public function sanitize( mixed $input ): array {
+		$input    = is_array( $input ) ? $input : array();
+		$defaults = self::defaults();
+
+		return array(
+			'debug_mode'      => empty( $input['debug_mode'] ) ? 0 : 1,
+			'enable_logs'     => empty( $input['enable_logs'] ) ? 0 : 1,
+			'primary_colour'   => sanitize_hex_color( $input['primary_colour'] ?? '' ) ?: $defaults['primary_colour'],
+			'secondary_colour' => sanitize_hex_color( $input['secondary_colour'] ?? '' ) ?: $defaults['secondary_colour'],
+			'accent_colour'    => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
+		);
+	}
+
+	/**
+	 * Renders the plugin version field.
+	 *
+	 * @return void
+	 */
+	public function render_plugin_version(): void {
+		printf( '<code>%s</code>', esc_html( ADAM_COMUNIDADE_VERSION ) );
+	}
+
+	/**
+	 * Renders a checkbox field.
+	 *
+	 * @param array<string,string> $args Field arguments.
+	 * @return void
+	 */
+	public function render_checkbox( array $args ): void {
+		$key = sanitize_key( $args['key'] ?? '' );
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( self::OPTION_NAME . '[' . $key . ']' ); ?>"
+				value="1"
+				<?php checked( 1, self::get( $key ) ); ?>
+			>
+			<?php esc_html_e( 'Enabled', 'adam-comunidade' ); ?>
+		</label>
+		<?php
+	}
+
+	/**
+	 * Renders a colour picker field.
+	 *
+	 * @param array<string,string> $args Field arguments.
+	 * @return void
+	 */
+	public function render_colour( array $args ): void {
+		$key = sanitize_key( $args['key'] ?? '' );
+		printf(
+			'<input class="adam-comunidade-colour" type="text" name="%1$s" value="%2$s" data-default-color="%3$s">',
+			esc_attr( self::OPTION_NAME . '[' . $key . ']' ),
+			esc_attr( (string) self::get( $key ) ),
+			esc_attr( (string) self::defaults()[ $key ] )
+		);
+	}
+
+	/**
+	 * Renders the database version field.
+	 *
+	 * @return void
+	 */
+	public function render_data_version(): void {
+		$data_version = get_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION );
+
+		printf( '<code>%s</code>', esc_html( (string) $data_version ) );
+	}
+
+	/**
+	 * Handles the cache reset placeholder action securely.
+	 *
+	 * @return void
+	 */
+	public function reset_cache(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to perform this action.', 'adam-comunidade' ) );
+		}
+
+		check_admin_referer( 'adam_comunidade_reset_cache' );
+
+		do_action( 'adam_comunidade_reset_cache' );
+		Helpers::add_admin_notice(
+			__( 'Plugin cache reset requested. No cache providers are registered yet.', 'adam-comunidade' ),
+			'success'
+		);
+
+		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-settings' ) );
+		exit;
+	}
+
+	/**
+	 * Logs settings changes when logging is enabled.
+	 *
+	 * @param mixed $old_value Previous settings.
+	 * @param mixed $value     New settings.
+	 * @return void
+	 */
+	public function settings_updated( mixed $old_value, mixed $value ): void {
+		unset( $old_value );
+		Logger::info(
+			'Settings changed',
+			array( 'user_id' => get_current_user_id() ),
+			is_array( $value ) ? $value : array()
+		);
+	}
+
+	/**
+	 * Gets one setting.
+	 *
+	 * @param string $key Setting key.
+	 * @return string|int|null
+	 */
+	public static function get( string $key ): string|int|null {
+		$settings = wp_parse_args( get_option( self::OPTION_NAME, array() ), self::defaults() );
+
+		return $settings[ $key ] ?? null;
+	}
+
+	/**
+	 * Default settings.
+	 *
+	 * @return array<string,string|int>
+	 */
+	public static function defaults(): array {
+		return array(
+			'debug_mode'       => 0,
+			'enable_logs'      => 0,
+			'primary_colour'   => '#1d4ed8',
+			'secondary_colour' => '#0f172a',
+			'accent_colour'    => '#f59e0b',
+		);
+	}
+}

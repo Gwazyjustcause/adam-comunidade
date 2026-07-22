@@ -1,0 +1,33 @@
+/**
+ * Public component primitives. Feature modules opt into this stylesheet.
+ */
+
+.adam-comunidade {
+	--adam-primary: #1d4ed8;
+	--adam-secondary: #0f172a;
+	--adam-accent: #f59e0b;
+	--adam-border: #e2e8f0;
+	box-sizing: border-box;
+}
+
+.adam-comunidade *,
+.adam-comunidade *::before,
+.adam-comunidade *::after {
+	box-sizing: inherit;
+}
+
+.adam-comunidade__card {
+	background: #fff;
+	border: 1px solid var(--adam-border);
+	border-radius: 12px;
+	padding: 24px;
+}
+
+.adam-comunidade__empty {
+	background: #f8fafc;
+	border: 1px dashed #cbd5e1;
+	border-radius: 12px;
+	color: #64748b;
+	padding: 40px 20px;
+	text-align: center;
+}
