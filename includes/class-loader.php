@@ -117,6 +117,7 @@ final class Loader {
 		$this->services['shortcodes']  = new Shortcodes();
 		$this->services['modules']     = new Module_Manager();
 		$this->services['modules']->add( new Teams\Module() );
+		$this->services['modules']->add( new Fields\Module() );
 
 		if ( is_admin() ) {
 			$admin = new Admin();

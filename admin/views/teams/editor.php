@@ -212,7 +212,17 @@ if ( $team_id && $adam_slug ) {
 
 				<section class="adam-card adam-editor-panel" id="adam-team-panel-fields" role="tabpanel" aria-labelledby="adam-team-tab-fields" hidden>
 					<h2><?php esc_html_e( 'Associated Fields', 'adam-comunidade' ); ?></h2>
-					<div class="adam-empty-state"><h3><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></h3><p><?php esc_html_e( 'This feature will become available in Phase 3.', 'adam-comunidade' ); ?></p><select multiple disabled><option><?php esc_html_e( 'No fields available yet', 'adam-comunidade' ); ?></option></select></div>
+					<label class="adam-field">
+						<span><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></span>
+						<select name="team[associated_fields][]" multiple size="8">
+							<?php foreach ( $available_fields as $adam_available_field ) : ?>
+								<option value="<?php echo esc_attr( (string) $adam_available_field->id ); ?>" <?php selected( in_array( (int) $adam_available_field->id, $selected_fields, true ) ); ?>>
+									<?php echo esc_html( $adam_available_field->name ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<small><?php esc_html_e( 'Select one or more published fields.', 'adam-comunidade' ); ?></small>
+					</label>
 				</section>
 
 				<section class="adam-card adam-editor-panel" id="adam-team-panel-seo" role="tabpanel" aria-labelledby="adam-team-tab-seo" hidden>

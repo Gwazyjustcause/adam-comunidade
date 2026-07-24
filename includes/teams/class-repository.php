@@ -245,6 +245,24 @@ final class Repository {
 	}
 
 	/**
+	 * Returns lightweight team choices without loading full records.
+	 *
+	 * @param string $status Optional status constraint.
+	 * @return object[]
+	 */
+	public function choices( string $status = 'published' ): array {
+		global $wpdb;
+
+		$sql = 'SELECT id, name, slug FROM ' . Schema::teams_table();
+		if ( $status ) {
+			$sql = $wpdb->prepare( $sql . ' WHERE status = %s', $status );
+		}
+		$sql .= ' ORDER BY name ASC';
+
+		return $wpdb->get_results( $sql ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
 	 * Returns grouped status counts.
 	 *
 	 * @return array<string,int>
@@ -331,6 +349,11 @@ final class Repository {
 		$wpdb->delete( Schema::team_fields_table(), array( 'team_id' => $team_id ), array( '%d' ) );
 
 		foreach ( $field_ids as $field_id ) {
+			$wpdb->delete(
+				Schema::team_fields_table(),
+				array( 'field_id' => $field_id ),
+				array( '%d' )
+			);
 			$wpdb->insert(
 				Schema::team_fields_table(),
 				array(

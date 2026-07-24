@@ -190,6 +190,12 @@ final class Router {
 			array( 'adam-comunidade' ),
 			ADAM_COMUNIDADE_VERSION
 		);
+		wp_enqueue_style(
+			'adam-comunidade-fields',
+			Helpers::url( 'assets/css/fields-public.css' ),
+			array( 'adam-comunidade-teams' ),
+			ADAM_COMUNIDADE_VERSION
+		);
 		wp_enqueue_script(
 			'adam-comunidade-teams',
 			Helpers::url( 'assets/js/teams-public.js' ),

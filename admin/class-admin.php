@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Teams\Repository as Teams_Repository;
+use ADAM\Comunidade\Fields\Repository as Fields_Repository;
 
 /**
  * Renders plugin admin screens and notices.
@@ -41,6 +42,11 @@ final class Admin {
 			array( 'orderby' => 'created_at', 'order' => 'DESC', 'per_page' => 5 )
 		)['items'];
 		$updated_teams   = $team_repository->query(
+			array( 'orderby' => 'updated_at', 'order' => 'DESC', 'per_page' => 5 )
+		)['items'];
+		$field_repository = new Fields_Repository();
+		$field_counts     = $field_repository->statistics();
+		$updated_fields   = $field_repository->query(
 			array( 'orderby' => 'updated_at', 'order' => 'DESC', 'per_page' => 5 )
 		)['items'];
 		$view            = Helpers::path( 'admin/views/dashboard.php' );

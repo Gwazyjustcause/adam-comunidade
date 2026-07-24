@@ -14,6 +14,8 @@ $adam_comunidade_options = array(
 	'adam_comunidade_version',
 	'adam_comunidade_db_version',
 	'adam_comunidade_settings',
+	'adam_comunidade_teams_db_version',
+	'adam_comunidade_fields_db_version',
 );
 
 if ( is_multisite() ) {

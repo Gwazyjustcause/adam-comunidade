@@ -30,7 +30,9 @@ final class Install {
 
 		update_option( 'adam_comunidade_version', ADAM_COMUNIDADE_VERSION, false );
 		Teams\Schema::install();
+		Fields\Schema::install();
 		Teams\Router::add_rewrite_rules();
+		Fields\Router::add_rewrite_rules();
 
 		flush_rewrite_rules();
 	}

@@ -85,6 +85,7 @@ final class Schema {
 		dbDelta( $fields_sql );
 
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
+		update_option( 'adam_comunidade_teams_db_version', '2.0.0', false );
 	}
 
 	/**

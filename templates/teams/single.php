@@ -11,12 +11,24 @@ use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Fields\View as Field_View;
 
 $adam_team        = Router::current_team();
 $adam_styles      = Options::decode_list( $adam_team->playing_styles );
 $adam_equipment   = Options::decode_list( $adam_team->equipment_tags );
 $adam_gallery     = Options::decode_list( $adam_team->gallery );
 $adam_recruitment = View::label( $adam_team->recruitment_status, Options::recruitment_statuses() );
+$adam_field_repository = new Field_Repository();
+$adam_associated_fields = $adam_field_repository->query(
+	array(
+		'status'   => 'published',
+		'team_id'  => (int) $adam_team->id,
+		'orderby'  => 'name',
+		'order'    => 'ASC',
+		'per_page' => 12,
+	)
+)['items'];
 $adam_contacts    = array_filter(
 	array(
 		'website'   => array( __( 'Website', 'adam-comunidade' ), $adam_team->website ),
@@ -120,7 +132,18 @@ get_header();
 			</section>
 		<?php endif; ?>
 
-		<section class="adam-team-section adam-associated-fields"><h2><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></h2><div class="adam-comunidade__empty"><p><?php esc_html_e( 'Coming in Phase 3.', 'adam-comunidade' ); ?></p></div></section>
+		<section class="adam-team-section adam-associated-fields">
+			<h2><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></h2>
+			<?php if ( $adam_associated_fields ) : ?>
+				<div class="adam-field-grid">
+					<?php foreach ( $adam_associated_fields as $adam_associated_field ) : ?>
+						<?php echo Field_View::card( $adam_associated_field, $adam_field_repository ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="adam-comunidade__empty"><p><?php esc_html_e( 'No associated fields are currently published.', 'adam-comunidade' ); ?></p></div>
+			<?php endif; ?>
+		</section>
 	</div>
 	<div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Image viewer', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Close image viewer', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div>
 </main>

@@ -35,9 +35,10 @@ final class Assets {
 			'toplevel_page_adam-comunidade',
 			'adam-comunidade_page_adam-comunidade-settings',
 		);
-		$is_team_screen = str_contains( $hook_suffix, 'adam-comunidade-team' );
+		$is_module_screen = str_contains( $hook_suffix, 'adam-comunidade-team' )
+			|| str_contains( $hook_suffix, 'adam-comunidade-field' );
 
-		if ( ! in_array( $hook_suffix, $allowed, true ) && ! $is_team_screen ) {
+		if ( ! in_array( $hook_suffix, $allowed, true ) && ! $is_module_screen ) {
 			return;
 		}
 

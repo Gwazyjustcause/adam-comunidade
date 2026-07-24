@@ -14,6 +14,7 @@ use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
 use ADAM\Comunidade\Teams\Validator;
+use ADAM\Comunidade\Fields\Repository as Field_Repository;
 
 /**
  * Coordinates team admin screens and actions.
@@ -191,6 +192,11 @@ final class Controller {
 		}
 
 		$view = Helpers::path( 'admin/views/teams/editor.php' );
+		$field_repository = new Field_Repository();
+		$available_fields = $field_repository->choices( 'published' );
+		$selected_fields = isset( $team->associated_fields )
+			? array_map( 'absint', (array) $team->associated_fields )
+			: ( $team_id ? $this->repository->field_ids( $team_id ) : array() );
 		require $view;
 	}
 
@@ -235,6 +241,17 @@ final class Controller {
 			Helpers::add_admin_notice( __( 'The team could not be saved.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $team_id );
 		}
+
+		$field_repository = new Field_Repository();
+		$allowed_fields   = array_map(
+			static fn( object $field ): int => (int) $field->id,
+			$field_repository->choices( 'published' )
+		);
+		$selected_fields  = array_intersect(
+			array_map( 'absint', (array) ( $input['associated_fields'] ?? array() ) ),
+			$allowed_fields
+		);
+		$this->repository->sync_fields( (int) $saved_id, $selected_fields );
 
 		Logger::info(
 			$team_id ? 'Team updated' : 'Team created',
@@ -346,7 +363,11 @@ final class Controller {
 
 		$validated = ( new Validator( $this->repository ) )->validate( $data );
 
-		return is_wp_error( $validated ) ? false : $this->repository->create( $validated );
+		if ( is_wp_error( $validated ) ) {
+			return false;
+		}
+
+		return $this->repository->create( $validated );
 	}
 
 	/**
