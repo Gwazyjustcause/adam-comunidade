@@ -64,11 +64,13 @@ get_header();
 			</div>
 			<div>
 				<h1><?php echo esc_html( $adam_team->name ); ?></h1>
+				<?php if ( 'verified_team' === ( $adam_team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Team', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<p><?php echo esc_html( implode( ', ', array_filter( array( $adam_team->municipality, $adam_team->district ) ) ) ); ?></p>
 				<div class="adam-team-hero__meta">
 					<span><?php echo esc_html( sprintf( _n( '%d member', '%d members', (int) $adam_team->members, 'adam-comunidade' ), (int) $adam_team->members ) ); ?></span>
 					<span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_team->recruitment_status ); ?>"><?php echo esc_html( $adam_recruitment ); ?></span>
 				</div>
+				<?php if ( $adam_team->recruitment_min_age || $adam_team->recruitment_experience || $adam_team->recruitment_equipment || $adam_team->recruitment_training ) : ?><div class="adam-recruitment-details"><strong><?php esc_html_e( 'Recruitment details', 'adam-comunidade' ); ?></strong><?php if ( $adam_team->recruitment_min_age ) : ?><span><?php echo esc_html( sprintf( __( 'Minimum age: %d', 'adam-comunidade' ), $adam_team->recruitment_min_age ) ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_experience ) : ?><span><?php echo esc_html( $adam_team->recruitment_experience ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_equipment ) : ?><span><?php echo esc_html( $adam_team->recruitment_equipment ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_training ) : ?><span><?php esc_html_e( 'Training available', 'adam-comunidade' ); ?></span><?php endif; ?></div><?php endif; ?>
 			</div>
 		</div>
 	</section>
@@ -144,6 +146,7 @@ get_header();
 				<div class="adam-comunidade__empty"><p><?php esc_html_e( 'No associated fields are currently published.', 'adam-comunidade' ); ?></p></div>
 			<?php endif; ?>
 		</section>
+		<?php do_action( 'adam_comunidade_team_after_content', $adam_team ); ?>
 	</div>
 	<div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Image viewer', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Close image viewer', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div>
 </main>

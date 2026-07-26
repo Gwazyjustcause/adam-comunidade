@@ -150,6 +150,7 @@ final class Repository {
 			array(
 				'search'        => '',
 				'status'        => '',
+				'featured'      => '',
 				'district'      => '',
 				'municipality'  => '',
 				'playing_style' => '',
@@ -161,6 +162,13 @@ final class Repository {
 				'per_page'      => 20,
 			)
 		);
+		$cache_key = 'fields_' . md5( wp_json_encode( $args ) );
+		if ( ! is_admin() ) {
+			$cached = wp_cache_get( $cache_key, 'adam_comunidade_archives' );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+		}
 
 		$fields_table      = Schema::fields_table();
 		$relations_table   = Schema::field_teams_table();
@@ -185,6 +193,10 @@ final class Repository {
 				$where[]      = 'f.' . $column . ' = %s';
 				$parameters[] = (string) $args[ $column ];
 			}
+		}
+		if ( '' !== (string) $args['featured'] ) {
+			$where[]      = 'f.featured = %d';
+			$parameters[] = absint( $args['featured'] );
 		}
 
 		if ( $args['playing_style'] ) {
@@ -244,11 +256,15 @@ final class Repository {
 		$prepared_list     = $wpdb->prepare( $list_sql, ...$list_parameters );
 		$items             = $wpdb->get_results( $prepared_list ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
-		return array(
+		$result = array(
 			'items' => is_array( $items ) ? $items : array(),
 			'total' => $total,
 			'pages' => (int) ceil( $total / $per_page ),
 		);
+		if ( ! is_admin() ) {
+			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', 300 );
+		}
+		return $result;
 	}
 
 	/**

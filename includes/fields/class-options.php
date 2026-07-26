@@ -27,6 +27,24 @@ final class Options {
 	}
 
 	/**
+	 * Public availability states, independent of publishing status.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function availability_statuses(): array {
+		return (array) apply_filters(
+			'adam_comunidade_field_availability_statuses',
+			array(
+				'open'              => __( 'Open', 'adam-comunidade' ),
+				'seasonal'          => __( 'Seasonal', 'adam-comunidade' ),
+				'temporary_closure' => __( 'Temporarily closed', 'adam-comunidade' ),
+				'private_events'    => __( 'Private events only', 'adam-comunidade' ),
+				'maintenance'       => __( 'Under maintenance', 'adam-comunidade' ),
+			)
+		);
+	}
+
+	/**
 	 * Field playing styles.
 	 *
 	 * @return array<string,string>

@@ -145,6 +145,7 @@ final class Repository {
 			array(
 				'search'      => '',
 				'status'      => '',
+				'featured'    => '',
 				'district'    => '',
 				'municipality' => '',
 				'playing_style' => '',
@@ -155,6 +156,13 @@ final class Repository {
 				'per_page'     => 20,
 			)
 		);
+		$cache_key = 'teams_' . md5( wp_json_encode( $args ) );
+		if ( ! is_admin() ) {
+			$cached = wp_cache_get( $cache_key, 'adam_comunidade_archives' );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+		}
 
 		$where      = array( '1=1' );
 		$parameters = array();
@@ -173,6 +181,10 @@ final class Repository {
 				$where[]      = $field . ' = %s';
 				$parameters[] = (string) $args[ $field ];
 			}
+		}
+		if ( '' !== (string) $args['featured'] ) {
+			$where[]      = 'featured = %d';
+			$parameters[] = absint( $args['featured'] );
 		}
 
 		if ( $args['recruitment'] ) {
@@ -211,11 +223,15 @@ final class Repository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Prepared immediately above.
 		$items = $wpdb->get_results( $prepared_list_sql );
 
-		return array(
+		$result = array(
 			'items' => is_array( $items ) ? $items : array(),
 			'total' => $total,
 			'pages' => (int) ceil( $total / $per_page ),
 		);
+		if ( ! is_admin() ) {
+			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', 300 );
+		}
+		return $result;
 	}
 
 	/**

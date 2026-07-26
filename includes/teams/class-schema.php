@@ -13,6 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * Installs and upgrades the Teams module tables.
  */
 final class Schema {
+	public const VERSION = '6.0.0';
+
 	/**
 	 * Creates or upgrades the module tables.
 	 *
@@ -33,6 +35,8 @@ final class Schema {
 			short_name varchar(100) NOT NULL DEFAULT '',
 			slug varchar(191) NOT NULL,
 			status varchar(20) NOT NULL DEFAULT 'draft',
+			featured tinyint(1) unsigned NOT NULL DEFAULT 0,
+			verification varchar(40) NOT NULL DEFAULT '',
 			logo_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			cover_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			gallery longtext NULL,
@@ -56,6 +60,10 @@ final class Schema {
 			founded smallint(4) unsigned NULL,
 			members int(10) unsigned NOT NULL DEFAULT 0,
 			recruitment_status varchar(30) NOT NULL DEFAULT 'closed',
+			recruitment_min_age tinyint(3) unsigned NOT NULL DEFAULT 0,
+			recruitment_experience text NULL,
+			recruitment_equipment text NULL,
+			recruitment_training tinyint(1) unsigned NOT NULL DEFAULT 0,
 			playing_styles text NULL,
 			equipment_tags text NULL,
 			meta_title varchar(255) NOT NULL DEFAULT '',
@@ -69,6 +77,7 @@ final class Schema {
 			UNIQUE KEY name (name),
 			UNIQUE KEY slug (slug),
 			KEY status_updated (status,updated_at),
+			KEY featured_status (featured,status),
 			KEY district (district),
 			KEY municipality (municipality)
 		) {$charset_collate};";
@@ -85,7 +94,7 @@ final class Schema {
 		dbDelta( $fields_sql );
 
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
-		update_option( 'adam_comunidade_teams_db_version', '2.0.0', false );
+		update_option( 'adam_comunidade_teams_db_version', self::VERSION, false );
 	}
 
 	/**

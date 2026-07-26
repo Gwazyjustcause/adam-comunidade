@@ -1,0 +1,147 @@
+.adam-admin-heading,
+.adam-directory-filters,
+.adam-directory-bulk,
+.adam-directory-statuses,
+.adam-directory-tabs {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: space-between;
+	margin: 16px 0;
+}
+
+.adam-directory-filters,
+.adam-directory-bulk,
+.adam-directory-statuses {
+	justify-content: flex-start;
+}
+
+.adam-directory-table img {
+	border-radius: 8px;
+	height: 48px;
+	object-fit: contain;
+	width: 48px;
+}
+
+.adam-directory-editor form {
+	max-width: 1120px;
+}
+
+.adam-directory-panel {
+	margin-top: 16px;
+}
+
+.adam-directory-panel label {
+	display: flex;
+	flex-direction: column;
+	font-weight: 600;
+	gap: 6px;
+	margin: 14px 0;
+}
+
+.adam-directory-panel input[type="text"],
+.adam-directory-panel input[type="url"],
+.adam-directory-panel input[type="email"],
+.adam-directory-panel input[type="number"],
+.adam-directory-panel select,
+.adam-directory-panel textarea {
+	max-width: 100%;
+	width: 100%;
+}
+
+.adam-directory-grid,
+.adam-directory-media-grid {
+	display: grid;
+	gap: 18px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.adam-directory-media {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 16px;
+}
+
+.adam-directory-media img {
+	height: 150px;
+	max-width: 100%;
+	object-fit: contain;
+	width: 100%;
+}
+
+.adam-directory-gallery {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.adam-directory-gallery li {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	cursor: move;
+	padding: 8px;
+	position: relative;
+}
+
+.adam-directory-gallery img {
+	height: 100px;
+	object-fit: cover;
+	width: 100%;
+}
+
+.adam-directory-gallery .button-link-delete {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+}
+
+@media (max-width: 782px) {
+	.adam-directory-table th:nth-child(4),
+	.adam-directory-table td:nth-child(4),
+	.adam-directory-table th:nth-child(5),
+	.adam-directory-table td:nth-child(5),
+	.adam-directory-table th:nth-child(7),
+	.adam-directory-table td:nth-child(7) {
+		display: none;
+	}
+}
+
+.adam-builder-row {
+	align-items: center;
+	display: grid;
+	gap: 14px;
+	grid-template-columns: auto minmax(180px, 1fr) repeat(4, auto);
+	margin: 10px 0;
+}
+
+.adam-builder-row .dashicons-move {
+	cursor: grab;
+}
+
+.adam-builder-placeholder {
+	border: 2px dashed #8c8f94;
+	height: 70px;
+}
+
+.adam-analytics-bars {
+	display: grid;
+	gap: 12px;
+}
+
+.adam-analytics-bars li {
+	align-items: center;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(120px, 1fr) 2fr auto;
+}
+
+.adam-analytics-bars i {
+	background: #d84a2b;
+	border-radius: 999px;
+	display: block;
+	height: 10px;
+	width: var(--value);
+}

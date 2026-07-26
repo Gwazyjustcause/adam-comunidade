@@ -10,6 +10,7 @@ namespace ADAM\Comunidade\Fields;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Experience\Templates;
 
 /**
  * Owns clean URLs, previews, SEO, and AJAX discovery.
@@ -92,7 +93,7 @@ final class Router {
 	 */
 	public function template_include( string $template ): string {
 		if ( get_query_var( 'adam_fields_archive' ) ) {
-			return Helpers::path( 'templates/fields/archive.php' );
+			return Templates::locate( 'fields/archive.php' );
 		}
 
 		$slug = sanitize_title( (string) get_query_var( 'adam_field_slug' ) );
@@ -114,14 +115,14 @@ final class Router {
 		}
 
 		if ( self::$current_field && self::$current_field->slug === $slug ) {
-			return Helpers::path( 'templates/fields/single.php' );
+			return Templates::locate( 'fields/single.php' );
 		}
 
 		foreach ( $this->repository->distinct( 'district', 'published' ) as $district ) {
 			if ( sanitize_title( $district ) === $slug ) {
 				self::$archive_location = $district;
 
-				return Helpers::path( 'templates/fields/archive.php' );
+				return Templates::locate( 'fields/archive.php' );
 			}
 		}
 

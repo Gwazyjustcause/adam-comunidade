@@ -35,7 +35,7 @@ final class Module implements Module_Interface {
 			update_option( 'adam_comunidade_version', ADAM_COMUNIDADE_VERSION, false );
 		}
 
-		if ( '2.0.0' !== get_option( 'adam_comunidade_teams_db_version' ) ) {
+		if ( Schema::VERSION !== get_option( 'adam_comunidade_teams_db_version' ) ) {
 			Schema::install();
 			Router::add_rewrite_rules();
 			flush_rewrite_rules( false );

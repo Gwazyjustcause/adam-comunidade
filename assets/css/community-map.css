@@ -1,0 +1,108 @@
+.adam-map-widget {
+	--team: #2e7d32;
+	--field: #8d6e22;
+	--partner: #d84a2b;
+	--institution: #315b9e;
+	background: #fff;
+	border-radius: 18px;
+	box-shadow: 0 12px 40px rgba(21, 32, 38, .1);
+	margin: 28px auto;
+	max-width: 1200px;
+	overflow: hidden;
+}
+
+.adam-map-widget > header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	justify-content: space-between;
+	padding: 20px;
+}
+
+.adam-map-widget h2 {
+	margin: 4px 0;
+}
+
+.adam-map-widget header span {
+	color: #d84a2b;
+	font-size: .75rem;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.adam-map-legend {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: .85rem;
+	gap: 8px;
+}
+
+.adam-map-legend i {
+	background: var(--marker);
+	border-radius: 50%;
+	height: 11px;
+	margin-left: 8px;
+	width: 11px;
+}
+
+.adam-map-widget [data-type="team"] { --marker: var(--team); }
+.adam-map-widget [data-type="field"] { --marker: var(--field); }
+.adam-map-widget [data-type="partner"] { --marker: var(--partner); }
+.adam-map-widget [data-type="institution"] { --marker: var(--institution); }
+
+.adam-map-canvas {
+	background-color: #e8eeea;
+	background-image:
+		linear-gradient(32deg, transparent 48%, rgba(255,255,255,.7) 49%, rgba(255,255,255,.7) 51%, transparent 52%),
+		linear-gradient(120deg, transparent 48%, rgba(69,117,90,.08) 49%, rgba(69,117,90,.08) 51%, transparent 52%);
+	background-size: 85px 85px, 130px 130px;
+	height: min(70vh, 620px);
+	min-height: 420px;
+	overflow: hidden;
+	position: relative;
+}
+
+.adam-map-marker {
+	background: var(--marker);
+	border: 3px solid #fff;
+	border-radius: 50% 50% 50% 0;
+	box-shadow: 0 4px 12px rgba(0,0,0,.25);
+	height: 26px;
+	position: absolute;
+	transform: rotate(-45deg) translate(-50%, -50%);
+	width: 26px;
+}
+
+.adam-map-marker::after {
+	background: #fff;
+	border-radius: 50%;
+	content: "";
+	height: 7px;
+	left: 7px;
+	position: absolute;
+	top: 7px;
+	width: 7px;
+}
+
+.adam-map-marker:focus {
+	outline: 4px solid rgba(0,0,0,.3);
+}
+
+.adam-map-preview {
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 10px 30px rgba(0,0,0,.2);
+	max-width: 260px;
+	padding: 16px;
+	position: absolute;
+	z-index: 5;
+}
+
+.adam-map-preview a {
+	color: #d84a2b;
+	display: block;
+	font-weight: 750;
+	margin-top: 8px;
+}

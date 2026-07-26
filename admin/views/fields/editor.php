@@ -167,6 +167,9 @@ if ( $field_id && $adam_slug ) {
 			<aside class="adam-card adam-publish-card">
 				<h2><?php esc_html_e( 'Publish', 'adam-comunidade' ); ?></h2>
 				<label class="adam-field"><span><?php esc_html_e( 'Status', 'adam-comunidade' ); ?></span><select name="field[status]"><?php foreach ( Options::statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $adam_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+				<label class="adam-field"><span><?php esc_html_e( 'Availability', 'adam-comunidade' ); ?></span><select name="field[availability]"><?php foreach ( Options::availability_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $adam_value( 'availability', 'open' ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[featured]" value="1" <?php checked( (int) $adam_value( 'featured', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Featured Field', 'adam-comunidade' ); ?></span></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[verification]" value="verified_field" <?php checked( $adam_value( 'verification' ), 'verified_field' ); ?>> <span><?php esc_html_e( 'Verified Field', 'adam-comunidade' ); ?></span></label>
 				<button class="button button-primary adam-button" type="submit"><?php esc_html_e( 'Save Field', 'adam-comunidade' ); ?></button>
 			</aside>
 		</div>

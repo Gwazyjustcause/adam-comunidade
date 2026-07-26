@@ -201,6 +201,10 @@ if ( $team_id && $adam_slug ) {
 						<label class="adam-field"><span><?php esc_html_e( 'Recruitment Status', 'adam-comunidade' ); ?></span><select name="team[recruitment_status]">
 							<?php foreach ( Options::recruitment_statuses() as $adam_key => $adam_label ) : ?><option value="<?php echo esc_attr( $adam_key ); ?>" <?php selected( $adam_value( 'recruitment_status', 'closed' ), $adam_key ); ?>><?php echo esc_html( $adam_label ); ?></option><?php endforeach; ?>
 						</select></label>
+						<label class="adam-field"><span><?php esc_html_e( 'Minimum age', 'adam-comunidade' ); ?></span><input type="number" min="0" max="99" name="team[recruitment_min_age]" value="<?php echo esc_attr( (string) $adam_value( 'recruitment_min_age', 0 ) ); ?>"></label>
+						<label class="adam-field"><span><?php esc_html_e( 'Experience required', 'adam-comunidade' ); ?></span><textarea name="team[recruitment_experience]"><?php echo esc_textarea( (string) $adam_value( 'recruitment_experience' ) ); ?></textarea></label>
+						<label class="adam-field"><span><?php esc_html_e( 'Equipment required', 'adam-comunidade' ); ?></span><textarea name="team[recruitment_equipment]"><?php echo esc_textarea( (string) $adam_value( 'recruitment_equipment' ) ); ?></textarea></label>
+						<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[recruitment_training]" value="1" <?php checked( (int) $adam_value( 'recruitment_training', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Training available', 'adam-comunidade' ); ?></span></label>
 					</div>
 					<fieldset class="adam-fieldset"><legend><?php esc_html_e( 'Playing Styles', 'adam-comunidade' ); ?></legend><div class="adam-choice-grid">
 						<?php foreach ( Options::playing_styles() as $adam_key => $adam_label ) : ?><label><input type="checkbox" name="team[playing_styles][]" value="<?php echo esc_attr( $adam_key ); ?>" <?php checked( in_array( $adam_key, $adam_playing_styles, true ) ); ?>><?php echo esc_html( $adam_label ); ?></label><?php endforeach; ?>
@@ -237,6 +241,8 @@ if ( $team_id && $adam_slug ) {
 				<label class="adam-field"><span><?php esc_html_e( 'Status', 'adam-comunidade' ); ?></span><select name="team[status]">
 					<?php foreach ( Options::statuses() as $adam_key => $adam_label ) : ?><option value="<?php echo esc_attr( $adam_key ); ?>" <?php selected( $adam_status, $adam_key ); ?>><?php echo esc_html( $adam_label ); ?></option><?php endforeach; ?>
 				</select></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[featured]" value="1" <?php checked( (int) $adam_value( 'featured', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Featured Team', 'adam-comunidade' ); ?></span></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[verification]" value="verified_team" <?php checked( $adam_value( 'verification' ), 'verified_team' ); ?>> <span><?php esc_html_e( 'Verified Team', 'adam-comunidade' ); ?></span></label>
 				<button class="button button-primary adam-button" type="submit"><?php esc_html_e( 'Save Team', 'adam-comunidade' ); ?></button>
 			</aside>
 		</div>

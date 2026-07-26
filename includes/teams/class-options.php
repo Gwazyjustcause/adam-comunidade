@@ -32,10 +32,17 @@ final class Options {
 	 * @return array<string,string>
 	 */
 	public static function recruitment_statuses(): array {
-		return array(
-			'open'        => __( 'Open', 'adam-comunidade' ),
-			'invite_only' => __( 'Invite Only', 'adam-comunidade' ),
-			'closed'      => __( 'Closed', 'adam-comunidade' ),
+		return (array) apply_filters(
+			'adam_comunidade_recruitment_statuses',
+			array(
+				'recruiting'     => __( 'Recruiting', 'adam-comunidade' ),
+				'limited'        => __( 'Limited recruitment', 'adam-comunidade' ),
+				'not_recruiting' => __( 'Not recruiting', 'adam-comunidade' ),
+				// Legacy values remain readable during upgrades.
+				'open'           => __( 'Recruiting', 'adam-comunidade' ),
+				'invite_only'    => __( 'Limited recruitment', 'adam-comunidade' ),
+				'closed'         => __( 'Not recruiting', 'adam-comunidade' ),
+			)
 		);
 	}
 

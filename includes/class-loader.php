@@ -118,6 +118,8 @@ final class Loader {
 		$this->services['modules']     = new Module_Manager();
 		$this->services['modules']->add( new Teams\Module() );
 		$this->services['modules']->add( new Fields\Module() );
+		$this->services['modules']->add( new Directory\Module() );
+		$this->services['modules']->add( new Experience\Module() );
 
 		if ( is_admin() ) {
 			$admin = new Admin();

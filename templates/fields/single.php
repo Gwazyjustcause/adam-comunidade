@@ -61,6 +61,8 @@ get_header();
 		<div class="adam-field-container adam-field-hero__content">
 			<div>
 				<h1><?php echo esc_html( $field->name ); ?></h1>
+				<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Field', 'adam-comunidade' ); ?></span><?php endif; ?>
+				<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Open', 'adam-comunidade' ) ); ?></span>
 				<p><?php echo esc_html( implode( ', ', array_filter( array( $field->municipality, $field->district ) ) ) ); ?></p>
 				<?php if ( $styles ) : ?><div class="adam-field-badges adam-field-badges--hero">
 					<?php foreach ( $styles as $style ) : ?><span><?php echo esc_html( View::style_label( $style ) ); ?></span><?php endforeach; ?>

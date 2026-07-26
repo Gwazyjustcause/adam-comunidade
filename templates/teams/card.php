@@ -23,6 +23,8 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 		<?php endif; ?>
 	</a>
 	<div class="adam-team-card__body">
+		<?php if ( ! empty( $team->featured ) ) : ?><span class="adam-comunidade__badge"><?php esc_html_e( 'Featured', 'adam-comunidade' ); ?></span><?php endif; ?>
+		<?php if ( 'verified_team' === ( $team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Team', 'adam-comunidade' ); ?></span><?php endif; ?>
 		<div class="adam-team-card__identity">
 			<div class="adam-team-card__logo">
 				<?php if ( $team->logo_id ) : ?>
@@ -40,6 +42,7 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 		</div>
 		<div class="adam-team-card__meta">
 			<span><?php echo esc_html( sprintf( _n( '%d member', '%d members', (int) $team->members, 'adam-comunidade' ), (int) $team->members ) ); ?></span>
+			<span><?php echo esc_html( View::label( $team->recruitment_status, Options::recruitment_statuses() ) ); ?></span>
 		</div>
 		<?php if ( $adam_card_styles ) : ?>
 			<div class="adam-team-badges">

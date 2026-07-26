@@ -22,6 +22,9 @@ $adam_styles = Options::decode_list( $field->playing_styles );
 		<?php endif; ?>
 	</a>
 	<div class="adam-field-card__body">
+		<?php if ( ! empty( $field->featured ) ) : ?><span class="adam-comunidade__badge"><?php esc_html_e( 'Featured', 'adam-comunidade' ); ?></span><?php endif; ?>
+		<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Field', 'adam-comunidade' ); ?></span><?php endif; ?>
+		<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Open', 'adam-comunidade' ) ); ?></span>
 		<h2><a href="<?php echo esc_url( Router::field_url( $field ) ); ?>"><?php echo esc_html( $field->name ); ?></a></h2>
 		<p class="adam-field-card__location"><?php echo esc_html( implode( ', ', array_filter( array( $field->municipality, $field->district ) ) ) ); ?></p>
 		<?php if ( $adam_styles ) : ?><div class="adam-field-badges">

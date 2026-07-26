@@ -20,6 +20,21 @@ final class Assets {
 	 */
 	public function register(): void {
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'appearance' ), 100 );
+	}
+
+	/**
+	 * Applies administrator-selected design tokens after a module requests CSS.
+	 */
+	public function appearance(): void {
+		if ( ! wp_style_is( 'adam-comunidade', 'enqueued' ) ) {
+			return;
+		}
+		$settings  = wp_parse_args( get_option( Settings::OPTION_NAME, array() ), Settings::defaults() );
+		$primary   = sanitize_hex_color( $settings['primary_colour'] ?? '' ) ?: '#1d4ed8';
+		$secondary = sanitize_hex_color( $settings['secondary_colour'] ?? '' ) ?: '#0f172a';
+		$accent    = sanitize_hex_color( $settings['accent_colour'] ?? '' ) ?: '#f59e0b';
+		wp_add_inline_style( 'adam-comunidade', ':root{--adam-primary:' . $primary . ';--adam-secondary:' . $secondary . ';--adam-accent:' . $accent . ';}' );
 	}
 
 	/**

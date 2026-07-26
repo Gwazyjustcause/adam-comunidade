@@ -16,7 +16,7 @@ final class Schema {
 	/**
 	 * Module schema version.
 	 */
-	public const VERSION = '3.0.0';
+	public const VERSION = '6.0.0';
 
 	/**
 	 * Creates or upgrades all Fields module tables.
@@ -40,6 +40,9 @@ final class Schema {
 			name varchar(191) NOT NULL,
 			slug varchar(191) NOT NULL,
 			status varchar(20) NOT NULL DEFAULT 'draft',
+			featured tinyint(1) unsigned NOT NULL DEFAULT 0,
+			verification varchar(40) NOT NULL DEFAULT '',
+			availability varchar(40) NOT NULL DEFAULT 'open',
 			cover_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			short_description text NULL,
 			full_description longtext NULL,
@@ -70,6 +73,7 @@ final class Schema {
 			UNIQUE KEY name (name),
 			UNIQUE KEY slug (slug),
 			KEY status_updated (status,updated_at),
+			KEY featured_status (featured,status),
 			KEY district (district),
 			KEY municipality (municipality),
 			KEY capacity (max_players)

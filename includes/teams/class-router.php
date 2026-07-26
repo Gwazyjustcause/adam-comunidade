@@ -10,6 +10,7 @@ namespace ADAM\Comunidade\Teams;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Experience\Templates;
 
 /**
  * Owns clean team URLs and public data resolution.
@@ -85,7 +86,7 @@ final class Router {
 	 */
 	public function template_include( string $template ): string {
 		if ( get_query_var( 'adam_teams_archive' ) ) {
-			return Helpers::path( 'templates/teams/archive.php' );
+			return Templates::locate( 'teams/archive.php' );
 		}
 
 		$slug = sanitize_title( (string) get_query_var( 'adam_team_slug' ) );
@@ -116,7 +117,7 @@ final class Router {
 			return get_404_template();
 		}
 
-		return Helpers::path( 'templates/teams/single.php' );
+		return Templates::locate( 'teams/single.php' );
 	}
 
 	/**

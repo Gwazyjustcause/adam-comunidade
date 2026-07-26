@@ -15,8 +15,8 @@ $adam_comunidade_statistics = array(
 );
 
 $adam_comunidade_roadmap = array(
-	__( 'Partners', 'adam-comunidade' ),
-	__( 'Brands', 'adam-comunidade' ),
+	__( 'Events', 'adam-comunidade' ),
+	__( 'Bookings', 'adam-comunidade' ),
 	__( 'Regions', 'adam-comunidade' ),
 );
 ?>
@@ -51,6 +51,51 @@ $adam_comunidade_roadmap = array(
 			<?php endforeach; ?>
 		</div>
 	</section>
+
+	<section aria-labelledby="adam-directory-statistics-heading">
+		<div class="adam-section-heading">
+			<h2 id="adam-directory-statistics-heading"><?php esc_html_e( 'Community Ecosystem', 'adam-comunidade' ); ?></h2>
+		</div>
+		<div class="adam-stat-grid adam-stat-grid--five">
+			<?php
+			$adam_directory_statistics = array(
+				__( 'Teams', 'adam-comunidade' )        => $team_counts['all'],
+				__( 'Fields', 'adam-comunidade' )       => $field_counts['all'],
+				__( 'Partners', 'adam-comunidade' )     => $directory_counts['partner']['all'],
+				__( 'Brands', 'adam-comunidade' )       => $directory_counts['brand']['all'],
+				__( 'Institutions', 'adam-comunidade' ) => $directory_counts['institution']['all'],
+			);
+			foreach ( $adam_directory_statistics as $adam_label => $adam_value ) :
+				?>
+				<div class="adam-stat-card">
+					<span class="adam-stat-card__value"><?php echo esc_html( (string) $adam_value ); ?></span>
+					<span class="adam-stat-card__label"><?php echo esc_html( $adam_label ); ?></span>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</section>
+
+	<section aria-labelledby="adam-community-insights-heading">
+		<div class="adam-section-heading"><h2 id="adam-community-insights-heading"><?php esc_html_e( 'Community Insights', 'adam-comunidade' ); ?></h2><a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-moderation' ) ); ?>"><?php esc_html_e( 'Open moderation', 'adam-comunidade' ); ?></a></div>
+		<div class="adam-stat-grid">
+			<?php foreach ( array( __( 'Pending submissions', 'adam-comunidade' ) => $community_insights['pending'], __( 'Pending claims', 'adam-comunidade' ) => $community_insights['claims'], __( 'Verified owners', 'adam-comunidade' ) => $community_insights['owners'], __( 'Upcoming calendar entries', 'adam-comunidade' ) => $community_insights['calendar'] ) as $adam_label => $adam_value ) : ?><div class="adam-stat-card"><span class="adam-stat-card__value"><?php echo esc_html( (string) $adam_value ); ?></span><span class="adam-stat-card__label"><?php echo esc_html( $adam_label ); ?></span></div><?php endforeach; ?>
+		</div>
+	</section>
+
+	<div class="adam-dashboard-columns">
+		<section class="adam-card">
+			<div class="adam-card__header"><h2><?php esc_html_e( 'Recently Added', 'adam-comunidade' ); ?></h2></div>
+			<?php if ( $recent_directory ) : ?><ul class="adam-dashboard-team-list"><?php foreach ( $recent_directory as $adam_entry ) : ?>
+				<li><?php echo wp_get_attachment_image( (int) $adam_entry->logo_id, array( 42, 42 ) ); ?><div><strong><?php echo esc_html( $adam_entry->name ); ?></strong><small><?php echo esc_html( ucfirst( $adam_entry->entity_type ) ); ?></small></div></li>
+			<?php endforeach; ?></ul><?php else : ?><div class="adam-empty-state"><?php esc_html_e( 'No directory content yet.', 'adam-comunidade' ); ?></div><?php endif; ?>
+		</section>
+		<section class="adam-card">
+			<div class="adam-card__header"><h2><?php esc_html_e( 'Featured Content', 'adam-comunidade' ); ?></h2></div>
+			<?php if ( $featured_directory ) : ?><ul class="adam-dashboard-team-list"><?php foreach ( array_slice( $featured_directory, 0, 6 ) as $adam_entry ) : ?>
+				<li><?php echo wp_get_attachment_image( (int) $adam_entry->logo_id, array( 42, 42 ) ); ?><div><strong><?php echo esc_html( $adam_entry->name ); ?></strong><small><?php echo esc_html( ucfirst( $adam_entry->entity_type ) ); ?></small></div></li>
+			<?php endforeach; ?></ul><?php else : ?><div class="adam-empty-state"><?php esc_html_e( 'No featured content yet.', 'adam-comunidade' ); ?></div><?php endif; ?>
+		</section>
+	</div>
 
 	<section aria-labelledby="adam-field-statistics-heading">
 		<div class="adam-section-heading">
@@ -131,7 +176,7 @@ $adam_comunidade_roadmap = array(
 				<span class="adam-card__eyebrow"><?php esc_html_e( 'What is next', 'adam-comunidade' ); ?></span>
 				<h2 id="adam-roadmap-heading"><?php esc_html_e( 'Roadmap', 'adam-comunidade' ); ?></h2>
 			</div>
-			<span class="adam-badge"><?php esc_html_e( 'Phase 3', 'adam-comunidade' ); ?></span>
+			<span class="adam-badge"><?php esc_html_e( 'Phase 6', 'adam-comunidade' ); ?></span>
 		</div>
 		<ul class="adam-roadmap">
 			<?php foreach ( $adam_comunidade_roadmap as $adam_comunidade_module ) : ?>

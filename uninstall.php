@@ -16,6 +16,10 @@ $adam_comunidade_options = array(
 	'adam_comunidade_settings',
 	'adam_comunidade_teams_db_version',
 	'adam_comunidade_fields_db_version',
+	'adam_comunidade_directory_db_version',
+	'adam_comunidade_experience_db_version',
+	'adam_comunidade_home_sections',
+	'adam_comunidade_cache_version',
 );
 
 if ( is_multisite() ) {
@@ -27,6 +31,7 @@ if ( is_multisite() ) {
 		foreach ( $adam_comunidade_options as $adam_comunidade_option ) {
 			delete_option( $adam_comunidade_option );
 		}
+		wp_clear_scheduled_hook( 'adam_comunidade_notification_scan' );
 
 		restore_current_blog();
 	}
@@ -34,4 +39,5 @@ if ( is_multisite() ) {
 	foreach ( $adam_comunidade_options as $adam_comunidade_option ) {
 		delete_option( $adam_comunidade_option );
 	}
+	wp_clear_scheduled_hook( 'adam_comunidade_notification_scan' );
 }

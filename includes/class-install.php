@@ -31,8 +31,17 @@ final class Install {
 		update_option( 'adam_comunidade_version', ADAM_COMUNIDADE_VERSION, false );
 		Teams\Schema::install();
 		Fields\Schema::install();
+		Directory\Schema::install();
+		Experience\Schema::install();
+		( new Experience\News() )->register_content();
 		Teams\Router::add_rewrite_rules();
 		Fields\Router::add_rewrite_rules();
+		Directory\Router::add_rewrite_rules();
+		Directory\Rest_API::add_rewrite_rules();
+		Experience\Router::add_rewrite_rules();
+		Experience\Api_V2::add_rewrite_rules();
+		Experience\Portal::add_rewrite_rules();
+		Experience\Calendar::add_rewrite_rules();
 
 		flush_rewrite_rules();
 	}

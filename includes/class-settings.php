@@ -228,7 +228,7 @@ final class Settings {
 
 		do_action( 'adam_comunidade_reset_cache' );
 		Helpers::add_admin_notice(
-			__( 'Plugin cache reset requested. No cache providers are registered yet.', 'adam-comunidade' ),
+			__( 'Community object, archive, discovery, and REST caches were invalidated.', 'adam-comunidade' ),
 			'success'
 		);
 
