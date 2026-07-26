@@ -20,7 +20,13 @@ $field       = Router::current_field();
 $repository  = new Repository();
 $styles      = Options::decode_list( $field->playing_styles );
 $amenities   = $repository->amenities( (int) $field->id );
-$gallery     = $repository->gallery( (int) $field->id );
+$gallery     = array_values(
+	array_filter(
+		$repository->gallery( (int) $field->id ),
+		static fn( object $item ): bool => wp_attachment_is_image( (int) $item->attachment_id )
+			&& (bool) wp_get_attachment_image_url( (int) $item->attachment_id, 'full' )
+	)
+);
 $team_id     = $repository->associated_team_id( (int) $field->id );
 $team        = $team_id ? ( new Team_Repository() )->find( $team_id ) : null;
 $team        = $team && 'published' === $team->status ? $team : null;
@@ -38,23 +44,22 @@ if ( $coordinates ) {
 } elseif ( $google_maps_url ) {
 	$directions_url = $google_maps_url;
 }
-$contacts    = array_filter(
+$capacity = array_filter(
 	array(
-		array( __( 'Website', 'adam-comunidade' ), $field->website ),
-		array( 'Facebook', $field->facebook ),
-		array( 'Instagram', $field->instagram ),
-		array( __( 'Email', 'adam-comunidade' ), $field->email ? 'mailto:' . $field->email : '' ),
-		array(
-			__( 'Phone', 'adam-comunidade' ),
-			$field->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $field->phone ) : '',
-		),
+		'max_players'         => array( absint( $field->max_players ), __( 'Maximum', 'adam-comunidade' ) ),
+		'min_players'         => array( absint( $field->min_players ), __( 'Minimum', 'adam-comunidade' ) ),
+		'recommended_players' => array( absint( $field->recommended_players ), __( 'Recommended', 'adam-comunidade' ) ),
 	),
-	static fn( array $contact ): bool => ! empty( $contact[1] )
+	static fn( array $item ): bool => $item[0] > 0
 );
+$has_mobile_actions = (bool) ( $directions_url || $google_maps_url || $coordinates );
+$has_description    = '' !== trim( (string) $field->short_description )
+	|| '' !== trim( wp_strip_all_tags( (string) $field->full_description ) );
+$has_rules          = '' !== trim( wp_strip_all_tags( (string) $field->rules ) );
 
 get_header();
 ?>
-<main class="adam-comunidade adam-field-single" id="main">
+<main class="adam-comunidade adam-field-single<?php echo $has_mobile_actions ? ' has-mobile-actions' : ''; ?>" id="main">
 	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-field-hero' ) ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-field-hero__cover' ) ); ?>">
 			<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
@@ -65,7 +70,7 @@ get_header();
 				<?php if ( ! empty( $field->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Associado ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Autorização verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Open', 'adam-comunidade' ) ); ?></span>
-				<p><?php echo esc_html( implode( ', ', array_filter( array( $field->municipality, $field->district ) ) ) ); ?></p>
+				<?php if ( $field->municipality || $field->district ) : ?><p><?php echo esc_html( implode( ', ', array_filter( array( $field->municipality, $field->district ) ) ) ); ?></p><?php endif; ?>
 				<?php if ( $styles ) : ?><div class="adam-field-badges adam-field-badges--hero">
 					<?php foreach ( $styles as $style ) : ?><span><?php echo esc_html( View::style_label( $style ) ); ?></span><?php endforeach; ?>
 				</div><?php endif; ?>
@@ -74,15 +79,14 @@ get_header();
 		</div>
 	</section>
 
-	<div class="adam-field-mobile-actions">
+	<?php if ( $has_mobile_actions ) : ?><div class="adam-field-mobile-actions">
 		<?php if ( $directions_url ) : ?><a href="<?php echo esc_url( $directions_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Directions', 'adam-comunidade' ); ?></a><?php endif; ?>
-		<?php if ( $field->phone ) : ?><a href="<?php echo esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $field->phone ) ); ?>"><?php esc_html_e( 'Call', 'adam-comunidade' ); ?></a><?php endif; ?>
-		<?php if ( $google_maps_url ) : ?><a href="<?php echo esc_url( $google_maps_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
+		<?php if ( $google_maps_url && $google_maps_url !== $directions_url ) : ?><a href="<?php echo esc_url( $google_maps_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
 		<?php if ( $coordinates ) : ?><button type="button" data-copy-gps="<?php echo esc_attr( $coordinates ); ?>"><?php esc_html_e( 'Copy GPS', 'adam-comunidade' ); ?></button><?php endif; ?>
-	</div>
+	</div><?php endif; ?>
 
 	<div class="adam-field-container adam-field-content">
-		<?php if ( $field->short_description || $field->full_description ) : ?>
+		<?php if ( $has_description ) : ?>
 			<details class="adam-field-section adam-field-collapsible" open>
 				<summary><h2><?php esc_html_e( 'About', 'adam-comunidade' ); ?></h2></summary>
 				<?php if ( $field->short_description ) : ?><p class="adam-field-lead"><?php echo esc_html( $field->short_description ); ?></p><?php endif; ?>
@@ -102,16 +106,14 @@ get_header();
 			</div>
 		</section><?php endif; ?>
 
-		<section class="adam-field-section">
+		<?php if ( $capacity ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Capacity', 'adam-comunidade' ); ?></h2>
 			<div class="adam-field-capacity">
-				<div><strong><?php echo esc_html( (string) $field->max_players ); ?></strong><span><?php esc_html_e( 'Maximum', 'adam-comunidade' ); ?></span></div>
-				<div><strong><?php echo esc_html( (string) $field->min_players ); ?></strong><span><?php esc_html_e( 'Minimum', 'adam-comunidade' ); ?></span></div>
-				<div><strong><?php echo esc_html( (string) $field->recommended_players ); ?></strong><span><?php esc_html_e( 'Recommended', 'adam-comunidade' ); ?></span></div>
+				<?php foreach ( $capacity as $capacity_item ) : ?><div><strong><?php echo esc_html( (string) $capacity_item[0] ); ?></strong><span><?php echo esc_html( $capacity_item[1] ); ?></span></div><?php endforeach; ?>
 			</div>
-		</section>
+		</section><?php endif; ?>
 
-		<?php if ( $field->rules ) : ?><details class="adam-field-section adam-field-collapsible" open>
+		<?php if ( $has_rules ) : ?><details class="adam-field-section adam-field-collapsible" open>
 			<summary><h2><?php esc_html_e( 'Rules', 'adam-comunidade' ); ?></h2></summary>
 			<?php echo wp_kses_post( wpautop( $field->rules ) ); ?>
 		</details><?php endif; ?>
@@ -142,24 +144,15 @@ get_header();
 			</div>
 		</section><?php endif; ?>
 
-		<?php if ( $contacts ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Contact', 'adam-comunidade' ); ?></h2>
-			<div class="adam-field-actions"><?php foreach ( $contacts as $contact ) : ?><a class="adam-field-button" href="<?php echo esc_url( $contact[1] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $contact[0] ); ?></a><?php endforeach; ?></div>
-		</section><?php endif; ?>
-
 		<?php if ( $team ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Equipa Associada', 'adam-comunidade' ); ?></h2>
-			<div class="adam-associated-team-card">
-				<div><?php echo wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo' ); ?></div>
-				<div><h3><?php echo esc_html( $team->name ); ?></h3><p><?php echo esc_html( $team->short_description ); ?></p><a class="adam-field-button" href="<?php echo esc_url( Team_Router::team_url( $team ) ); ?>"><?php esc_html_e( 'Ver Equipa', 'adam-comunidade' ); ?></a></div>
+			<div class="adam-associated-team-card<?php echo empty( $team->logo_id ) ? ' adam-associated-team-card--without-logo' : ''; ?>">
+				<?php if ( ! empty( $team->logo_id ) ) : ?><div><?php echo wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo' ); ?></div><?php endif; ?>
+				<div><h3><?php echo esc_html( $team->name ); ?></h3><?php if ( $team->short_description ) : ?><p><?php echo esc_html( $team->short_description ); ?></p><?php endif; ?><a class="adam-field-button" href="<?php echo esc_url( Team_Router::team_url( $team ) ); ?>"><?php esc_html_e( 'Ver Equipa', 'adam-comunidade' ); ?></a></div>
 			</div>
 		</section><?php endif; ?>
 
 		<?php do_action( 'adam_comunidade_field_before_events', $field ); ?>
-		<section class="adam-field-section adam-upcoming-events">
-			<h2><?php esc_html_e( 'Upcoming Events', 'adam-comunidade' ); ?></h2>
-			<div class="adam-comunidade__empty"><?php esc_html_e( 'Integração disponível numa fase futura.', 'adam-comunidade' ); ?></div>
-		</section>
 		<?php do_action( 'adam_comunidade_field_after_content', $field ); ?>
 	</div>
 

@@ -611,7 +611,7 @@
 
 .adam-field-capacity {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .adam-field-capacity div {
@@ -693,6 +693,10 @@
 	display: grid;
 	gap: 20px;
 	grid-template-columns: 100px 1fr;
+}
+
+.adam-associated-team-card.adam-associated-team-card--without-logo {
+	grid-template-columns: 1fr;
 }
 
 .adam-associated-team-card > div:first-child {
@@ -837,7 +841,7 @@
 		box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
 		display: grid;
 		gap: 6px;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
 		left: 0;
 		padding: 9px;
 		position: fixed;
@@ -862,6 +866,10 @@
 	}
 
 	.adam-field-content {
+		padding-bottom: 40px;
+	}
+
+	.adam-field-single.has-mobile-actions .adam-field-content {
 		padding-bottom: 120px;
 	}
 
@@ -912,6 +920,10 @@
 	.adam-associated-team-card {
 		align-items: start;
 		grid-template-columns: 72px 1fr;
+	}
+
+	.adam-associated-team-card.adam-associated-team-card--without-logo {
+		grid-template-columns: 1fr;
 	}
 
 	.adam-associated-team-card > div:first-child {

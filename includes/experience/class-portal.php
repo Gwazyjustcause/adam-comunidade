@@ -54,13 +54,10 @@ final class Portal {
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ), 40 );
 		add_action( 'admin_post_nopriv_adam_public_submission', array( $this, 'submit' ) );
 		add_action( 'admin_post_adam_public_submission', array( $this, 'submit' ) );
-		add_action( 'admin_post_adam_claim_listing', array( $this, 'claim' ) );
 		add_action( 'admin_post_adam_owner_edit', array( $this, 'owner_edit' ) );
 		add_action( 'admin_post_adam_moderate_submission', array( $this, 'moderate' ) );
 		add_action( 'admin_post_adam_notification_read', array( $this, 'read_notification' ) );
 		Admin_Router::register_page( 'moderation', array( 'title' => __( 'Aprovações', 'adam-comunidade' ), 'controller' => $this, 'method' => 'moderation_page' ) );
-		add_action( 'adam_comunidade_team_after_content', array( $this, 'claim_team' ) );
-		add_action( 'adam_comunidade_field_after_content', array( $this, 'claim_field' ) );
 	}
 
 	public static function add_rewrite_rules(): void {
@@ -698,22 +695,6 @@ final class Portal {
 		return $this->upload_file( $key, $extensions, ! empty( $field['required'] ), absint( $field['max_size_mb'] ) );
 	}
 
-	public function claim(): void {
-		if ( ! is_user_logged_in() ) {
-			auth_redirect();
-		}
-		$type = sanitize_key( wp_unslash( $_POST['object_type'] ?? '' ) );
-		$id   = absint( $_POST['object_id'] ?? 0 );
-		check_admin_referer( 'adam_claim_' . $type . '_' . $id, 'adam_nonce' );
-		if ( ! in_array( $type, array( 'team', 'field' ), true ) || ! self::record( $type, $id ) ) {
-			wp_die( esc_html__( 'O registo não é válido.', 'adam-comunidade' ) );
-		}
-		$user = wp_get_current_user();
-		$this->insert_submission( 'claim', $type, $id, array(), $user->user_email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );
-		wp_safe_redirect( add_query_arg( 'adam_status', 'claim-submitted', wp_get_referer() ?: home_url( '/' ) ) );
-		exit;
-	}
-
 	public function owner_edit(): void {
 		if ( ! is_user_logged_in() ) {
 			auth_redirect();
@@ -1065,27 +1046,6 @@ final class Portal {
 		$wpdb->update( Schema::notifications_table(), array( 'is_read' => 1 ), array( 'id' => $id, 'user_id' => get_current_user_id() ) );
 		wp_safe_redirect( home_url( '/painel-comunidade/' ) );
 		exit;
-	}
-
-	public function claim_team( object $team ): void {
-		$this->claim_box( 'team', (int) $team->id );
-	}
-
-	public function claim_field( object $field ): void {
-		$this->claim_box( 'field', (int) $field->id );
-	}
-
-	private function claim_box( string $type, int $id ): void {
-		if ( is_user_logged_in() && $this->is_owner( get_current_user_id(), $type, $id ) ) {
-			echo '<p><a class="adam-community-button" href="' . esc_url( home_url( '/painel-comunidade/' ) ) . '">' . esc_html__( 'Gerir este registo', 'adam-comunidade' ) . '</a></p>';
-			return;
-		}
-		?>
-		<details class="adam-claim-box"><summary><?php esc_html_e( 'Esta é a sua organização? Peça a gestão desta página', 'adam-comunidade' ); ?></summary>
-			<?php if ( ! is_user_logged_in() ) : ?><p><a href="<?php echo esc_url( wp_login_url( wp_get_referer() ?: home_url( '/' ) ) ); ?>"><?php esc_html_e( 'Inicie sessão para começar a verificação.', 'adam-comunidade' ); ?></a></p>
-			<?php else : ?><form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post"><input type="hidden" name="action" value="adam_claim_listing"><input type="hidden" name="object_type" value="<?php echo esc_attr( $type ); ?>"><input type="hidden" name="object_id" value="<?php echo esc_attr( $id ); ?>"><?php wp_nonce_field( 'adam_claim_' . $type . '_' . $id, 'adam_nonce' ); ?><textarea name="verification_details" required placeholder="<?php esc_attr_e( 'Explique a sua relação com este registo e forneça dados para verificação.', 'adam-comunidade' ); ?>"></textarea><button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar pedido de gestão', 'adam-comunidade' ); ?></button></form><?php endif; ?>
-		</details>
-		<?php
 	}
 
 	private static function record( string $type, int $id ): ?object {
