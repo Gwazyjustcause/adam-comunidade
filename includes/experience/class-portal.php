@@ -53,6 +53,19 @@ final class Portal {
 		add_rewrite_rule( '^painel-comunidade/?$', 'index.php?adam_owner_dashboard=1', 'top' );
 	}
 
+	/**
+	 * Returns the public submission URL for one supported object type.
+	 *
+	 * @param string $type Object type.
+	 * @return string
+	 */
+	public static function submission_url( string $type ): string {
+		$type = sanitize_key( $type );
+		return isset( self::TYPES[ $type ] )
+			? home_url( '/submeter-' . self::TYPES[ $type ] . '/' )
+			: home_url( '/' );
+	}
+
 	public function query_vars( array $vars ): array {
 		return array_merge( $vars, array( 'adam_submission', 'adam_owner_dashboard' ) );
 	}
@@ -67,6 +80,9 @@ final class Portal {
 	public function title( string $title ): string {
 		if ( get_query_var( 'adam_owner_dashboard' ) ) {
 			return __( 'Community Dashboard', 'adam-comunidade' );
+		}
+		if ( 'field' === get_query_var( 'adam_submission' ) ) {
+			return __( 'Submeter Campo', 'adam-comunidade' );
 		}
 		return get_query_var( 'adam_submission' ) ? __( 'Submit to ADAM Comunidade', 'adam-comunidade' ) : $title;
 	}
@@ -97,20 +113,38 @@ final class Portal {
 		}
 		?>
 		<section class="adam-community-panel adam-portal-panel">
-			<h1><?php esc_html_e( 'Submit to ADAM Comunidade', 'adam-comunidade' ); ?></h1>
-			<p><?php esc_html_e( 'Every submission is reviewed by ADAM before it can be published.', 'adam-comunidade' ); ?></p>
+			<h1><?php echo 'field' === $type ? esc_html__( 'Submeter Campo', 'adam-comunidade' ) : esc_html__( 'Submit to ADAM Comunidade', 'adam-comunidade' ); ?></h1>
+			<?php if ( 'field' === $type ) : ?>
+				<div class="adam-legal-submission-warning" role="alert">
+					<strong><?php esc_html_e( 'Autorização legal obrigatória', 'adam-comunidade' ); ?></strong>
+					<p><?php esc_html_e( 'A ADAM apenas publica campos que tenham autorização ou permissão legal para funcionar. É obrigatório anexar uma cópia legível do documento de autorização.', 'adam-comunidade' ); ?></p>
+					<ul>
+						<li><?php esc_html_e( 'Submissões sem este documento não serão aprovadas.', 'adam-comunidade' ); ?></li>
+						<li><?php esc_html_e( 'As informações, o documento e as fotografias são revistos manualmente pela administração da ADAM.', 'adam-comunidade' ); ?></li>
+						<li><?php esc_html_e( 'O campo só aparece publicamente depois de ser aprovado.', 'adam-comunidade' ); ?></li>
+					</ul>
+				</div>
+			<?php else : ?>
+				<p><?php esc_html_e( 'Every submission is reviewed by ADAM before it can be published.', 'adam-comunidade' ); ?></p>
+			<?php endif; ?>
 			<?php self::status_notice(); ?>
-			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" class="adam-portal-form">
+			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data" class="adam-portal-form">
 				<input type="hidden" name="action" value="adam_public_submission">
 				<input type="hidden" name="object_type" value="<?php echo esc_attr( $type ); ?>">
 				<?php wp_nonce_field( 'adam_public_submission', 'adam_nonce' ); ?>
 				<label><?php esc_html_e( 'Name', 'adam-comunidade' ); ?><input name="name" required maxlength="190"></label>
 				<label><?php esc_html_e( 'Email', 'adam-comunidade' ); ?><input name="contact_email" type="email" required></label>
-				<label><?php esc_html_e( 'District', 'adam-comunidade' ); ?><input name="district" maxlength="100"></label>
-				<label><?php esc_html_e( 'Municipality', 'adam-comunidade' ); ?><input name="municipality" maxlength="100"></label>
+				<label><?php esc_html_e( 'District', 'adam-comunidade' ); ?><input name="district" maxlength="100" <?php echo 'field' === $type ? 'required' : ''; ?>></label>
+				<label><?php esc_html_e( 'Municipality', 'adam-comunidade' ); ?><input name="municipality" maxlength="100" <?php echo 'field' === $type ? 'required' : ''; ?>></label>
+				<?php if ( 'field' === $type ) : ?><label class="adam-portal-form__wide"><?php esc_html_e( 'Address', 'adam-comunidade' ); ?><input name="address" maxlength="255" required></label><?php endif; ?>
 				<label><?php esc_html_e( 'Website', 'adam-comunidade' ); ?><input name="website" type="url"></label>
+				<?php if ( 'field' === $type ) : ?><label><?php esc_html_e( 'Phone', 'adam-comunidade' ); ?><input name="phone" type="tel" maxlength="50"></label><?php endif; ?>
 				<label class="adam-portal-form__wide"><?php esc_html_e( 'Short description', 'adam-comunidade' ); ?><textarea name="short_description" rows="3" required></textarea></label>
 				<label class="adam-portal-form__wide"><?php esc_html_e( 'Details for verification', 'adam-comunidade' ); ?><textarea name="verification_details" rows="4" required></textarea></label>
+				<?php if ( 'field' === $type ) : ?>
+					<label class="adam-portal-form__wide adam-portal-upload"><?php esc_html_e( 'Proof of legal authorisation', 'adam-comunidade' ); ?> *<input name="authorization_document" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required><small><?php esc_html_e( 'PDF, JPG or PNG. This document is required for administrative review.', 'adam-comunidade' ); ?></small></label>
+					<label class="adam-portal-form__wide adam-portal-upload"><?php esc_html_e( 'Field photographs', 'adam-comunidade' ); ?><input name="field_photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple><small><?php esc_html_e( 'Optional. Upload up to five photographs.', 'adam-comunidade' ); ?></small></label>
+				<?php endif; ?>
 				<label class="adam-portal-form__wide"><input name="consent" type="checkbox" value="1" required> <?php esc_html_e( 'I confirm that this information is accurate and may be reviewed by ADAM.', 'adam-comunidade' ); ?></label>
 				<button class="adam-community-button" type="submit"><?php esc_html_e( 'Send for review', 'adam-comunidade' ); ?></button>
 			</form>
@@ -174,12 +208,38 @@ final class Portal {
 			'slug'              => sanitize_title( wp_unslash( $_POST['name'] ?? '' ) ),
 			'district'          => sanitize_text_field( wp_unslash( $_POST['district'] ?? '' ) ),
 			'municipality'      => sanitize_text_field( wp_unslash( $_POST['municipality'] ?? '' ) ),
+			'address'           => sanitize_text_field( wp_unslash( $_POST['address'] ?? '' ) ),
 			'website'           => $website,
 			'short_description' => sanitize_textarea_field( wp_unslash( $_POST['short_description'] ?? '' ) ),
 			'email'             => $email,
+			'phone'             => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
 		);
+		if (
+			! $payload['name']
+			|| (
+				'field' === $type
+				&& ( ! $payload['district'] || ! $payload['municipality'] || ! $payload['address'] )
+			)
+		) {
+			wp_die( esc_html__( 'Complete all required field information.', 'adam-comunidade' ) );
+		}
+		if ( 'field' === $type ) {
+			$authorization_document_id = $this->upload_file(
+				'authorization_document',
+				array( 'pdf', 'jpg', 'jpeg', 'png' ),
+				true
+			);
+			if ( is_wp_error( $authorization_document_id ) ) {
+				wp_die( esc_html( $authorization_document_id->get_error_message() ) );
+			}
+			$payload['authorization_document_id'] = $authorization_document_id;
+			$payload['verification']              = 'verified_field';
+			$payload['is_associated']              = 0;
+			$payload['gallery_ids']                = $this->upload_photos( 'field_photos', 5 );
+			$payload['cover_id']                   = $payload['gallery_ids'][0] ?? 0;
+		}
 		$this->insert_submission( 'new', $type, 0, $payload, $email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );
-		wp_safe_redirect( add_query_arg( 'adam_status', 'submitted', home_url( '/submeter-' . self::TYPES[ $type ] . '/' ) ) );
+		wp_safe_redirect( add_query_arg( 'adam_status', 'submitted', self::submission_url( $type ) ) );
 		exit;
 	}
 
@@ -235,6 +295,8 @@ final class Portal {
 			<p><strong><?php esc_html_e( 'Contact', 'adam-comunidade' ); ?>:</strong> <?php echo esc_html( $row->contact_email ); ?></p>
 			<pre><?php echo esc_html( wp_json_encode( $payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) ); ?></pre>
 			<p><?php echo esc_html( $row->verification_details ); ?></p>
+			<?php if ( ! empty( $payload['authorization_document_id'] ) ) : ?><p><strong><?php esc_html_e( 'Legal authorisation:', 'adam-comunidade' ); ?></strong> <a href="<?php echo esc_url( wp_get_attachment_url( absint( $payload['authorization_document_id'] ) ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Review document', 'adam-comunidade' ); ?></a></p><?php endif; ?>
+			<?php if ( ! empty( $payload['gallery_ids'] ) ) : ?><div class="adam-moderation-photos"><?php foreach ( array_map( 'absint', (array) $payload['gallery_ids'] ) as $photo_id ) : echo wp_get_attachment_image( $photo_id, 'thumbnail' ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div><?php endif; ?>
 			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post"><?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?><input type="hidden" name="action" value="adam_moderate_submission"><input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>"><textarea name="admin_note" placeholder="<?php esc_attr_e( 'Review note', 'adam-comunidade' ); ?>"></textarea> <button class="button button-primary" name="decision" value="approve"><?php esc_html_e( 'Approve and publish', 'adam-comunidade' ); ?></button> <button class="button" name="decision" value="changes"><?php esc_html_e( 'Request changes', 'adam-comunidade' ); ?></button> <button class="button button-link-delete" name="decision" value="reject"><?php esc_html_e( 'Reject', 'adam-comunidade' ); ?></button></form>
 			</div>
 		<?php endforeach; ?></div>
@@ -280,6 +342,19 @@ final class Portal {
 			return (int) $row->object_id;
 		}
 		$payload = json_decode( $row->payload, true ) ?: array();
+		if (
+			'field' === $row->object_type
+			&& 'new' === $row->submission_type
+			&& (
+				empty( $payload['authorization_document_id'] )
+				|| ! get_post( absint( $payload['authorization_document_id'] ) )
+			)
+		) {
+			return new \WP_Error(
+				'authorization_required',
+				__( 'This field submission cannot be approved without its legal authorisation document.', 'adam-comunidade' )
+			);
+		}
 		$record  = $row->object_id ? self::record( $row->object_type, (int) $row->object_id ) : null;
 		$input   = array_merge( $record ? (array) $record : array(), $payload, array( 'status' => 'published' ) );
 		if ( isset( $input['gallery'] ) && is_string( $input['gallery'] ) ) {
@@ -304,7 +379,88 @@ final class Portal {
 			return $data;
 		}
 		$result = $record ? $repo->update( (int) $row->object_id, $data ) : $repo->create( $data );
-		return $result ? ( $record ? (int) $row->object_id : (int) $result ) : new \WP_Error( 'save_failed', __( 'The listing could not be saved.', 'adam-comunidade' ) );
+		if ( ! $result ) {
+			return new \WP_Error( 'save_failed', __( 'The listing could not be saved.', 'adam-comunidade' ) );
+		}
+		$result_id = $record ? (int) $row->object_id : (int) $result;
+		if ( 'field' === $row->object_type && ! empty( $payload['gallery_ids'] ) ) {
+			$repo->sync_gallery(
+				$result_id,
+				array_map(
+					static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ),
+					array_slice( array_filter( array_map( 'absint', (array) $payload['gallery_ids'] ) ), 0, 5 )
+				)
+			);
+		}
+		return $result_id;
+	}
+
+	/**
+	 * Stores one public upload in the Media Library.
+	 *
+	 * @param string   $field_name File input name.
+	 * @param string[] $extensions Allowed extensions.
+	 * @param bool     $required Whether the file is mandatory.
+	 * @return int|\WP_Error
+	 */
+	private function upload_file( string $field_name, array $extensions, bool $required = false ): int|\WP_Error {
+		if (
+			empty( $_FILES[ $field_name ]['name'] )
+			|| ! is_string( $_FILES[ $field_name ]['name'] )
+		) {
+			return $required
+				? new \WP_Error( 'authorization_required', __( 'Proof of legal authorisation is required.', 'adam-comunidade' ) )
+				: 0;
+		}
+
+		$extension = strtolower( (string) pathinfo( sanitize_file_name( wp_unslash( $_FILES[ $field_name ]['name'] ) ), PATHINFO_EXTENSION ) );
+		if ( ! in_array( $extension, $extensions, true ) ) {
+			return new \WP_Error( 'invalid_upload_type', __( 'The uploaded file type is not allowed.', 'adam-comunidade' ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$attachment_id = media_handle_upload( $field_name, 0 );
+
+		return is_wp_error( $attachment_id ) ? $attachment_id : absint( $attachment_id );
+	}
+
+	/**
+	 * Stores a bounded set of public field photographs.
+	 *
+	 * @param string $field_name Multiple file input name.
+	 * @param int    $limit Maximum files.
+	 * @return int[]
+	 */
+	private function upload_photos( string $field_name, int $limit ): array {
+		if ( empty( $_FILES[ $field_name ]['name'] ) || ! is_array( $_FILES[ $field_name ]['name'] ) ) {
+			return array();
+		}
+
+		$original = $_FILES[ $field_name ];
+		$ids      = array();
+		$count    = min( $limit, count( $original['name'] ) );
+
+		for ( $index = 0; $index < $count; ++$index ) {
+			if ( UPLOAD_ERR_NO_FILE === (int) $original['error'][ $index ] ) {
+				continue;
+			}
+			$_FILES[ $field_name ] = array(
+				'name'     => $original['name'][ $index ],
+				'type'     => $original['type'][ $index ],
+				'tmp_name' => $original['tmp_name'][ $index ],
+				'error'    => $original['error'][ $index ],
+				'size'     => $original['size'][ $index ],
+			);
+			$attachment_id = $this->upload_file( $field_name, array( 'jpg', 'jpeg', 'png', 'webp' ) );
+			if ( ! is_wp_error( $attachment_id ) && $attachment_id ) {
+				$ids[] = $attachment_id;
+			}
+		}
+		$_FILES[ $field_name ] = $original;
+
+		return $ids;
 	}
 
 	private function insert_submission( string $submission_type, string $object_type, int $object_id, array $payload, string $email, string $verification ): void {

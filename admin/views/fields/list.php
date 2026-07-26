@@ -16,7 +16,7 @@ $adam_base_url     = \ADAM\Comunidade\Admin\Router::module_url( 'fields' );
 	<header class="adam-page-header">
 		<div>
 			<h1><?php esc_html_e( 'Campos', 'adam-comunidade' ); ?></h1>
-			<p><?php esc_html_e( 'Maintain the central directory of associated airsoft fields.', 'adam-comunidade' ); ?></p>
+			<p><?php esc_html_e( 'Maintain the directory of legally authorised airsoft fields. Association is managed as a distinction on each field.', 'adam-comunidade' ); ?></p>
 		</div>
 		<div class="adam-header-actions">
 			<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'field-amenities' ) ); ?>">

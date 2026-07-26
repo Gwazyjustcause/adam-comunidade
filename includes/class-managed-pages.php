@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.0.0';
+	private const VERSION = '1.1.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -72,7 +72,7 @@ final class Managed_Pages {
 			),
 			'fields' => array(
 				'label'         => __( 'Fields', 'adam-comunidade' ),
-				'default_title' => __( 'Campos Associados', 'adam-comunidade' ),
+				'default_title' => __( 'Campos', 'adam-comunidade' ),
 				'default_slug'  => 'campos',
 				'option'        => 'fields_page_id',
 			),
@@ -122,11 +122,31 @@ final class Managed_Pages {
 
 		if ( $requires_install ) {
 			self::activate();
+			self::migrate_legacy_titles();
 		}
 
 		if ( $requires_install || $requires_flush ) {
 			self::regenerate_rewrite_rules();
 			delete_option( Install::REWRITE_FLUSH_OPTION );
+		}
+	}
+
+	/**
+	 * Renames only untouched legacy defaults while preserving custom page titles.
+	 *
+	 * @return void
+	 */
+	private static function migrate_legacy_titles(): void {
+		$page_id = self::id( 'fields', true );
+		$page    = $page_id ? get_post( $page_id ) : null;
+
+		if ( $page && 'Campos Associados' === $page->post_title ) {
+			wp_update_post(
+				array(
+					'ID'         => $page_id,
+					'post_title' => 'Campos',
+				)
+			);
 		}
 	}
 

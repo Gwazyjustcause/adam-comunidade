@@ -256,6 +256,9 @@ final class Router {
 		$result   = $this->repository->query(
 			array(
 				'status'        => 'published',
+				'legally_authorized' => 1,
+				'prioritize_associated' => true,
+				'associated'    => 'only' === $this->post_value( 'associated' ) ? 1 : '',
 				'search'        => $this->post_value( 'search' ),
 				'district'      => $this->post_value( 'district' ),
 				'municipality'  => $this->post_value( 'municipality' ),
@@ -268,11 +271,28 @@ final class Router {
 				'per_page'      => 12,
 			)
 		);
-		$cards = '';
+		$associated_cards = '';
+		$other_cards      = '';
 
 		foreach ( $result['items'] as $field ) {
-			$cards .= View::card( $field, $this->repository );
+			if ( ! empty( $field->is_associated ) ) {
+				$associated_cards .= View::card( $field, $this->repository );
+			} else {
+				$other_cards .= View::card( $field, $this->repository );
+			}
 		}
+		$cards = $associated_cards
+			? '<section class="adam-field-group adam-field-group--associated"><header><h2>'
+				. esc_html__( 'Campos Associados', 'adam-comunidade' )
+				. '</h2><p>' . esc_html__( 'Campos com associação ativa à ADAM e prioridade na listagem.', 'adam-comunidade' )
+				. '</p></header><div class="adam-field-grid">' . $associated_cards . '</div></section>'
+			: '';
+		$cards .= $other_cards
+			? '<section class="adam-field-group"><header><h2>'
+				. esc_html__( 'Outros Campos', 'adam-comunidade' )
+				. '</h2><p>' . esc_html__( 'Todos com autorização legal verificada.', 'adam-comunidade' )
+				. '</p></header><div class="adam-field-grid">' . $other_cards . '</div></section>'
+			: '';
 		if ( ! $cards ) {
 			$cards = '<div class="adam-comunidade__empty adam-fields-empty">'
 				. esc_html__( 'No fields match the selected filters.', 'adam-comunidade' )

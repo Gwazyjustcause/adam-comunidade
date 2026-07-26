@@ -57,6 +57,7 @@ final class Field_List_Table extends \WP_List_Table {
 			'name'            => __( 'Name', 'adam-comunidade' ),
 			'district'        => __( 'District', 'adam-comunidade' ),
 			'municipality'    => __( 'Municipality', 'adam-comunidade' ),
+			'association'     => __( 'Association', 'adam-comunidade' ),
 			'associated_team' => __( 'Associated Team', 'adam-comunidade' ),
 			'status'          => __( 'Status', 'adam-comunidade' ),
 			'updated_at'      => __( 'Last Updated', 'adam-comunidade' ),
@@ -194,6 +195,18 @@ final class Field_List_Table extends \WP_List_Table {
 	protected function column_associated_team( $item ): string {
 		return $item->associated_team_name
 			? esc_html( $item->associated_team_name )
+			: '&mdash;';
+	}
+
+	/**
+	 * Renders the ADAM association distinction.
+	 *
+	 * @param object $item Field row.
+	 * @return string
+	 */
+	protected function column_association( $item ): string {
+		return ! empty( $item->is_associated )
+			? '<span class="adam-badge adam-badge--success">' . esc_html__( 'Associado ADAM', 'adam-comunidade' ) . '</span>'
 			: '&mdash;';
 	}
 

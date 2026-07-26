@@ -45,6 +45,56 @@
 	grid-column: 1 / -1;
 }
 
+.adam-legal-submission-warning {
+	background: #fff4cf;
+	border: 2px solid #c69718;
+	border-left-width: 8px;
+	border-radius: 10px;
+	color: #302709;
+	margin: 20px 0 26px;
+	padding: clamp(18px, 3vw, 26px);
+}
+
+.adam-legal-submission-warning strong {
+	display: block;
+	font-size: 1.2rem;
+	margin-bottom: 5px;
+}
+
+.adam-legal-submission-warning p {
+	font-weight: 700;
+}
+
+.adam-legal-submission-warning ul {
+	margin-bottom: 0;
+	padding-left: 20px;
+}
+
+.adam-portal-upload {
+	background: #f7f8f4;
+	border: 1px dashed #87956c;
+	border-radius: 9px;
+	padding: 15px;
+}
+
+.adam-portal-upload small {
+	color: #5d6855;
+	font-weight: 400;
+}
+
+.adam-moderation-photos {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.adam-moderation-photos img {
+	border-radius: 6px;
+	height: 90px;
+	object-fit: cover;
+	width: 120px;
+}
+
 .adam-badge--verified {
 	background: #0f766e;
 	border-radius: 999px;

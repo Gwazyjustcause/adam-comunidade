@@ -137,7 +137,7 @@ final class Components {
 		$number   = max( 1, min( 24, absint( $attributes['number'] ?? 6 ) ) );
 		$order    = sanitize_key( $attributes['order'] ?? 'newest' );
 		$featured = filter_var( $attributes['featured'] ?? false, FILTER_VALIDATE_BOOL );
-		$labels   = array( 'teams' => __( 'Equipas Associadas', 'adam-comunidade' ), 'fields' => __( 'Campos Associados', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ) );
+		$labels   = array( 'teams' => __( 'Equipas Associadas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ) );
 		if ( ! isset( $labels[ $type ] ) ) {
 			return '';
 		}

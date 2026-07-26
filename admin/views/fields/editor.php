@@ -169,7 +169,15 @@ if ( $field_id && $adam_slug ) {
 				<label class="adam-field"><span><?php esc_html_e( 'Status', 'adam-comunidade' ); ?></span><select name="field[status]"><?php foreach ( Options::statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $adam_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
 				<label class="adam-field"><span><?php esc_html_e( 'Availability', 'adam-comunidade' ); ?></span><select name="field[availability]"><?php foreach ( Options::availability_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $adam_value( 'availability', 'open' ), $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[featured]" value="1" <?php checked( (int) $adam_value( 'featured', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Featured Field', 'adam-comunidade' ); ?></span></label>
-				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[verification]" value="verified_field" <?php checked( $adam_value( 'verification' ), 'verified_field' ); ?>> <span><?php esc_html_e( 'Verified Field', 'adam-comunidade' ); ?></span></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[verification]" value="verified_field" <?php checked( $adam_value( 'verification' ), 'verified_field' ); ?>> <span><?php esc_html_e( 'Legal authorisation verified', 'adam-comunidade' ); ?></span></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[is_associated]" value="1" <?php checked( (int) $adam_value( 'is_associated', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Associated Field', 'adam-comunidade' ); ?></span></label>
+				<div class="adam-media-field adam-legal-document" data-adam-field-media="document">
+					<h3><?php esc_html_e( 'Authorisation document', 'adam-comunidade' ); ?></h3>
+					<input type="hidden" name="field[authorization_document_id]" value="<?php echo esc_attr( (string) $adam_value( 'authorization_document_id', 0 ) ); ?>">
+					<div class="adam-media-preview"><?php echo esc_html( $adam_value( 'authorization_document_id', 0 ) ? get_the_title( (int) $adam_value( 'authorization_document_id', 0 ) ) : __( 'No document selected', 'adam-comunidade' ) ); ?></div>
+					<button class="button adam-field-media-select" type="button" data-kind="document"><?php esc_html_e( 'Choose Document', 'adam-comunidade' ); ?></button>
+					<button class="button-link-delete adam-field-media-remove" type="button"><?php esc_html_e( 'Remove', 'adam-comunidade' ); ?></button>
+				</div>
 				<button class="button button-primary adam-button" type="submit"><?php esc_html_e( 'Save Field', 'adam-comunidade' ); ?></button>
 			</aside>
 		</div>

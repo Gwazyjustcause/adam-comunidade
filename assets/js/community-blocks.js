@@ -9,7 +9,7 @@
 	var ToggleControl = components.ToggleControl;
 	var typeOptions = [
 		{ label: 'Equipas Associadas', value: 'teams' },
-		{ label: 'Campos Associados', value: 'fields' },
+		{ label: 'Campos', value: 'fields' },
 		{ label: 'Parceiros', value: 'partners' },
 		{ label: 'Instituições', value: 'institutions' },
 		{ label: 'Marcas', value: 'brands' }

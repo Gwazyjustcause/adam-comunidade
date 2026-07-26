@@ -42,8 +42,9 @@ final class Repository {
 		$args = array( $slug );
 
 		if ( $published_only ) {
-			$sql   .= ' AND status = %s';
+			$sql   .= ' AND status = %s AND verification = %s';
 			$args[] = 'published';
+			$args[] = 'verified_field';
 		}
 
 		$row = $wpdb->get_row( $wpdb->prepare( $sql, ...$args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -59,6 +60,10 @@ final class Repository {
 	 */
 	public function create( array $data ): int|false {
 		global $wpdb;
+
+		if ( 'published' === ( $data['status'] ?? '' ) && 'verified_field' !== ( $data['verification'] ?? '' ) ) {
+			return false;
+		}
 
 		$now                = current_time( 'mysql', true );
 		$data['created_at'] = $now;
@@ -88,6 +93,11 @@ final class Repository {
 		$current            = $this->find( $id );
 		$data['updated_at'] = current_time( 'mysql', true );
 		$data['updated_by'] = get_current_user_id();
+		$verification       = $data['verification'] ?? ( $current->verification ?? '' );
+
+		if ( 'published' === ( $data['status'] ?? '' ) && 'verified_field' !== $verification ) {
+			return false;
+		}
 
 		if (
 			$current
@@ -151,6 +161,9 @@ final class Repository {
 				'search'        => '',
 				'status'        => '',
 				'featured'      => '',
+				'associated'    => '',
+				'legally_authorized' => '',
+				'prioritize_associated' => false,
 				'district'      => '',
 				'municipality'  => '',
 				'playing_style' => '',
@@ -194,9 +207,21 @@ final class Repository {
 				$parameters[] = (string) $args[ $column ];
 			}
 		}
+		if ( 'published' === $args['status'] && ! is_admin() ) {
+			$where[]      = 'f.verification = %s';
+			$parameters[] = 'verified_field';
+		}
 		if ( '' !== (string) $args['featured'] ) {
 			$where[]      = 'f.featured = %d';
 			$parameters[] = absint( $args['featured'] );
+		}
+		if ( '' !== (string) $args['associated'] ) {
+			$where[]      = 'f.is_associated = %d';
+			$parameters[] = absint( $args['associated'] );
+		}
+		if ( '' !== (string) $args['legally_authorized'] ) {
+			$where[]      = 'f.verification = %s';
+			$parameters[] = 'verified_field';
 		}
 
 		if ( $args['playing_style'] ) {
@@ -241,8 +266,11 @@ final class Repository {
 			. " INNER JOIN {$teams_table} t ON t.id = r.team_id"
 			. " WHERE r.field_id = f.id AND t.status = 'published' LIMIT 1) AS associated_team_slug";
 		$count_sql = "SELECT COUNT(*) FROM {$fields_table} f WHERE {$where_sql}";
+		$order_sql = ! empty( $args['prioritize_associated'] )
+			? "f.is_associated DESC, f.{$orderby} {$order}"
+			: "f.{$orderby} {$order}";
 		$list_sql  = "SELECT f.*, {$team_columns} FROM {$fields_table} f"
-			. " WHERE {$where_sql} ORDER BY f.{$orderby} {$order} LIMIT %d OFFSET %d";
+			. " WHERE {$where_sql} ORDER BY {$order_sql} LIMIT %d OFFSET %d";
 
 		if ( $parameters ) {
 			$total = (int) $wpdb->get_var( $wpdb->prepare( $count_sql, ...$parameters ) );
@@ -367,6 +395,29 @@ final class Repository {
 		);
 
 		return $counts;
+	}
+
+	/**
+	 * Returns public directory totals for legally authorised fields.
+	 *
+	 * @return array{total:int,associated:int,independent:int}
+	 */
+	public function public_statistics(): array {
+		global $wpdb;
+
+		$sql = 'SELECT COUNT(*) AS total,'
+			. ' SUM(CASE WHEN is_associated = 1 THEN 1 ELSE 0 END) AS associated'
+			. ' FROM ' . Schema::fields_table()
+			. " WHERE status = 'published' AND verification = 'verified_field'";
+		$row = $wpdb->get_row( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$total      = (int) ( $row->total ?? 0 );
+		$associated = (int) ( $row->associated ?? 0 );
+
+		return array(
+			'total'       => $total,
+			'associated'  => $associated,
+			'independent' => max( 0, $total - $associated ),
+		);
 	}
 
 	/**

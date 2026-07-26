@@ -76,6 +76,18 @@ function wp_insert_post( array $data, bool $wp_error = false ): int {
 	return $id;
 }
 
+function wp_update_post( array $data ): int {
+	$id = absint( $data['ID'] ?? 0 );
+	if ( $id && isset( $GLOBALS['adam_posts'][ $id ] ) ) {
+		foreach ( $data as $key => $value ) {
+			if ( 'ID' !== $key ) {
+				$GLOBALS['adam_posts'][ $id ]->{$key} = $value;
+			}
+		}
+	}
+	return $id;
+}
+
 function is_wp_error( mixed $value ): bool {
 	return false;
 }
@@ -140,6 +152,14 @@ foreach ( Managed_Pages::definitions() as $module => $definition ) {
 
 Managed_Pages::activate();
 assert( 6 === count( $GLOBALS['adam_posts'] ), 'Repeated activation created duplicate pages.' );
+
+$fields_id = Managed_Pages::id( 'fields' );
+assert( 'Campos' === $GLOBALS['adam_posts'][ $fields_id ]->post_title, 'The Fields directory must use the Campos default title.' );
+$GLOBALS['adam_posts'][ $fields_id ]->post_title = 'Campos Associados';
+$migrate_titles = new ReflectionMethod( Managed_Pages::class, 'migrate_legacy_titles' );
+$migrate_titles->setAccessible( true );
+$migrate_titles->invoke( null );
+assert( 'Campos' === $GLOBALS['adam_posts'][ $fields_id ]->post_title, 'The untouched legacy Fields title was not migrated.' );
 
 $teams_id = Managed_Pages::id( 'teams' );
 $GLOBALS['adam_posts'][ $teams_id ]->post_title = 'Equipas Associadas Renomeadas';

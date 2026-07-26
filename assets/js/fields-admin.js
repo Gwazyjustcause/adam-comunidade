@@ -81,6 +81,23 @@
 		frame.open();
 	}
 
+	function openDocument( field ) {
+		const frame = wp.media( {
+			title: config.documentTitle,
+			button: { text: config.useDocument },
+			library: { type: [ 'application/pdf', 'image/jpeg', 'image/png' ] },
+			multiple: false,
+		} );
+
+		frame.on( 'select', () => {
+			const attachment = frame.state().get( 'selection' ).first();
+			field.querySelector( 'input[type="hidden"]' ).value = attachment.get( 'id' );
+			field.querySelector( '.adam-media-preview' ).textContent =
+				attachment.get( 'filename' ) || attachment.get( 'title' );
+		} );
+		frame.open();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', () => {
 		document.querySelectorAll( '[data-adam-field-tab]' ).forEach( ( button ) => {
 			button.addEventListener( 'click', () => {
@@ -99,6 +116,8 @@
 				const field = button.closest( '[data-adam-field-media]' );
 				if ( 'gallery' === button.dataset.kind ) {
 					openGallery( field );
+				} else if ( 'document' === button.dataset.kind ) {
+					openDocument( field );
 				} else {
 					openCover( field );
 				}

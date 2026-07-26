@@ -113,6 +113,30 @@ final class Validator {
 		if ( $cover_id && ! wp_attachment_is_image( $cover_id ) ) {
 			$cover_id = 0;
 		}
+		$verification = in_array( sanitize_key( $input['verification'] ?? '' ), array( '', 'verified_field' ), true )
+			? sanitize_key( $input['verification'] ?? '' )
+			: '';
+		$authorization_document_id = absint( $input['authorization_document_id'] ?? 0 );
+		if ( $authorization_document_id ) {
+			$document_mime = (string) get_post_mime_type( $authorization_document_id );
+			if (
+				'attachment' !== get_post_type( $authorization_document_id )
+				|| ! in_array( $document_mime, array( 'application/pdf', 'image/jpeg', 'image/png' ), true )
+			) {
+				$authorization_document_id = 0;
+			}
+		}
+
+		if ( 'published' === $status && 'verified_field' !== $verification ) {
+			$errors->add(
+				'legal_authorization_required',
+				__( 'A field can only be published after its legal authorisation has been verified.', 'adam-comunidade' )
+			);
+		}
+
+		if ( $errors->has_errors() ) {
+			return $errors;
+		}
 
 		return array_merge(
 			array(
@@ -120,7 +144,9 @@ final class Validator {
 				'slug'                => $slug,
 				'status'              => $status,
 				'featured'            => empty( $input['featured'] ) ? 0 : 1,
-				'verification'        => in_array( sanitize_key( $input['verification'] ?? '' ), array( '', 'verified_field' ), true ) ? sanitize_key( $input['verification'] ?? '' ) : '',
+				'is_associated'       => empty( $input['is_associated'] ) ? 0 : 1,
+				'verification'        => $verification,
+				'authorization_document_id' => $authorization_document_id,
 				'availability'        => in_array( sanitize_key( $input['availability'] ?? 'open' ), array( 'open', 'seasonal', 'temporary_closure', 'private_events', 'maintenance' ), true ) ? sanitize_key( $input['availability'] ?? 'open' ) : 'open',
 				'cover_id'            => $cover_id,
 				'short_description'   => sanitize_textarea_field( (string) ( $input['short_description'] ?? '' ) ),

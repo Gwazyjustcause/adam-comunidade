@@ -148,8 +148,10 @@ final class Controller {
 				'confirmDelete' => __( 'Permanently delete this field? Media files will be retained.', 'adam-comunidade' ),
 				'coverTitle'    => __( 'Choose Field Cover', 'adam-comunidade' ),
 				'galleryTitle'  => __( 'Choose Gallery Images', 'adam-comunidade' ),
+				'documentTitle' => __( 'Choose Legal Authorisation Document', 'adam-comunidade' ),
 				'useImage'      => __( 'Use image', 'adam-comunidade' ),
 				'useImages'     => __( 'Use images', 'adam-comunidade' ),
+				'useDocument'   => __( 'Use document', 'adam-comunidade' ),
 				'removeImage'   => __( 'Remove image', 'adam-comunidade' ),
 				'caption'       => __( 'Caption', 'adam-comunidade' ),
 			)
