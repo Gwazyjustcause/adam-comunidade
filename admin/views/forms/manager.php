@@ -40,6 +40,7 @@ defined( 'ABSPATH' ) || exit;
 						<label><?php esc_html_e( 'Texto do aviso', 'adam-comunidade' ); ?><textarea name="forms[<?php echo esc_attr( $type ); ?>][notice_text]" rows="3"><?php echo esc_textarea( $form['notice_text'] ); ?></textarea></label>
 						<label><?php esc_html_e( 'Texto de confirmação', 'adam-comunidade' ); ?><textarea name="forms[<?php echo esc_attr( $type ); ?>][confirmation_message]" rows="2"><?php echo esc_textarea( $form['confirmation_message'] ); ?></textarea></label>
 						<label><?php esc_html_e( 'Mensagem de sucesso', 'adam-comunidade' ); ?><textarea name="forms[<?php echo esc_attr( $type ); ?>][success_message]" rows="2"><?php echo esc_textarea( $form['success_message'] ); ?></textarea></label>
+						<label><?php esc_html_e( 'Tempo médio de análise', 'adam-comunidade' ); ?><input class="regular-text" name="forms[<?php echo esc_attr( $type ); ?>][review_time]" value="<?php echo esc_attr( $form['review_time'] ); ?>" placeholder="<?php esc_attr_e( '2–5 dias úteis', 'adam-comunidade' ); ?>"></label>
 						<label><?php esc_html_e( 'Texto do botão', 'adam-comunidade' ); ?><input class="regular-text" name="forms[<?php echo esc_attr( $type ); ?>][submit_label]" value="<?php echo esc_attr( $form['submit_label'] ); ?>"></label>
 					</div>
 				</div>

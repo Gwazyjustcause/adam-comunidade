@@ -18,6 +18,7 @@ use ADAM\Comunidade\Fields\Schema as Field_Schema;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Forms\Manager as Forms_Manager;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
@@ -28,6 +29,7 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
 final class Portal {
 	private static ?Forms_Manager $forms = null;
 	private static ?Email_Service $emails = null;
+	private const ROUTES_VERSION = '1.1.0';
 
 	private const TYPES = array(
 		'team'        => 'equipa',
@@ -43,6 +45,7 @@ final class Portal {
 
 	public function register(): void {
 		add_action( 'init', array( self::class, 'add_rewrite_rules' ) );
+		add_action( 'init', array( self::class, 'maybe_flush_rewrite_rules' ), 999 );
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 		add_filter( 'template_include', array( $this, 'template' ), 50 );
 		add_filter( 'pre_get_document_title', array( $this, 'title' ) );
@@ -61,6 +64,7 @@ final class Portal {
 	public static function add_rewrite_rules(): void {
 		foreach ( self::TYPES as $type => $slug ) {
 			add_rewrite_rule( '^submeter-' . $slug . '/?$', 'index.php?adam_submission=' . $type, 'top' );
+			add_rewrite_rule( '^submeter-' . $slug . '/sucesso/?$', 'index.php?adam_submission_success=' . $type, 'top' );
 		}
 		add_rewrite_rule( '^painel-comunidade/?$', 'index.php?adam_owner_dashboard=1', 'top' );
 	}
@@ -78,12 +82,33 @@ final class Portal {
 			: home_url( '/' );
 	}
 
+	/**
+	 * Returns the clean success URL for one submission type.
+	 */
+	public static function success_url( string $type ): string {
+		$type = sanitize_key( $type );
+		return isset( self::TYPES[ $type ] )
+			? trailingslashit( self::submission_url( $type ) ) . 'sucesso/'
+			: home_url( '/' );
+	}
+
+	/**
+	 * Flushes rewrite rules once when the submission route contract changes.
+	 */
+	public static function maybe_flush_rewrite_rules(): void {
+		if ( self::ROUTES_VERSION === get_option( 'adam_comunidade_submission_routes_version' ) ) {
+			return;
+		}
+		flush_rewrite_rules( false );
+		update_option( 'adam_comunidade_submission_routes_version', self::ROUTES_VERSION, false );
+	}
+
 	public function query_vars( array $vars ): array {
-		return array_merge( $vars, array( 'adam_submission', 'adam_owner_dashboard' ) );
+		return array_merge( $vars, array( 'adam_submission', 'adam_submission_success', 'adam_owner_dashboard' ) );
 	}
 
 	public function template( string $template ): string {
-		if ( get_query_var( 'adam_submission' ) || get_query_var( 'adam_owner_dashboard' ) ) {
+		if ( get_query_var( 'adam_submission' ) || get_query_var( 'adam_submission_success' ) || get_query_var( 'adam_owner_dashboard' ) ) {
 			return Templates::locate( 'experience/portal.php' );
 		}
 		return $template;
@@ -93,13 +118,16 @@ final class Portal {
 		if ( get_query_var( 'adam_owner_dashboard' ) ) {
 			return __( 'Painel da Comunidade', 'adam-comunidade' );
 		}
-		$type = sanitize_key( (string) get_query_var( 'adam_submission' ) );
+		$type = sanitize_key( (string) ( get_query_var( 'adam_submission_success' ) ?: get_query_var( 'adam_submission' ) ) );
 		$form = self::forms()->get( $type );
+		if ( get_query_var( 'adam_submission_success' ) && $form ) {
+			return __( 'Submissão Recebida', 'adam-comunidade' );
+		}
 		return $form ? (string) $form['title'] : $title;
 	}
 
 	public function assets(): void {
-		if ( ! get_query_var( 'adam_submission' ) && ! get_query_var( 'adam_owner_dashboard' ) ) {
+		if ( ! get_query_var( 'adam_submission' ) && ! get_query_var( 'adam_submission_success' ) && ! get_query_var( 'adam_owner_dashboard' ) ) {
 			return;
 		}
 		wp_enqueue_style( 'adam-comunidade' );
@@ -117,7 +145,55 @@ final class Portal {
 			self::render_dashboard();
 			return;
 		}
+		if ( get_query_var( 'adam_submission_success' ) ) {
+			self::render_submission_success( sanitize_key( (string) get_query_var( 'adam_submission_success' ) ) );
+			return;
+		}
 		self::render_submission_form( sanitize_key( (string) get_query_var( 'adam_submission' ) ) );
+	}
+
+	private static function render_submission_success( string $type ): void {
+		$form = self::forms()->get( $type );
+		if ( ! isset( self::TYPES[ $type ] ) || ! $form ) {
+			return;
+		}
+		$labels = self::success_labels( $type );
+		$fields = (array) ( $form['fields'] ?? array() );
+		?>
+		<section class="adam-community-panel adam-portal-panel adam-submission-success">
+			<div class="adam-submission-success__icon" aria-hidden="true">✓</div>
+			<p class="adam-submission-success__eyebrow"><?php esc_html_e( 'Pedido registado com sucesso', 'adam-comunidade' ); ?></p>
+			<h1><?php esc_html_e( 'Submissão Recebida', 'adam-comunidade' ); ?></h1>
+			<p class="adam-submission-success__lead"><?php echo esc_html( sprintf( __( 'Obrigado por submeter %s à ADAM.', 'adam-comunidade' ), $labels['subject'] ) ); ?></p>
+			<p><?php echo esc_html( $form['success_message'] ); ?></p>
+
+			<div class="adam-submission-success__review">
+				<h2><?php esc_html_e( 'A nossa equipa irá agora analisar', 'adam-comunidade' ); ?></h2>
+				<ul>
+					<li><?php esc_html_e( 'As informações fornecidas', 'adam-comunidade' ); ?></li>
+					<?php if ( ! empty( $fields['field_photos']['visible'] ) ) : ?><li><?php esc_html_e( 'As fotografias enviadas', 'adam-comunidade' ); ?></li><?php endif; ?>
+					<?php if ( ! empty( $fields['authorization_document']['visible'] ) ) : ?><li><?php esc_html_e( 'O comprovativo de autorização legal', 'adam-comunidade' ); ?></li><?php endif; ?>
+				</ul>
+				<p><?php esc_html_e( 'Receberá um email a confirmar a receção da submissão e será novamente contactado quando a análise estiver concluída.', 'adam-comunidade' ); ?></p>
+				<div class="adam-submission-success__time">
+					<span><?php esc_html_e( 'Tempo médio de análise', 'adam-comunidade' ); ?></span>
+					<strong><?php echo esc_html( (string) $form['review_time'] ); ?></strong>
+				</div>
+			</div>
+
+			<ol class="adam-submission-timeline" aria-label="<?php esc_attr_e( 'Estado da submissão', 'adam-comunidade' ); ?>">
+				<li class="is-complete"><span>✓</span><strong><?php esc_html_e( 'Submissão recebida', 'adam-comunidade' ); ?></strong></li>
+				<li class="is-current"><span>⏳</span><strong><?php esc_html_e( 'Em análise', 'adam-comunidade' ); ?></strong></li>
+				<li><span>○</span><strong><?php esc_html_e( 'Aguarda decisão', 'adam-comunidade' ); ?></strong></li>
+				<li><span>○</span><strong><?php esc_html_e( 'Publicação', 'adam-comunidade' ); ?></strong></li>
+			</ol>
+
+			<div class="adam-submission-success__actions">
+				<a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( $labels['back_url'] ); ?>">← <?php echo esc_html( $labels['back_label'] ); ?></a>
+				<a class="adam-community-button" href="<?php echo esc_url( self::submission_url( $type ) ); ?>"><?php echo esc_html( $labels['another_label'] ); ?></a>
+			</div>
+		</section>
+		<?php
 	}
 
 	private static function render_submission_form( string $type ): void {
@@ -353,7 +429,7 @@ final class Portal {
 				)
 			);
 		}
-		wp_safe_redirect( add_query_arg( 'adam_status', 'submitted', self::submission_url( $type ) ) );
+		wp_safe_redirect( self::success_url( $type ) );
 		exit;
 	}
 
@@ -965,6 +1041,46 @@ final class Portal {
 			'partner'     => __( 'Parceiro', 'adam-comunidade' ),
 			'institution' => __( 'Instituição', 'adam-comunidade' ),
 		)[ $type ] ?? __( 'Conteúdo', 'adam-comunidade' );
+	}
+
+	/**
+	 * Returns type-specific copy and navigation for the shared success page.
+	 *
+	 * @return array{subject:string,back_url:string,back_label:string,another_label:string}
+	 */
+	private static function success_labels( string $type ): array {
+		$labels = array(
+			'field' => array(
+				'subject'       => __( 'o seu campo', 'adam-comunidade' ),
+				'back_url'      => Managed_Pages::url( 'fields' ),
+				'back_label'    => __( 'Voltar aos Campos', 'adam-comunidade' ),
+				'another_label' => __( 'Submeter outro Campo', 'adam-comunidade' ),
+			),
+			'team' => array(
+				'subject'       => __( 'a sua equipa', 'adam-comunidade' ),
+				'back_url'      => Managed_Pages::url( 'teams' ),
+				'back_label'    => __( 'Voltar às Equipas', 'adam-comunidade' ),
+				'another_label' => __( 'Submeter outra Equipa', 'adam-comunidade' ),
+			),
+			'partner' => array(
+				'subject'       => __( 'o parceiro', 'adam-comunidade' ),
+				'back_url'      => Managed_Pages::url( 'partners' ),
+				'back_label'    => __( 'Voltar aos Parceiros', 'adam-comunidade' ),
+				'another_label' => __( 'Submeter outro Parceiro', 'adam-comunidade' ),
+			),
+			'institution' => array(
+				'subject'       => __( 'a instituição', 'adam-comunidade' ),
+				'back_url'      => Managed_Pages::url( 'institutions' ),
+				'back_label'    => __( 'Voltar às Instituições', 'adam-comunidade' ),
+				'another_label' => __( 'Submeter outra Instituição', 'adam-comunidade' ),
+			),
+		);
+		return $labels[ $type ] ?? array(
+			'subject'       => __( 'o conteúdo', 'adam-comunidade' ),
+			'back_url'      => home_url( '/' ),
+			'back_label'    => __( 'Voltar à Comunidade', 'adam-comunidade' ),
+			'another_label' => __( 'Submeter outro pedido', 'adam-comunidade' ),
+		);
 	}
 
 	private static function submission_type_label( string $type ): string {

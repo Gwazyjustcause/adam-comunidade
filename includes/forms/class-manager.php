@@ -105,6 +105,7 @@ final class Manager {
 				'notice_text'          => sanitize_textarea_field( wp_unslash( $posted['notice_text'] ?? $current['notice_text'] ) ),
 				'confirmation_message' => sanitize_textarea_field( wp_unslash( $posted['confirmation_message'] ?? $current['confirmation_message'] ) ),
 				'success_message'      => sanitize_textarea_field( wp_unslash( $posted['success_message'] ?? $current['success_message'] ) ),
+				'review_time'          => sanitize_text_field( wp_unslash( $posted['review_time'] ?? $current['review_time'] ) ),
 				'submit_label'         => sanitize_text_field( wp_unslash( $posted['submit_label'] ?? $current['submit_label'] ) ),
 				'fields'               => $fields,
 			);
@@ -152,6 +153,7 @@ final class Manager {
 			'notice_text'          => '',
 			'confirmation_message' => __( 'Confirmo que a informação fornecida é verdadeira e pode ser verificada pela ADAM.', 'adam-comunidade' ),
 			'success_message'      => __( 'Obrigado. A submissão foi recebida e está a aguardar revisão.', 'adam-comunidade' ),
+			'review_time'          => __( '2–5 dias úteis', 'adam-comunidade' ),
 			'submit_label'         => __( 'Enviar para revisão', 'adam-comunidade' ),
 		);
 

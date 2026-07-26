@@ -109,6 +109,18 @@ Submission routes:
 - `/submeter-parceiro`
 - `/submeter-instituicao`
 
+Successful POST requests follow Post/Redirect/Get and redirect to the matching
+shared confirmation route:
+
+- `/submeter-equipa/sucesso`
+- `/submeter-campo/sucesso`
+- `/submeter-parceiro/sucesso`
+- `/submeter-instituicao/sucesso`
+
+The confirmation layout is rendered once by `Experience\Portal`; type-specific
+copy and navigation come from the form type. Administrators can configure the
+displayed average review time in the public Forms manager.
+
 Trust badges are deliberately excluded from public and owner payloads. Only an
 administrator can assign them in the normal editors.
 
