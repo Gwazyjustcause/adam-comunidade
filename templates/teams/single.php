@@ -11,6 +11,7 @@ use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\View as Field_View;
 
@@ -50,11 +51,11 @@ get_header();
 	id="main"
 	style="--adam-team-colour: <?php echo esc_attr( $adam_team->team_colour ?: '#1d4ed8' ); ?>"
 >
-	<section class="adam-team-hero">
-		<div class="adam-team-hero__cover">
+	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-team-hero' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-team-hero__cover' ) ); ?>">
 			<?php echo wp_get_attachment_image( (int) $adam_team->cover_id, 'adam-team-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
 		</div>
-		<div class="adam-team-container adam-team-hero__content">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-team-container adam-team-hero__content' ) ); ?>">
 			<div class="adam-team-hero__logo">
 				<?php if ( $adam_team->logo_id ) : ?>
 					<?php echo wp_get_attachment_image( (int) $adam_team->logo_id, 'adam-team-logo' ); ?>
@@ -63,10 +64,10 @@ get_header();
 				<?php endif; ?>
 			</div>
 			<div>
-				<h1><?php echo esc_html( $adam_team->name ); ?></h1>
+				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $adam_team->name ); ?></h1>
 				<?php if ( 'verified_team' === ( $adam_team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Team', 'adam-comunidade' ); ?></span><?php endif; ?>
-				<p><?php echo esc_html( implode( ', ', array_filter( array( $adam_team->municipality, $adam_team->district ) ) ) ); ?></p>
-				<div class="adam-team-hero__meta">
+				<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( implode( ', ', array_filter( array( $adam_team->municipality, $adam_team->district ) ) ) ); ?></p>
+				<div class="<?php echo esc_attr( Public_Hero::element( 'meta', 'adam-team-hero__meta' ) ); ?>">
 					<span><?php echo esc_html( sprintf( _n( '%d member', '%d members', (int) $adam_team->members, 'adam-comunidade' ), (int) $adam_team->members ) ); ?></span>
 					<span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_team->recruitment_status ); ?>"><?php echo esc_html( $adam_recruitment ); ?></span>
 				</div>

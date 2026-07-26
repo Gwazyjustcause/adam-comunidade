@@ -15,6 +15,7 @@ use ADAM\Comunidade\Fields\Router;
 use ADAM\Comunidade\Fields\View;
 use ADAM\Comunidade\Experience\Portal;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Public_Hero;
 
 $repository            = new Repository();
 $query_search          = sanitize_text_field( (string) filter_input( INPUT_GET, 'search' ) );
@@ -75,18 +76,18 @@ if ( ! $hero_slides ) {
 get_header();
 ?>
 <main class="adam-comunidade adam-fields-archive" id="main">
-	<section class="adam-fields-directory-hero" data-adam-fields-carousel data-autoplay="<?php echo ! empty( $hero_settings['autoplay'] ) ? 'true' : 'false'; ?>" data-interval="<?php echo esc_attr( (string) absint( $hero_settings['interval'] ) ); ?>" aria-roledescription="<?php esc_attr_e( 'carousel', 'adam-comunidade' ); ?>" aria-label="<?php esc_attr_e( 'Campos de airsoft do Centro de Portugal', 'adam-comunidade' ); ?>">
-		<div class="adam-fields-hero-slides" aria-live="off">
+	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-fields-directory-hero', 'archive' ) ); ?>" data-adam-fields-carousel data-autoplay="<?php echo ! empty( $hero_settings['autoplay'] ) ? 'true' : 'false'; ?>" data-interval="<?php echo esc_attr( (string) absint( $hero_settings['interval'] ) ); ?>" aria-roledescription="<?php esc_attr_e( 'carousel', 'adam-comunidade' ); ?>" aria-label="<?php esc_attr_e( 'Campos de airsoft do Centro de Portugal', 'adam-comunidade' ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-fields-hero-slides' ) ); ?>" aria-live="off">
 			<?php foreach ( $hero_slides as $hero_index => $hero_slide ) : ?>
 				<div class="adam-fields-hero-slide<?php echo 0 === $hero_index ? ' is-active' : ''; ?>" data-adam-fields-slide aria-hidden="<?php echo 0 === $hero_index ? 'false' : 'true'; ?>">
 					<img src="<?php echo esc_url( (string) $hero_slide['url'] ); ?>" alt="<?php echo esc_attr( (string) $hero_slide['alt'] ); ?>" <?php echo 0 === $hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
 				</div>
 			<?php endforeach; ?>
 		</div>
-		<div class="adam-fields-container">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-fields-container' ) ); ?>">
 			<div class="adam-fields-hero-copy">
-				<span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-				<h1><?php echo $route_district ? esc_html( sprintf( __( 'Campos em %s', 'adam-comunidade' ), $route_district ) ) : esc_html( $directory_title ); ?></h1>
+				<span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
+				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo $route_district ? esc_html( sprintf( __( 'Campos em %s', 'adam-comunidade' ), $route_district ) ) : esc_html( $directory_title ); ?></h1>
 				<p><?php esc_html_e( 'Descobre campos de airsoft legalmente autorizados no Centro de Portugal, consulta instalações, regras e localização.', 'adam-comunidade' ); ?></p>
 			</div>
 			<div class="adam-fields-stats" aria-label="<?php esc_attr_e( 'Directory statistics', 'adam-comunidade' ); ?>">

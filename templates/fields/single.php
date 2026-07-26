@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Fields\Map;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
@@ -54,13 +55,13 @@ $contacts    = array_filter(
 get_header();
 ?>
 <main class="adam-comunidade adam-field-single" id="main">
-	<section class="adam-field-hero">
-		<div class="adam-field-hero__cover">
+	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-field-hero' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-field-hero__cover' ) ); ?>">
 			<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
 		</div>
-		<div class="adam-field-container adam-field-hero__content">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-field-container adam-field-hero__content' ) ); ?>">
 			<div>
-				<h1><?php echo esc_html( $field->name ); ?></h1>
+				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $field->name ); ?></h1>
 				<?php if ( ! empty( $field->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Associado ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Autorização verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Open', 'adam-comunidade' ) ); ?></span>

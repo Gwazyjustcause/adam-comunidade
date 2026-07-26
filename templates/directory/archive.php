@@ -12,6 +12,7 @@ use ADAM\Comunidade\Directory\Router;
 use ADAM\Comunidade\Directory\Types;
 use ADAM\Comunidade\Directory\View;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Public_Hero;
 
 $type       = Router::current_type();
 $definition = Types::get( $type );
@@ -25,12 +26,14 @@ $result     = $repository->query( $type, array( 'status' => 'published', 'search
 get_header();
 ?>
 <main class="adam-community adam-community-archive" id="main" data-directory-type="<?php echo esc_attr( $type ); ?>">
+	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-community-header', 'archive' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container' ) ); ?>">
+			<span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
+			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ); ?></h1>
+			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Discover the organisations that collaborate with and support the ADAM community.', 'adam-comunidade' ); ?></p>
+		</div>
+	</header>
 	<div class="adam-community-container">
-		<header class="adam-community-header">
-			<span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1><?php echo esc_html( get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ); ?></h1>
-			<p><?php esc_html_e( 'Discover the organisations that collaborate with and support the ADAM community.', 'adam-comunidade' ); ?></p>
-		</header>
 		<form class="adam-community-filters" data-directory-filters>
 			<label><span><?php esc_html_e( 'Search', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $search ); ?>"></label>
 			<?php if ( $definition['categories'] ) : ?><label><span><?php echo esc_html( 'institution' === $type ? __( 'Type', 'adam-comunidade' ) : __( 'Category', 'adam-comunidade' ) ); ?></span><select name="category"><option value=""><?php esc_html_e( 'All', 'adam-comunidade' ); ?></option><?php foreach ( $definition['categories'] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $category, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endif; ?>

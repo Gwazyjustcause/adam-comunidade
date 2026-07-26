@@ -19,12 +19,13 @@ $controller = (string) file_get_contents( $root . '/includes/fields/admin/class-
 $admin      = (string) file_get_contents( $root . '/admin/views/fields/hero.php' );
 $script     = (string) file_get_contents( $root . '/assets/js/fields-public.js' );
 $style      = (string) file_get_contents( $root . '/assets/css/fields-public.css' );
+$shared     = (string) file_get_contents( $root . '/assets/css/public.css' );
 
 $assert( ! str_contains( $archive, 'adam-field-submit-button' ), 'The redundant hero CTA remains.' );
 foreach ( array( 'data-adam-fields-carousel', 'data-adam-fields-prev', 'data-adam-fields-next', 'data-adam-fields-indicator' ) as $contract ) {
 	$assert( str_contains( $archive, $contract ), 'Missing public carousel contract: ' . $contract );
 }
-$assert( str_contains( $style, 'color: #c9f6a1' ), 'The hero heading is not using the light ADAM green.' );
+$assert( str_contains( $shared, '--adam-hero-title: #c9f6a1' ), 'The hero heading is not using the shared light ADAM green.' );
 $assert( str_contains( $style, 'transition: opacity' ), 'The carousel needs a fade transition.' );
 foreach ( array( "'mouseenter'", "'mouseleave'", "'touchstart'", "'touchend'", "'visibilitychange'" ) as $interaction ) {
 	$assert( str_contains( $script, $interaction ), 'Missing carousel interaction: ' . $interaction );

@@ -16,6 +16,7 @@ use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\View as Field_View;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\View as Team_View;
+use ADAM\Comunidade\Public_Hero;
 
 $region_slug = sanitize_title( (string) get_query_var( 'adam_region' ) );
 $district = \ADAM\Comunidade\Experience\Router::regions()[ $region_slug ] ?? ucwords( str_replace( '-', ' ', $region_slug ) );
@@ -35,7 +36,7 @@ $section = static fn( string $title, array $cards ): string => $cards ? '<sectio
 get_header();
 ?>
 <main class="adam-experience" id="main">
-	<header class="adam-experience-hero"><div class="adam-experience-container"><span><?php esc_html_e( 'Automatic Region', 'adam-comunidade' ); ?></span><h1><?php echo esc_html( $district ); ?></h1><p><?php echo esc_html( sprintf( __( 'The live ADAM community in %s.', 'adam-comunidade' ), $district ) ); ?></p></div></header>
+	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-experience-hero', 'archive' ) ); ?>"><div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-experience-container' ) ); ?>"><span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'Automatic Region', 'adam-comunidade' ); ?></span><h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $district ); ?></h1><p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( sprintf( __( 'The live ADAM community in %s.', 'adam-comunidade' ), $district ) ); ?></p></div></header>
 	<div class="adam-experience-container">
 		<?php echo ( new Smart_Blocks( $discovery ) )->statistics( $district ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<section class="adam-advanced-map" data-adam-advanced-map data-markers="<?php echo esc_attr( wp_json_encode( $markers ) ); ?>"><div class="adam-section-title"><h2><?php esc_html_e( 'Region Map', 'adam-comunidade' ); ?></h2></div><div class="adam-map-layout"><div class="adam-map-canvas" data-adam-map-canvas role="region" aria-label="<?php esc_attr_e( 'Region map', 'adam-comunidade' ); ?>"></div><div class="adam-map-results" data-adam-map-results></div></div></section>

@@ -20,12 +20,12 @@
 
 .adam-teams-archive {
 	min-height: 70vh;
-	padding: 72px 0;
+	padding: 0 0 72px;
 }
 
 .adam-teams-header {
 	margin-bottom: 38px;
-	max-width: 680px;
+	max-width: none;
 }
 
 .adam-teams-header h1 {
@@ -257,18 +257,7 @@
 
 .adam-team-hero__cover {
 	height: clamp(250px, 40vw, 520px);
-	opacity: 0.55;
 	overflow: hidden;
-}
-
-.adam-team-hero__cover::after {
-	background: linear-gradient(transparent, #0f172a);
-	bottom: 0;
-	content: "";
-	height: 70%;
-	left: 0;
-	position: absolute;
-	right: 0;
 }
 
 .adam-team-hero__cover img {

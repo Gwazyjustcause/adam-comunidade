@@ -11,6 +11,7 @@ use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
 use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Public_Hero;
 
 $adam_repository   = new Repository();
 $adam_result       = $adam_repository->query(
@@ -27,13 +28,14 @@ $adam_municipalities = $adam_repository->distinct( 'municipality', 'published' )
 get_header();
 ?>
 <main class="adam-comunidade adam-teams-archive" id="main">
+	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-teams-header', 'archive' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-teams-container' ) ); ?>">
+			<span class="<?php echo esc_attr( Public_Hero::element( 'kicker', 'adam-teams-kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
+			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( get_the_title( Managed_Pages::id( 'teams' ) ) ); ?></h1>
+			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Discover associated airsoft teams across Portugal.', 'adam-comunidade' ); ?></p>
+		</div>
+	</header>
 	<div class="adam-teams-container">
-		<header class="adam-teams-header">
-			<span class="adam-teams-kicker"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1><?php echo esc_html( get_the_title( Managed_Pages::id( 'teams' ) ) ); ?></h1>
-			<p><?php esc_html_e( 'Discover associated airsoft teams across Portugal.', 'adam-comunidade' ); ?></p>
-		</header>
-
 		<form class="adam-team-filters" id="adam-team-filters">
 			<div class="adam-team-filter adam-team-filter--search">
 				<label for="adam-team-search"><?php esc_html_e( 'Search', 'adam-comunidade' ); ?></label>

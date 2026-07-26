@@ -16,6 +16,7 @@ use ADAM\Comunidade\Fields\Amenity_Repository;
 use ADAM\Comunidade\Fields\Options as Field_Options;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 
 $discovery = new Discovery( new Team_Repository(), new Field_Repository(), new Directory_Repository() );
@@ -27,7 +28,7 @@ $institution_types = Types::get( 'institution' )['categories'];
 get_header();
 ?>
 <main class="adam-experience" id="main">
-	<header class="adam-experience-hero"><div class="adam-experience-container"><span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span><h1><?php echo esc_html( get_the_title( Managed_Pages::id( 'community' ) ) ); ?></h1><p><?php esc_html_e( 'Explore, compare, discover and connect with Portugal’s airsoft community.', 'adam-comunidade' ); ?></p></div></header>
+	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-experience-hero', 'archive' ) ); ?>"><div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-experience-container' ) ); ?>"><span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span><h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( get_the_title( Managed_Pages::id( 'community' ) ) ); ?></h1><p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Explore, compare, discover and connect with Portugal’s airsoft community.', 'adam-comunidade' ); ?></p></div></header>
 	<div class="adam-experience-container">
 		<?php echo Builder::search_form(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php echo ( new Smart_Blocks( $discovery ) )->statistics(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

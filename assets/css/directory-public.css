@@ -17,6 +17,16 @@
 	padding: 38px 0 18px;
 }
 
+.adam-community-header.adam-public-hero {
+	padding-bottom: clamp(72px, 9vw, 102px);
+	padding-top: clamp(48px, 8vw, 88px);
+}
+
+.adam-community-header .adam-community-container {
+	padding-bottom: 0;
+	padding-top: 0;
+}
+
 .adam-community-header > span {
 	color: var(--adam-community-accent);
 	font-size: .8rem;
@@ -195,7 +205,6 @@
 
 .adam-community-hero__cover {
 	height: clamp(240px, 38vw, 500px);
-	opacity: .5;
 }
 
 .adam-community-hero__cover img {

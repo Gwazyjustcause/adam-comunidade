@@ -385,7 +385,6 @@
 .adam-experience-hero {
 	background: linear-gradient(120deg, #111c22, #263943);
 	color: #fff;
-	padding: clamp(40px, 8vw, 90px) 0;
 }
 
 .adam-experience-hero span,

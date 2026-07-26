@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Directory\Relationship_Repository;
 use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Router;
@@ -55,12 +56,12 @@ $downloads = array_filter(
 get_header();
 ?>
 <main class="adam-community adam-community-single" id="main" data-entity-type="<?php echo esc_attr( $entry->entity_type ); ?>" data-entity-id="<?php echo esc_attr( $entry->id ); ?>">
-	<header class="adam-community-hero">
-		<div class="adam-community-hero__cover"><?php echo $entry->cover_id ? wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-cover', false, array( 'fetchpriority' => 'high' ) ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-		<div class="adam-community-container adam-community-hero__content">
+	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-community-hero' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-community-hero__cover' ) ); ?>"><?php echo $entry->cover_id ? wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-cover', false, array( 'fetchpriority' => 'high' ) ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container adam-community-hero__content' ) ); ?>">
 			<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( ucwords( str_replace( '_', ' ', $entry->verification ) ) ); ?></span><?php endif; ?>
 			<?php echo $entry->logo_id ? wp_get_attachment_image( (int) $entry->logo_id, 'adam-directory-logo', false, array( 'class' => 'adam-community-hero__logo' ) ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<div><?php if ( $entry->featured ) : ?><span class="adam-community-badge"><?php esc_html_e( 'Featured', 'adam-comunidade' ); ?></span><?php endif; ?><h1><?php echo esc_html( $entry->name ); ?></h1><p><?php echo esc_html( implode( ' · ', array_filter( array( $definition['categories'][ $entry->category ] ?? '', $entry->district, $entry->country ) ) ) ); ?></p></div>
+			<div><?php if ( $entry->featured ) : ?><span class="adam-community-badge adam-public-hero__badge"><?php esc_html_e( 'Featured', 'adam-comunidade' ); ?></span><?php endif; ?><h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $entry->name ); ?></h1><p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( implode( ' · ', array_filter( array( $definition['categories'][ $entry->category ] ?? '', $entry->district, $entry->country ) ) ) ); ?></p></div>
 		</div>
 	</header>
 	<div class="adam-community-container adam-community-content">
