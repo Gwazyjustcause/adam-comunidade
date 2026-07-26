@@ -20,6 +20,7 @@ use ADAM\Comunidade\Forms\Manager as Forms_Manager;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 /**
  * Keeps community contributions outside wp-admin and behind moderation.
@@ -105,18 +106,7 @@ final class Portal {
 		wp_enqueue_style( 'adam-experience', Helpers::url( 'assets/css/experience.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-experience' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_script( 'adam-experience', Helpers::url( 'assets/js/experience.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
-		wp_localize_script(
-			'adam-experience',
-			'adamExperience',
-			array(
-				'upload' => array(
-					'selected' => __( '%1$d de %2$d fotografias selecionadas', 'adam-comunidade' ),
-					'remaining' => __( 'Pode adicionar mais %d fotografias.', 'adam-comunidade' ),
-					'limit' => __( 'Pode selecionar no máximo %d fotografias.', 'adam-comunidade' ),
-					'drop' => __( 'Largue as fotografias aqui.', 'adam-comunidade' ),
-				),
-			)
-		);
+		Upload_Component::enqueue_assets();
 	}
 
 	/**
@@ -184,17 +174,42 @@ final class Portal {
 		$is_wide  = in_array( $type, array( 'textarea', 'file' ), true );
 		$multiple = 'file' === $type && absint( $field['max_files'] ) > 1;
 		$name     = $multiple ? $key . '[]' : $key;
+		if ( 'file' === $type ) {
+			?>
+			<div class="<?php echo esc_attr( 'adam-portal-form__wide adam-portal-upload-field ' . ( $error ? 'has-error' : '' ) ); ?>">
+				<strong><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></strong>
+				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
+				<?php
+				Upload_Component::render(
+					array(
+						'id'          => 'adam-upload-' . $key,
+						'mode'        => 'file',
+						'kind'        => str_contains( (string) $field['accept'], '.pdf' ) ? 'document' : 'image',
+						'name'        => $name,
+						'label'       => (string) $field['label'],
+						'accept'      => (string) $field['accept'],
+						'multiple'    => $multiple,
+						'max'         => absint( $field['max_files'] ),
+						'max_size_mb' => absint( $field['max_size_mb'] ),
+						'required'    => $required,
+						'error'       => $error,
+					)
+				);
+				?>
+				<?php if ( ! empty( $field['help_text'] ) ) : ?><small><?php echo esc_html( $field['help_text'] ); ?></small><?php endif; ?>
+			</div>
+			<?php
+			return;
+		}
 		?>
-		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( 'file' === $type ? 'adam-portal-upload ' : '' ) . ( $error ? 'has-error' : '' ) ); ?>" <?php echo $multiple ? 'data-adam-multi-upload data-max-files="' . esc_attr( $field['max_files'] ) . '"' : ''; ?>>
+		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( $error ? 'has-error' : '' ) ); ?>">
 			<?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?>
 			<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
-			<?php if ( $multiple ) : ?><span class="adam-portal-field-description"><?php echo esc_html( sprintf( __( 'Pode selecionar até %d fotografias. Pode selecionar várias imagens ao mesmo tempo ou voltar a clicar em “Escolher ficheiros” para adicionar mais. Também pode arrastar e largar imagens nesta área.', 'adam-comunidade' ), absint( $field['max_files'] ) ) ); ?></span><?php endif; ?>
 			<?php if ( 'textarea' === $type ) : ?>
 				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>><?php echo esc_textarea( $value ); ?></textarea>
 			<?php else : ?>
-				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" value="<?php echo 'file' === $type ? '' : esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" accept="<?php echo esc_attr( $field['accept'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>>
+				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>>
 			<?php endif; ?>
-			<?php if ( $multiple ) : ?><span class="adam-upload-status" aria-live="polite" data-adam-upload-status><?php echo esc_html( sprintf( __( '0 de %d fotografias selecionadas', 'adam-comunidade' ), absint( $field['max_files'] ) ) ); ?></span><?php endif; ?>
 			<?php if ( ! empty( $field['help_text'] ) ) : ?><small><?php echo esc_html( $field['help_text'] ); ?></small><?php endif; ?>
 			<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
 		</label>

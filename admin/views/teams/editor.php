@@ -8,6 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Teams\Options;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 $adam_value = static function ( string $key, mixed $default = '' ) use ( $team ): mixed {
 	return $team->{$key} ?? $default;
@@ -96,49 +97,24 @@ if ( $team_id && $adam_slug ) {
 					</div>
 				</section>
 
-				<section class="adam-card adam-editor-panel" id="adam-team-panel-branding" role="tabpanel" aria-labelledby="adam-team-tab-branding" hidden>
-					<h2><?php esc_html_e( 'Imagem', 'adam-comunidade' ); ?></h2>
-					<div class="adam-media-grid">
-						<div class="adam-media-field" data-adam-media="single">
-							<h3><?php esc_html_e( 'Logótipo', 'adam-comunidade' ); ?></h3>
-							<p><?php esc_html_e( 'Recomendado: 600×600 px, recorte quadrado.', 'adam-comunidade' ); ?></p>
-							<input type="hidden" name="team[logo_id]" value="<?php echo esc_attr( (string) $adam_value( 'logo_id', 0 ) ); ?>">
-							<div class="adam-media-preview">
-								<?php echo wp_get_attachment_image( (int) $adam_value( 'logo_id', 0 ), 'adam-team-logo' ); ?>
+					<section class="adam-card adam-editor-panel" id="adam-team-panel-branding" role="tabpanel" aria-labelledby="adam-team-tab-branding" hidden>
+						<h2><?php esc_html_e( 'Imagem', 'adam-comunidade' ); ?></h2>
+						<div class="adam-media-grid">
+							<div>
+								<h3><?php esc_html_e( 'Logótipo', 'adam-comunidade' ); ?></h3>
+								<p><?php esc_html_e( 'Recomendado: 600×600 px, recorte quadrado.', 'adam-comunidade' ); ?></p>
+								<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[logo_id]', 'items' => $adam_value( 'logo_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'logo_id', 0 ) ) ) : array() ) ); ?>
 							</div>
-							<button class="button adam-media-select" type="button" data-media-kind="logo"><?php esc_html_e( 'Escolher logótipo', 'adam-comunidade' ); ?></button>
-							<button class="button-link-delete adam-media-remove" type="button"><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
-							<?php if ( $adam_value( 'logo_id', 0 ) ) : ?>
-								<a class="adam-media-edit" href="<?php echo esc_url( get_edit_post_link( (int) $adam_value( 'logo_id', 0 ) ) ); ?>" target="_blank" rel="noopener noreferrer">
-									<?php esc_html_e( 'Editar / recortar logótipo', 'adam-comunidade' ); ?>
-								</a>
-							<?php endif; ?>
-						</div>
-						<div class="adam-media-field" data-adam-media="single">
-							<h3><?php esc_html_e( 'Imagem de capa', 'adam-comunidade' ); ?></h3>
-							<p><?php esc_html_e( 'Recomendado: 1920×600 px.', 'adam-comunidade' ); ?></p>
-							<input type="hidden" name="team[cover_id]" value="<?php echo esc_attr( (string) $adam_value( 'cover_id', 0 ) ); ?>">
-							<div class="adam-media-preview adam-media-preview--cover">
-								<?php echo wp_get_attachment_image( (int) $adam_value( 'cover_id', 0 ), 'adam-team-cover' ); ?>
+							<div>
+								<h3><?php esc_html_e( 'Imagem de capa', 'adam-comunidade' ); ?></h3>
+								<p><?php esc_html_e( 'Recomendado: 1920×600 px.', 'adam-comunidade' ); ?></p>
+								<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[cover_id]', 'items' => $adam_value( 'cover_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'cover_id', 0 ) ) ) : array() ) ); ?>
 							</div>
-							<button class="button adam-media-select" type="button" data-media-kind="cover"><?php esc_html_e( 'Escolher capa', 'adam-comunidade' ); ?></button>
-							<button class="button-link-delete adam-media-remove" type="button"><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
 						</div>
-					</div>
-					<div class="adam-media-field adam-gallery-field" data-adam-media="gallery">
 						<h3><?php esc_html_e( 'Galeria', 'adam-comunidade' ); ?></h3>
 						<p><?php esc_html_e( 'Selecione várias imagens e arraste as miniaturas para alterar a ordem.', 'adam-comunidade' ); ?></p>
-						<div class="adam-gallery-list">
-							<?php foreach ( $adam_gallery as $adam_image_id ) : ?>
-								<div class="adam-gallery-item" data-attachment-id="<?php echo esc_attr( (string) $adam_image_id ); ?>">
-									<input type="hidden" name="team[gallery][]" value="<?php echo esc_attr( (string) $adam_image_id ); ?>">
-									<?php echo wp_get_attachment_image( $adam_image_id, 'thumbnail' ); ?>
-									<button type="button" class="adam-gallery-remove" aria-label="<?php esc_attr_e( 'Remover imagem', 'adam-comunidade' ); ?>">&times;</button>
-								</div>
-							<?php endforeach; ?>
-						</div>
-						<button class="button adam-media-select" type="button" data-media-kind="gallery"><?php esc_html_e( 'Escolher imagens da galeria', 'adam-comunidade' ); ?></button>
-					</div>
+						<?php $adam_team_gallery_items = array_map( static fn( int $id ): array => Upload_Component::attachment( $id ), array_map( 'absint', $adam_gallery ) ); ?>
+						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[gallery][]', 'multiple' => true, 'max' => 20, 'items' => $adam_team_gallery_items ) ); ?>
 					<label class="adam-field adam-colour-field">
 						<span><?php esc_html_e( 'Cor da equipa', 'adam-comunidade' ); ?></span>
 						<input class="adam-team-colour" type="text" name="team[team_colour]" value="<?php echo esc_attr( (string) $adam_value( 'team_colour' ) ); ?>" data-default-color="">

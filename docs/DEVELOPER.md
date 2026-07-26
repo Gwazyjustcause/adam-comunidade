@@ -148,6 +148,39 @@ ADAM Members, ADAM Bot, and ADAM Events are detected without hard
 dependencies. Their availability is exposed through the `integrations`
 platform registry and the `adam_comunidade_integrations_ready` action.
 
+## Shared ADAM Upload component
+
+All public file inputs and administrative Media Library selectors use
+`ADAM\Comunidade\Uploads\Component`. The component owns the markup, thumbnails,
+document cards, counts, replacement/removal actions, drag ordering, local file
+previews, and shared `adam-comunidade-upload` assets.
+
+It supports four configurations through the same `render()` method:
+
+```php
+use ADAM\Comunidade\Uploads\Component;
+
+Component::render(
+	array(
+		'mode'     => 'file', // `file` for a form or `library` for wp-admin.
+		'kind'     => 'image', // `image` or `document`.
+		'name'     => 'photos[]',
+		'multiple' => true,
+		'max'      => 5,
+		'accept'   => '.jpg,.jpeg,.png,.webp',
+	)
+);
+```
+
+For Media Library mode, pass initial items created with
+`Component::attachment( $attachment_id )`. Use `caption_pattern` with an
+`__ID__` placeholder when gallery captions are required. Enqueue the common
+assets with `Component::enqueue_assets()`.
+
+The stable `data-adam-upload*` markup contract, asset handles, and
+`adam_upload_component_config` filter are intended to be lifted into the
+shared ADAM platform layer when ADAM Members adopts the uploader.
+
 ## ADAM Members
 
 An integration can return the total player count through

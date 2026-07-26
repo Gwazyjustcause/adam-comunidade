@@ -1,0 +1,278 @@
+.adam-upload {
+	--adam-upload-accent: var(--adam-primary, #1f6b35);
+	--adam-upload-danger: #b42318;
+	background: #f8faf8;
+	border: 1px solid #cad6cc;
+	border-radius: 12px;
+	padding: 14px;
+}
+
+.adam-upload.is-dragover {
+	background: #eaf5ec;
+	border-color: var(--adam-upload-accent);
+	box-shadow: 0 0 0 3px rgba(31, 107, 53, .13);
+}
+
+.adam-upload.has-error {
+	border-color: var(--adam-upload-danger);
+}
+
+.adam-upload .adam-upload__input {
+	border: 0;
+	height: 1px;
+	left: 0;
+	min-height: 1px;
+	opacity: 0;
+	padding: 0;
+	position: absolute;
+	top: 0;
+	width: 1px;
+}
+
+.adam-upload__toolbar {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.adam-upload__toolbar strong {
+	color: #213c29;
+	font-size: .95rem;
+}
+
+.adam-upload__toolbar span {
+	color: #607067;
+	font-size: .8rem;
+	font-weight: 500;
+}
+
+.adam-upload__list {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.adam-upload--document .adam-upload__list {
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.adam-upload__item,
+.adam-upload__add {
+	background: #fff;
+	border: 1px solid #cdd7d0;
+	border-radius: 10px;
+	box-sizing: border-box;
+	min-height: 180px;
+	overflow: hidden;
+	position: relative;
+}
+
+.adam-upload--document .adam-upload__item,
+.adam-upload--document .adam-upload__add {
+	min-height: 150px;
+}
+
+.adam-upload__item[draggable="true"] {
+	cursor: grab;
+}
+
+.adam-upload__item.is-dragging {
+	cursor: grabbing;
+	opacity: .48;
+}
+
+.adam-upload__preview {
+	align-items: center;
+	background: #e8eeea;
+	display: flex;
+	height: 112px;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
+}
+
+.adam-upload--document .adam-upload__preview {
+	height: 78px;
+}
+
+.adam-upload__preview img {
+	height: 100%;
+	object-fit: cover;
+	width: 100%;
+}
+
+.adam-upload__document-icon {
+	font-size: 2.4rem;
+	line-height: 1;
+}
+
+.adam-upload__actions {
+	align-items: center;
+	background: rgba(14, 29, 19, .82);
+	display: flex;
+	gap: 6px;
+	inset: 0;
+	justify-content: center;
+	opacity: 0;
+	padding: 10px;
+	position: absolute;
+	transition: opacity .16s ease;
+}
+
+.adam-upload__item:hover .adam-upload__actions,
+.adam-upload__item:focus-within .adam-upload__actions {
+	opacity: 1;
+}
+
+.adam-upload__actions button {
+	background: #fff;
+	border: 0;
+	border-radius: 6px;
+	color: #183520;
+	cursor: pointer;
+	font-size: .78rem;
+	font-weight: 750;
+	padding: 7px 9px;
+}
+
+.adam-upload__actions button:last-child {
+	background: #fff0ee;
+	color: var(--adam-upload-danger);
+}
+
+.adam-upload__meta {
+	display: grid;
+	gap: 4px;
+	padding: 10px 34px 10px 10px;
+}
+
+.adam-upload__meta strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.adam-upload__meta small {
+	color: #56655c;
+	font-weight: 500;
+}
+
+.adam-upload__meta input {
+	box-sizing: border-box;
+	margin-top: 5px;
+	max-width: 100%;
+	width: 100%;
+}
+
+.adam-upload__remove {
+	align-items: center;
+	background: #fff;
+	border: 1px solid #d8dfda;
+	border-radius: 50%;
+	color: var(--adam-upload-danger);
+	cursor: pointer;
+	display: flex;
+	font-size: 20px;
+	height: 28px;
+	justify-content: center;
+	line-height: 1;
+	position: absolute;
+	right: 7px;
+	top: 7px;
+	width: 28px;
+	z-index: 2;
+}
+
+.adam-upload__add {
+	align-items: center;
+	border: 2px dashed #8da596;
+	color: #31513a;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	justify-content: center;
+	padding: 18px;
+	text-align: center;
+}
+
+.adam-upload__add:hover,
+.adam-upload__add:focus-visible {
+	background: #edf6ef;
+	border-color: var(--adam-upload-accent);
+}
+
+.adam-upload__add > span {
+	align-items: center;
+	background: var(--adam-upload-accent);
+	border-radius: 50%;
+	color: #fff;
+	display: flex;
+	font-size: 1.5rem;
+	height: 36px;
+	justify-content: center;
+	width: 36px;
+}
+
+.adam-upload__add small {
+	color: #64716a;
+}
+
+.adam-upload.is-full .adam-upload__add,
+.adam-upload__add[hidden] {
+	display: none;
+}
+
+.adam-upload__progress {
+	margin-top: 12px;
+}
+
+.adam-upload__progress > span {
+	background: linear-gradient(90deg, #1f6b35, #78b788, #1f6b35);
+	background-size: 200% 100%;
+	border-radius: 999px;
+	display: block;
+	height: 6px;
+	animation: adam-upload-progress 1.1s linear infinite;
+}
+
+.adam-upload__progress small {
+	color: #526259;
+	display: block;
+	margin-top: 5px;
+}
+
+.adam-upload__error--client,
+.adam-upload > .adam-field-error {
+	display: block;
+	margin-top: 9px;
+}
+
+@keyframes adam-upload-progress {
+	to { background-position: -200% 0; }
+}
+
+@media (max-width: 600px) {
+	.adam-upload__toolbar {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.adam-upload__list,
+	.adam-upload--document .adam-upload__list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.adam-upload__actions {
+		transition: none;
+	}
+
+	.adam-upload__progress > span {
+		animation-duration: 4s;
+	}
+}

@@ -15,7 +15,8 @@ $assert = static function ( bool $condition, string $message ): void {
 
 $portal = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
 $email  = (string) file_get_contents( $root . '/includes/experience/class-email-service.php' );
-$script = (string) file_get_contents( $root . '/assets/js/experience.js' );
+$script = (string) file_get_contents( $root . '/assets/js/upload.js' );
+$validation_script = (string) file_get_contents( $root . '/assets/js/experience.js' );
 $style  = (string) file_get_contents( $root . '/assets/css/experience.css' );
 $view   = (string) file_get_contents( $root . '/admin/views/forms/manager.php' );
 $module = (string) file_get_contents( $root . '/includes/experience/class-module.php' );
@@ -27,10 +28,10 @@ $assert( str_contains( $portal, 'field_duplicate_error' ), 'Field submissions ne
 $assert( str_contains( $portal, "'changes_requested','awaiting_information','under_review'" ), 'All active review states must block duplicates.' );
 $assert( str_contains( $portal, "status = %s LIMIT 1" ), 'Published fields must be checked before accepting a duplicate.' );
 
-$assert( str_contains( $script, 'data-adam-multi-upload' ), 'Multi-image upload enhancement is missing.' );
+$assert( str_contains( $script, 'data-adam-upload' ), 'Reusable upload enhancement is missing.' );
 $assert( str_contains( $script, 'DataTransfer' ), 'Repeated file selections must be accumulated.' );
 $assert( str_contains( $script, 'dragover' ) && str_contains( $script, "'drop'" ), 'Drag and drop support is missing.' );
-$assert( str_contains( $script, 'scrollIntoView' ), 'The form must scroll to its first error.' );
+$assert( str_contains( $validation_script, 'scrollIntoView' ), 'The form must scroll to its first error.' );
 $assert( str_contains( $style, '.adam-portal-consent' ), 'Confirmation checkbox component styles are missing.' );
 $assert( str_contains( $style, '.adam-portal-form > .adam-community-button' ), 'Accessible submit button override is missing.' );
 

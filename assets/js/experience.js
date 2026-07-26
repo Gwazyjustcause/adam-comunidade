@@ -108,82 +108,6 @@
 		}
 	});
 
-	function formatUploadLabel(template, first, second) {
-		return String(template || '')
-			.replace('%1$d', first)
-			.replace('%2$d', second)
-			.replace('%d', first);
-	}
-
-	document.querySelectorAll('[data-adam-multi-upload]').forEach(function (dropZone) {
-		var input = dropZone.querySelector('input[type="file"]');
-		var status = dropZone.querySelector('[data-adam-upload-status]');
-		var limit = parseInt(dropZone.dataset.maxFiles || '1', 10);
-		var selected = [];
-
-		function key(file) {
-			return [file.name, file.size, file.lastModified].join(':');
-		}
-
-		function showError(message) {
-			var error = dropZone.querySelector('.adam-field-error--client');
-			if (!error) {
-				error = document.createElement('span');
-				error.className = 'adam-field-error adam-field-error--client';
-				dropZone.appendChild(error);
-			}
-			error.textContent = message;
-			input.setAttribute('aria-invalid', 'true');
-		}
-
-		function clearError() {
-			var error = dropZone.querySelector('.adam-field-error--client');
-			if (error) { error.remove(); }
-			input.removeAttribute('aria-invalid');
-		}
-
-		function commit(files) {
-			var known = new Set(selected.map(key));
-			Array.from(files || []).forEach(function (file) {
-				if (!known.has(key(file))) {
-					selected.push(file);
-					known.add(key(file));
-				}
-			});
-			if (selected.length > limit) {
-				selected = selected.slice(0, limit);
-				showError(formatUploadLabel((config.upload || {}).limit, limit));
-			} else {
-				clearError();
-			}
-			var transfer = new DataTransfer();
-			selected.forEach(function (file) { transfer.items.add(file); });
-			input.files = transfer.files;
-			var count = selected.length;
-			var label = formatUploadLabel((config.upload || {}).selected, count, limit);
-			if (count < limit) {
-				label += ' ' + formatUploadLabel((config.upload || {}).remaining, limit - count);
-			}
-			status.textContent = label;
-		}
-
-		input.addEventListener('change', function () { commit(input.files); });
-		['dragenter', 'dragover'].forEach(function (eventName) {
-			dropZone.addEventListener(eventName, function (event) {
-				event.preventDefault();
-				dropZone.classList.add('is-dragover');
-				status.textContent = (config.upload || {}).drop || status.textContent;
-			});
-		});
-		['dragleave', 'drop'].forEach(function (eventName) {
-			dropZone.addEventListener(eventName, function (event) {
-				event.preventDefault();
-				dropZone.classList.remove('is-dragover');
-				if ('drop' === eventName) { commit(event.dataTransfer.files); }
-			});
-		});
-	});
-
 	document.querySelectorAll('.adam-portal-form').forEach(function (form) {
 		form.addEventListener('submit', function (event) {
 			form.querySelectorAll('.adam-field-error--client').forEach(function (error) { error.remove(); });
@@ -192,7 +116,7 @@
 				if (control.disabled || control.checkValidity()) { return; }
 				invalid.push(control);
 				control.setAttribute('aria-invalid', 'true');
-				var label = control.closest('label');
+				var label = control.closest('label, .adam-portal-upload-field');
 				if (!label) { return; }
 				var error = document.createElement('span');
 				error.className = 'adam-field-error adam-field-error--client';

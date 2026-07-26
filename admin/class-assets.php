@@ -10,6 +10,7 @@ namespace ADAM\Comunidade\Admin;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 /**
  * Loads admin assets only on plugin screens.
@@ -36,6 +37,7 @@ final class Assets {
 		}
 
 		wp_enqueue_style( 'adam-comunidade-admin', Helpers::url( 'assets/css/admin.css' ), array(), ADAM_COMUNIDADE_VERSION );
+		Upload_Component::enqueue_assets();
 
 		if ( str_contains( $hook_suffix, 'adam-comunidade-settings' ) ) {
 			wp_enqueue_style( 'wp-color-picker' );

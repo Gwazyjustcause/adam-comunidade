@@ -32,6 +32,12 @@
 	gap: 6px;
 }
 
+.adam-portal-upload-field {
+	display: grid;
+	font-weight: 700;
+	gap: 6px;
+}
+
 .adam-portal-form label.has-error input,
 .adam-portal-form label.has-error textarea,
 .adam-portal-form [aria-invalid="true"] {

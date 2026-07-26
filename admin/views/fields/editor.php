@@ -8,6 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Fields\Options;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 $adam_value = static fn( string $key, mixed $default = '' ): mixed => $field->{$key} ?? $default;
 $adam_styles = Options::decode_list( $adam_value( 'playing_styles', array() ) );
@@ -71,31 +72,20 @@ if ( $field_id && $adam_slug ) {
 					</div>
 				</section>
 
-				<section class="adam-card adam-field-panel" id="adam-field-panel-branding" hidden>
-					<h2><?php esc_html_e( 'Imagem', 'adam-comunidade' ); ?></h2>
-					<div class="adam-media-field" data-adam-field-media="cover">
+					<section class="adam-card adam-field-panel" id="adam-field-panel-branding" hidden>
+						<h2><?php esc_html_e( 'Imagem', 'adam-comunidade' ); ?></h2>
 						<h3><?php esc_html_e( 'Imagem de capa', 'adam-comunidade' ); ?></h3>
 						<p><?php esc_html_e( 'Recomendado: 1920×700 px.', 'adam-comunidade' ); ?></p>
-						<input type="hidden" name="field[cover_id]" value="<?php echo esc_attr( (string) $adam_value( 'cover_id', 0 ) ); ?>">
-						<div class="adam-media-preview adam-media-preview--cover"><?php echo wp_get_attachment_image( (int) $adam_value( 'cover_id', 0 ), 'adam-field-cover' ); ?></div>
-						<button class="button adam-field-media-select" type="button" data-kind="cover"><?php esc_html_e( 'Escolher capa', 'adam-comunidade' ); ?></button>
-						<button class="button-link-delete adam-field-media-remove" type="button"><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
-					</div>
-					<div class="adam-media-field adam-gallery-field" data-adam-field-media="gallery">
+						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'field[cover_id]', 'items' => $adam_value( 'cover_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'cover_id', 0 ) ) ) : array() ) ); ?>
 						<h3><?php esc_html_e( 'Galeria', 'adam-comunidade' ); ?></h3>
 						<p><?php esc_html_e( 'Arraste para ordenar. As legendas aparecem na galeria pública.', 'adam-comunidade' ); ?></p>
-						<div class="adam-field-gallery-list">
-							<?php foreach ( $gallery as $item ) : ?>
-								<div class="adam-field-gallery-item" data-attachment-id="<?php echo esc_attr( (string) $item->attachment_id ); ?>">
-									<input type="hidden" name="field[gallery_ids][]" value="<?php echo esc_attr( (string) $item->attachment_id ); ?>">
-									<?php echo wp_get_attachment_image( (int) $item->attachment_id, 'thumbnail' ); ?>
-									<input type="text" name="field[gallery_captions][<?php echo esc_attr( (string) $item->attachment_id ); ?>]" value="<?php echo esc_attr( $item->caption ); ?>" placeholder="<?php esc_attr_e( 'Legenda', 'adam-comunidade' ); ?>">
-									<button type="button" class="adam-field-gallery-remove" aria-label="<?php esc_attr_e( 'Remover imagem', 'adam-comunidade' ); ?>">&times;</button>
-								</div>
-							<?php endforeach; ?>
-						</div>
-						<button class="button adam-field-media-select" type="button" data-kind="gallery"><?php esc_html_e( 'Escolher imagens da galeria', 'adam-comunidade' ); ?></button>
-					</div>
+						<?php
+						$adam_gallery_items = array();
+						foreach ( $gallery as $item ) {
+							$adam_gallery_items[] = Upload_Component::attachment( (int) $item->attachment_id, (string) $item->caption );
+						}
+						Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'field[gallery_ids][]', 'multiple' => true, 'max' => 20, 'items' => $adam_gallery_items, 'caption_pattern' => 'field[gallery_captions][__ID__]' ) );
+						?>
 				</section>
 
 				<section class="adam-card adam-field-panel" id="adam-field-panel-description" hidden>
@@ -171,13 +161,8 @@ if ( $field_id && $adam_slug ) {
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[featured]" value="1" <?php checked( (int) $adam_value( 'featured', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Campo em destaque', 'adam-comunidade' ); ?></span></label>
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[verification]" value="verified_field" <?php checked( $adam_value( 'verification' ), 'verified_field' ); ?>> <span><?php esc_html_e( 'Autorização legal verificada', 'adam-comunidade' ); ?></span></label>
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="field[is_associated]" value="1" <?php checked( (int) $adam_value( 'is_associated', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Campo associado', 'adam-comunidade' ); ?></span></label>
-				<div class="adam-media-field adam-legal-document" data-adam-field-media="document">
 					<h3><?php esc_html_e( 'Documento de autorização', 'adam-comunidade' ); ?></h3>
-					<input type="hidden" name="field[authorization_document_id]" value="<?php echo esc_attr( (string) $adam_value( 'authorization_document_id', 0 ) ); ?>">
-					<div class="adam-media-preview"><?php echo esc_html( $adam_value( 'authorization_document_id', 0 ) ? get_the_title( (int) $adam_value( 'authorization_document_id', 0 ) ) : __( 'Nenhum documento selecionado', 'adam-comunidade' ) ); ?></div>
-					<button class="button adam-field-media-select" type="button" data-kind="document"><?php esc_html_e( 'Escolher documento', 'adam-comunidade' ); ?></button>
-					<button class="button-link-delete adam-field-media-remove" type="button"><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
-				</div>
+					<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'document', 'name' => 'field[authorization_document_id]', 'accept' => '.pdf,.jpg,.jpeg,.png', 'items' => $adam_value( 'authorization_document_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'authorization_document_id', 0 ) ) ) : array() ) ); ?>
 				<button class="button button-primary adam-button" type="submit"><?php esc_html_e( 'Guardar campo', 'adam-comunidade' ); ?></button>
 			</aside>
 		</div>

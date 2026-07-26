@@ -13,6 +13,8 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
+
 $value = static fn( string $key, mixed $default = '' ): mixed => $entry->{$key} ?? $default;
 ?>
 <div class="wrap adam-comunidade-admin adam-directory-editor">
@@ -47,22 +49,23 @@ $value = static fn( string $key, mixed $default = '' ): mixed => $entry->{$key} 
 			<h2><?php esc_html_e( 'Imagem e multimédia', 'adam-comunidade' ); ?></h2>
 			<div class="adam-directory-media-grid">
 				<?php foreach ( array( 'logo_id' => __( 'Logótipo', 'adam-comunidade' ), 'cover_id' => __( 'Capa', 'adam-comunidade' ) ) as $field => $label ) : ?>
-					<div class="adam-directory-media" data-adam-media>
-						<h3><?php echo esc_html( $label ); ?></h3><div data-adam-preview><?php echo $value( $field ) ? wp_get_attachment_image( $value( $field ), 'medium' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-						<input type="hidden" name="entry[<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( $value( $field ) ); ?>">
-						<button type="button" class="button" data-adam-select-media><?php esc_html_e( 'Escolher', 'adam-comunidade' ); ?></button>
-						<button type="button" class="button-link-delete" data-adam-remove-media><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
+					<div>
+						<h3><?php echo esc_html( $label ); ?></h3>
+						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'entry[' . $field . ']', 'items' => $value( $field ) ? array( Upload_Component::attachment( (int) $value( $field ) ) ) : array() ) ); ?>
 					</div>
 				<?php endforeach; ?>
 			</div>
 			<h3><?php esc_html_e( 'Galeria', 'adam-comunidade' ); ?></h3>
-			<button type="button" class="button" data-adam-gallery-add><?php esc_html_e( 'Adicionar imagens à galeria', 'adam-comunidade' ); ?></button>
-			<ul class="adam-directory-gallery" data-adam-gallery>
-				<?php foreach ( $gallery as $image ) : ?><li data-id="<?php echo esc_attr( $image->attachment_id ); ?>"><?php echo wp_get_attachment_image( $image->attachment_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><input type="hidden" name="entry[gallery_ids][]" value="<?php echo esc_attr( $image->attachment_id ); ?>"><input type="text" name="entry[gallery_captions][<?php echo esc_attr( $image->attachment_id ); ?>]" value="<?php echo esc_attr( $image->caption ); ?>" placeholder="<?php esc_attr_e( 'Legenda', 'adam-comunidade' ); ?>"><button type="button" class="button-link-delete" data-adam-gallery-remove>×</button></li><?php endforeach; ?>
-			</ul>
+			<?php
+			$adam_directory_gallery_items = array();
+			foreach ( $gallery as $image ) {
+				$adam_directory_gallery_items[] = Upload_Component::attachment( (int) $image->attachment_id, (string) $image->caption );
+			}
+			Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'entry[gallery_ids][]', 'multiple' => true, 'max' => 20, 'items' => $adam_directory_gallery_items, 'caption_pattern' => 'entry[gallery_captions][__ID__]' ) );
+			?>
 			<div class="adam-directory-media-grid">
 				<?php foreach ( array( 'promo_pdf_id' => __( 'PDF promocional', 'adam-comunidade' ), 'catalogue_id' => __( 'Catálogo para descarregar', 'adam-comunidade' ) ) as $field => $label ) : ?>
-					<div class="adam-directory-media" data-adam-media data-media-type="application/pdf"><h3><?php echo esc_html( $label ); ?></h3><div data-adam-preview><?php echo $value( $field ) ? esc_html( get_the_title( $value( $field ) ) ) : ''; ?></div><input type="hidden" name="entry[<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( $value( $field ) ); ?>"><button type="button" class="button" data-adam-select-media><?php esc_html_e( 'Escolher ficheiro', 'adam-comunidade' ); ?></button><button type="button" class="button-link-delete" data-adam-remove-media><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button></div>
+					<div><h3><?php echo esc_html( $label ); ?></h3><?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'document', 'name' => 'entry[' . $field . ']', 'accept' => '.pdf', 'items' => $value( $field ) ? array( Upload_Component::attachment( (int) $value( $field ) ) ) : array() ) ); ?></div>
 				<?php endforeach; ?>
 			</div>
 		</section>
