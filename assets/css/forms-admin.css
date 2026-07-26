@@ -87,3 +87,19 @@
 		grid-column: 2;
 	}
 }
+.adam-form-manager__emails {
+	margin-top: 24px;
+}
+
+.adam-form-manager__email {
+	border-top: 1px solid #dcdcde;
+	display: grid;
+	gap: 10px;
+	padding: 18px 0;
+}
+
+.adam-form-manager__email > label:not(:first-of-type) {
+	display: grid;
+	font-weight: 600;
+	gap: 5px;
+}

@@ -30,7 +30,7 @@ foreach ( array( 'label', 'description', 'help_text', 'placeholder', 'type', 'vi
 $assert( str_contains( $controller, "register_page(\n\t\t\t'forms'" ), 'Form manager must register through the central admin router.' );
 $assert( str_contains( $view, 'data-adam-sortable' ), 'Form fields must be reorderable.' );
 $assert( str_contains( $portal, "foreach ( \$form['fields']" ), 'The public renderer must use the shared form schema.' );
-$assert( str_contains( $module, 'new Portal( $forms )' ), 'The form manager must be injected into the public portal.' );
+$assert( str_contains( $module, 'new Portal( $forms, $emails )' ), 'The form manager and email service must be injected into the public portal.' );
 
 foreach ( array( 'Admin_Tools', 'Import_Wizard', 'new Analytics()', 'new Health()' ) as $removed_service ) {
 	$assert( ! str_contains( $module, $removed_service ), 'Removed developer service is still registered: ' . $removed_service );

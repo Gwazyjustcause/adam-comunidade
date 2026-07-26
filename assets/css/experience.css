@@ -32,6 +32,13 @@
 	gap: 6px;
 }
 
+.adam-portal-form label.has-error input,
+.adam-portal-form label.has-error textarea,
+.adam-portal-form [aria-invalid="true"] {
+	border-color: #b42318;
+	box-shadow: 0 0 0 1px #b42318;
+}
+
 .adam-portal-form input,
 .adam-portal-form textarea {
 	border: 1px solid #b8c2c7;
@@ -43,6 +50,68 @@
 .adam-portal-form__wide,
 .adam-portal-form > button {
 	grid-column: 1 / -1;
+}
+
+.adam-portal-form > .adam-community-button {
+	background: #1f6b35;
+	border: 2px solid #1f6b35;
+	color: #fff;
+	font-size: 1rem;
+	transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.adam-portal-form > .adam-community-button:hover {
+	background: #174f29;
+	border-color: #174f29;
+	color: #fff;
+}
+
+.adam-portal-form > .adam-community-button:active {
+	transform: translateY(1px);
+}
+
+.adam-portal-form > .adam-community-button:focus-visible {
+	outline: 3px solid #075985;
+	outline-offset: 3px;
+}
+
+.adam-portal-consent {
+	align-items: center;
+	background: #f4f7f4;
+	border: 1px solid #cad6cc;
+	border-radius: 10px;
+	display: grid !important;
+	gap: 12px !important;
+	grid-template-columns: auto 1fr;
+	padding: 16px;
+}
+
+.adam-portal-consent input {
+	height: 20px;
+	margin: 0;
+	min-height: 20px;
+	padding: 0;
+	width: 20px;
+}
+
+.adam-portal-consent .adam-field-error {
+	grid-column: 2;
+}
+
+.adam-form-error-summary {
+	background: #fff1f0;
+	border: 1px solid #f0a19a;
+	border-left: 5px solid #b42318;
+	border-radius: 9px;
+	color: #7a271a;
+	margin: 18px 0;
+	padding: 14px 16px;
+}
+
+.adam-field-error {
+	color: #b42318;
+	font-size: .88rem;
+	font-weight: 700;
 }
 
 .adam-legal-submission-warning {
@@ -75,11 +144,30 @@
 	border: 1px dashed #87956c;
 	border-radius: 9px;
 	padding: 15px;
+	transition: background-color .18s ease, border-color .18s ease;
+}
+
+.adam-portal-upload.is-dragover {
+	background: #e8f4ea;
+	border-color: #1f6b35;
+	border-style: solid;
 }
 
 .adam-portal-upload small {
 	color: #5d6855;
 	font-weight: 400;
+}
+
+.adam-portal-field-description {
+	color: #52606a;
+	font-weight: 400;
+	line-height: 1.45;
+}
+
+.adam-upload-status {
+	color: #315b3a;
+	font-size: .9rem;
+	font-weight: 700;
 }
 
 .adam-moderation-photos {

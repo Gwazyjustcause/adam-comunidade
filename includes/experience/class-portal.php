@@ -13,6 +13,8 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Fields\Router as Field_Router;
+use ADAM\Comunidade\Fields\Schema as Field_Schema;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Forms\Manager as Forms_Manager;
 use ADAM\Comunidade\Helpers;
@@ -24,6 +26,7 @@ use ADAM\Comunidade\Teams\Validator as Team_Validator;
  */
 final class Portal {
 	private static ?Forms_Manager $forms = null;
+	private static ?Email_Service $emails = null;
 
 	private const TYPES = array(
 		'team'        => 'equipa',
@@ -32,8 +35,9 @@ final class Portal {
 		'institution' => 'instituicao',
 	);
 
-	public function __construct( Forms_Manager $forms ) {
+	public function __construct( Forms_Manager $forms, ?Email_Service $emails = null ) {
 		self::$forms = $forms;
+		self::$emails = $emails ?? new Email_Service();
 	}
 
 	public function register(): void {
@@ -100,6 +104,19 @@ final class Portal {
 		wp_enqueue_style( 'adam-comunidade' );
 		wp_enqueue_style( 'adam-experience', Helpers::url( 'assets/css/experience.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-experience' ), ADAM_COMUNIDADE_VERSION );
+		wp_enqueue_script( 'adam-experience', Helpers::url( 'assets/js/experience.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
+		wp_localize_script(
+			'adam-experience',
+			'adamExperience',
+			array(
+				'upload' => array(
+					'selected' => __( '%1$d de %2$d fotografias selecionadas', 'adam-comunidade' ),
+					'remaining' => __( 'Pode adicionar mais %d fotografias.', 'adam-comunidade' ),
+					'limit' => __( 'Pode selecionar no máximo %d fotografias.', 'adam-comunidade' ),
+					'drop' => __( 'Largue as fotografias aqui.', 'adam-comunidade' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -118,6 +135,9 @@ final class Portal {
 		if ( ! isset( self::TYPES[ $type ] ) || ! $form ) {
 			return;
 		}
+		$state  = self::form_state( $type );
+		$values = (array) ( $state['values'] ?? array() );
+		$errors = (array) ( $state['errors'] ?? array() );
 		?>
 		<section class="adam-community-panel adam-portal-panel">
 			<h1><?php echo esc_html( $form['title'] ); ?></h1>
@@ -129,14 +149,23 @@ final class Portal {
 			<?php endif; ?>
 			<?php if ( ! empty( $form['description'] ) ) : ?><p><?php echo nl2br( esc_html( $form['description'] ) ); ?></p><?php endif; ?>
 			<?php self::status_notice( $type ); ?>
-			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data" class="adam-portal-form">
+			<?php if ( $errors ) : ?>
+				<div class="adam-form-error-summary" id="adam-first-error" role="alert" tabindex="-1" data-adam-error-summary>
+					<strong><?php esc_html_e( 'Corrija os campos assinalados e tente novamente.', 'adam-comunidade' ); ?></strong>
+				</div>
+			<?php endif; ?>
+			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data" class="adam-portal-form" novalidate>
 				<input type="hidden" name="action" value="adam_public_submission">
 				<input type="hidden" name="object_type" value="<?php echo esc_attr( $type ); ?>">
 				<?php wp_nonce_field( 'adam_public_submission', 'adam_nonce' ); ?>
 				<?php foreach ( $form['fields'] as $key => $field ) : ?>
-					<?php if ( ! empty( $field['visible'] ) ) : self::render_field( $key, $field ); endif; ?>
+					<?php if ( ! empty( $field['visible'] ) ) : self::render_field( $key, $field, (string) ( $values[ $key ] ?? '' ), (string) ( $errors[ $key ] ?? '' ) ); endif; ?>
 				<?php endforeach; ?>
-				<label class="adam-portal-form__wide"><input name="consent" type="checkbox" value="1" required> <?php echo esc_html( $form['confirmation_message'] ); ?></label>
+				<label class="adam-portal-consent adam-portal-form__wide<?php echo isset( $errors['consent'] ) ? ' has-error' : ''; ?>">
+					<input name="consent" type="checkbox" value="1" required <?php checked( ! empty( $values['consent'] ) ); ?> <?php echo isset( $errors['consent'] ) ? 'aria-invalid="true" aria-describedby="adam-error-consent"' : ''; ?>>
+					<span><?php echo esc_html( $form['confirmation_message'] ); ?></span>
+					<?php if ( isset( $errors['consent'] ) ) : ?><span class="adam-field-error" id="adam-error-consent"><?php echo esc_html( $errors['consent'] ); ?></span><?php endif; ?>
+				</label>
 				<button class="adam-community-button" type="submit"><?php echo esc_html( $form['submit_label'] ); ?></button>
 			</form>
 		</section>
@@ -149,22 +178,25 @@ final class Portal {
 	 * @param string              $key Field key.
 	 * @param array<string,mixed> $field Field configuration.
 	 */
-	private static function render_field( string $key, array $field ): void {
+	private static function render_field( string $key, array $field, string $value = '', string $error = '' ): void {
 		$type     = (string) $field['type'];
 		$required = ! empty( $field['required'] );
 		$is_wide  = in_array( $type, array( 'textarea', 'file' ), true );
 		$multiple = 'file' === $type && absint( $field['max_files'] ) > 1;
 		$name     = $multiple ? $key . '[]' : $key;
 		?>
-		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( 'file' === $type ? 'adam-portal-upload' : '' ) ); ?>">
+		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( 'file' === $type ? 'adam-portal-upload ' : '' ) . ( $error ? 'has-error' : '' ) ); ?>" <?php echo $multiple ? 'data-adam-multi-upload data-max-files="' . esc_attr( $field['max_files'] ) . '"' : ''; ?>>
 			<?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?>
 			<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
+			<?php if ( $multiple ) : ?><span class="adam-portal-field-description"><?php echo esc_html( sprintf( __( 'Pode selecionar até %d fotografias. Pode selecionar várias imagens ao mesmo tempo ou voltar a clicar em “Escolher ficheiros” para adicionar mais. Também pode arrastar e largar imagens nesta área.', 'adam-comunidade' ), absint( $field['max_files'] ) ) ); ?></span><?php endif; ?>
 			<?php if ( 'textarea' === $type ) : ?>
-				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?>></textarea>
+				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>><?php echo esc_textarea( $value ); ?></textarea>
 			<?php else : ?>
-				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" accept="<?php echo esc_attr( $field['accept'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $multiple ? 'multiple' : ''; ?>>
+				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" value="<?php echo 'file' === $type ? '' : esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" accept="<?php echo esc_attr( $field['accept'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>>
 			<?php endif; ?>
+			<?php if ( $multiple ) : ?><span class="adam-upload-status" aria-live="polite" data-adam-upload-status><?php echo esc_html( sprintf( __( '0 de %d fotografias selecionadas', 'adam-comunidade' ), absint( $field['max_files'] ) ) ); ?></span><?php endif; ?>
 			<?php if ( ! empty( $field['help_text'] ) ) : ?><small><?php echo esc_html( $field['help_text'] ); ?></small><?php endif; ?>
+			<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
 		</label>
 		<?php
 	}
@@ -208,42 +240,38 @@ final class Portal {
 	public function submit(): void {
 		check_admin_referer( 'adam_public_submission', 'adam_nonce' );
 		$type = sanitize_key( wp_unslash( $_POST['object_type'] ?? '' ) );
-		if ( ! isset( self::TYPES[ $type ] ) || empty( $_POST['consent'] ) ) {
-			wp_die( esc_html__( 'A submissão não é válida.', 'adam-comunidade' ) );
+		if ( ! isset( self::TYPES[ $type ] ) ) {
+			wp_safe_redirect( home_url( '/' ) );
+			exit;
 		}
 		$form    = self::forms()->get( $type );
 		$payload = array();
 		$email   = '';
+		$values  = array( 'consent' => empty( $_POST['consent'] ) ? '' : '1' );
+		$errors  = array();
 
 		foreach ( $form['fields'] as $key => $field ) {
 			if ( empty( $field['visible'] ) ) {
 				continue;
 			}
 			if ( 'file' === $field['type'] ) {
-				$result = $this->process_form_upload( $key, $field );
+				$result = $this->validate_form_upload( $key, $field );
 				if ( is_wp_error( $result ) ) {
-					wp_die( esc_html( $result->get_error_message() ) );
-				}
-				if ( $result ) {
-					if ( 'authorization_document' === $key ) {
-						$payload['authorization_document_id'] = absint( $result );
-					} elseif ( 'field_photos' === $key ) {
-						$payload['gallery_ids'] = array_map( 'absint', (array) $result );
-						$payload['cover_id']    = $payload['gallery_ids'][0] ?? 0;
-					} else {
-						$payload[ $key ] = $result;
-					}
+					$errors[ $key ] = $result->get_error_message();
 				}
 				continue;
 			}
 
 			$value = trim( (string) wp_unslash( $_POST[ $key ] ?? '' ) );
+			$values[ $key ] = $value;
 			if ( ! empty( $field['required'] ) && '' === $value ) {
-				wp_die( sprintf( esc_html__( 'Preencha o campo obrigatório: %s.', 'adam-comunidade' ), esc_html( $field['label'] ) ) );
+				$errors[ $key ] = sprintf( __( 'Preencha o campo obrigatório: %s.', 'adam-comunidade' ), $field['label'] );
+				continue;
 			}
 			$value = $this->sanitize_form_value( $value, (string) $field['type'] );
 			if ( is_wp_error( $value ) ) {
-				wp_die( esc_html( $value->get_error_message() ) );
+				$errors[ $key ] = $value->get_error_message();
+				continue;
 			}
 			if ( 'contact_email' === $key ) {
 				$email            = (string) $value;
@@ -253,15 +281,63 @@ final class Portal {
 			}
 		}
 
-		if ( empty( $payload['name'] ) || ! is_email( $email ) ) {
-			wp_die( esc_html__( 'Indique um nome e um endereço de e-mail válidos.', 'adam-comunidade' ) );
+		if ( empty( $_POST['consent'] ) ) {
+			$errors['consent'] = __( 'Confirme a declaração antes de enviar.', 'adam-comunidade' );
 		}
+		if ( $errors ) {
+			$this->redirect_form_errors( $type, $values, $errors );
+		}
+
+		$duplicate = $this->field_duplicate_error( $type, (string) $payload['name'], $email );
+		if ( $duplicate ) {
+			$this->redirect_form_errors( $type, $values, array( 'name' => $duplicate ) );
+		}
+
+		$uploaded_ids = array();
+		foreach ( $form['fields'] as $key => $field ) {
+			if ( empty( $field['visible'] ) || 'file' !== $field['type'] ) {
+				continue;
+			}
+			$result = $this->process_form_upload( $key, $field );
+			if ( is_wp_error( $result ) ) {
+				$this->delete_uploaded_attachments( $uploaded_ids );
+				$this->redirect_form_errors( $type, $values, array( $key => $result->get_error_message() ) );
+			}
+			if ( ! $result ) {
+				continue;
+			}
+			if ( 'authorization_document' === $key ) {
+				$payload['authorization_document_id'] = absint( $result );
+			} elseif ( 'field_photos' === $key ) {
+				$payload['gallery_ids'] = array_map( 'absint', (array) $result );
+				$payload['cover_id']    = $payload['gallery_ids'][0] ?? 0;
+			} else {
+				$payload[ $key ] = $result;
+			}
+			$uploaded_ids = array_merge( $uploaded_ids, array_map( 'absint', (array) $result ) );
+		}
+
 		$payload['slug'] = sanitize_title( $payload['name'] );
 		if ( 'field' === $type ) {
 			$payload['verification']  = 'verified_field';
 			$payload['is_associated'] = 0;
 		}
-		$this->insert_submission( 'new', $type, 0, $payload, $email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );
+		$submission_id = $this->insert_submission( 'new', $type, 0, $payload, $email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );
+		if ( ! $submission_id ) {
+			$this->delete_uploaded_attachments( $uploaded_ids );
+			$this->redirect_form_errors( $type, $values, array( 'form' => __( 'Não foi possível guardar a submissão. Tente novamente.', 'adam-comunidade' ) ) );
+		}
+		if ( 'field' === $type ) {
+			self::emails()->send(
+				'field_received',
+				$email,
+				array(
+					'field_name' => (string) $payload['name'],
+					'field_url'  => '',
+					'admin_note' => '',
+				)
+			);
+		}
 		wp_safe_redirect( add_query_arg( 'adam_status', 'submitted', self::submission_url( $type ) ) );
 		exit;
 	}
@@ -284,6 +360,140 @@ final class Portal {
 			return sanitize_textarea_field( $value );
 		}
 		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Validates upload metadata before anything is added to the Media Library.
+	 *
+	 * @param string              $key Field key.
+	 * @param array<string,mixed> $field Field configuration.
+	 */
+	private function validate_form_upload( string $key, array $field ): true|\WP_Error {
+		$names = $_FILES[ $key ]['name'] ?? array();
+		$sizes = $_FILES[ $key ]['size'] ?? array();
+		$codes = $_FILES[ $key ]['error'] ?? array();
+		$names = is_array( $names ) ? $names : array( $names );
+		$sizes = is_array( $sizes ) ? $sizes : array( $sizes );
+		$codes = is_array( $codes ) ? $codes : array( $codes );
+		$files = array();
+
+		foreach ( $names as $index => $name ) {
+			if ( '' === (string) $name || UPLOAD_ERR_NO_FILE === (int) ( $codes[ $index ] ?? UPLOAD_ERR_NO_FILE ) ) {
+				continue;
+			}
+			$files[] = array(
+				'name'  => (string) $name,
+				'size'  => absint( $sizes[ $index ] ?? 0 ),
+				'error' => (int) ( $codes[ $index ] ?? UPLOAD_ERR_OK ),
+			);
+		}
+
+		if ( ! $files ) {
+			return ! empty( $field['required'] )
+				? new \WP_Error( 'upload_required', sprintf( __( 'É obrigatório anexar: %s.', 'adam-comunidade' ), $field['label'] ) )
+				: true;
+		}
+
+		$limit = max( 1, absint( $field['max_files'] ) );
+		if ( count( $files ) > $limit ) {
+			return new \WP_Error( 'too_many_uploads', sprintf( __( 'Pode selecionar no máximo %d fotografias.', 'adam-comunidade' ), $limit ) );
+		}
+
+		$extensions = array_values(
+			array_filter(
+				array_map(
+					static fn( string $extension ): string => ltrim( strtolower( trim( $extension ) ), '.' ),
+					explode( ',', (string) $field['accept'] )
+				)
+			)
+		);
+		$max_size = max( 1, absint( $field['max_size_mb'] ) ) * MB_IN_BYTES;
+		foreach ( $files as $file ) {
+			if ( UPLOAD_ERR_OK !== $file['error'] ) {
+				return new \WP_Error( 'upload_failed', __( 'Não foi possível receber um dos ficheiros. Selecione-o novamente.', 'adam-comunidade' ) );
+			}
+			$extension = strtolower( (string) pathinfo( sanitize_file_name( wp_unslash( $file['name'] ) ), PATHINFO_EXTENSION ) );
+			if ( ! in_array( $extension, $extensions, true ) ) {
+				return new \WP_Error( 'invalid_upload_type', __( 'O tipo de ficheiro enviado não é permitido.', 'adam-comunidade' ) );
+			}
+			if ( $file['size'] > $max_size ) {
+				return new \WP_Error( 'upload_too_large', sprintf( __( 'Cada ficheiro pode ter no máximo %d MB.', 'adam-comunidade' ), max( 1, absint( $field['max_size_mb'] ) ) ) );
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Blocks active duplicate field submissions and already published fields.
+	 */
+	private function field_duplicate_error( string $type, string $name, string $email ): string {
+		if ( 'field' !== $type ) {
+			return '';
+		}
+
+		global $wpdb;
+		$published = $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT id FROM ' . Field_Schema::fields_table() . ' WHERE name = %s AND status = %s LIMIT 1',
+				$name,
+				'published'
+			)
+		);
+		if ( $published ) {
+			return sprintf(
+				__( 'Este campo já está publicado. Para atualizar a informação existente, contacte a ADAM através de %s.', 'adam-comunidade' ),
+				self::emails()->contact_email()
+			);
+		}
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT payload FROM ' . Schema::submissions_table() . " WHERE submission_type = 'new' AND object_type = 'field' AND contact_email = %s AND status IN ('pending','changes_requested','awaiting_information','under_review')",
+				$email
+			)
+		); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( $rows as $row ) {
+			$payload = json_decode( (string) $row->payload, true );
+			if ( is_array( $payload ) && 0 === strcasecmp( trim( (string) ( $payload['name'] ?? '' ) ), trim( $name ) ) ) {
+				return __( 'Já existe uma submissão deste campo, com este e-mail, em análise. Aguarde a revisão ou contacte a ADAM se precisar de acrescentar informação.', 'adam-comunidade' );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Stores scalar form state briefly and returns to the public form.
+	 *
+	 * @param array<string,string> $values Submitted scalar values.
+	 * @param array<string,string> $errors Field errors.
+	 * @return never
+	 */
+	private function redirect_form_errors( string $type, array $values, array $errors ): never {
+		$token = strtolower( wp_generate_password( 32, false, false ) );
+		set_transient(
+			'adam_submission_state_' . $token,
+			array(
+				'type'   => $type,
+				'values' => $values,
+				'errors' => $errors,
+			),
+			15 * MINUTE_IN_SECONDS
+		);
+		wp_safe_redirect( add_query_arg( 'adam_form_state', rawurlencode( $token ), self::submission_url( $type ) ) . '#adam-first-error' );
+		exit;
+	}
+
+	/**
+	 * Removes uploads created by an otherwise failed submission.
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 */
+	private function delete_uploaded_attachments( array $ids ): void {
+		foreach ( array_filter( array_map( 'absint', $ids ) ) as $id ) {
+			wp_delete_attachment( $id, true );
+		}
 	}
 
 	/**
@@ -461,8 +671,25 @@ final class Portal {
 			}
 			$object_id = (int) $result;
 		}
-		$wpdb->update( Schema::submissions_table(), array( 'status' => $status, 'object_id' => $object_id, 'admin_note' => sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ), 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
+		$admin_note = sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) );
+		$updated = $wpdb->update( Schema::submissions_table(), array( 'status' => $status, 'object_id' => $object_id, 'admin_note' => $admin_note, 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
+		if ( false === $updated ) {
+			wp_die( esc_html__( 'Não foi possível guardar a decisão. Tente novamente.', 'adam-comunidade' ) );
+		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
+		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
+			$email_payload = json_decode( (string) $row->payload, true ) ?: array();
+			$field         = 'approve' === $decision ? ( new Field_Repository() )->find( $object_id ) : null;
+			self::emails()->send(
+				'approve' === $decision ? 'field_approved' : 'field_rejected',
+				(string) $row->contact_email,
+				array(
+					'field_name' => (string) ( $email_payload['name'] ?? '' ),
+					'field_url'  => $field ? Field_Router::field_url( $field ) : '',
+					'admin_note' => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
+				)
+			);
+		}
 		do_action( 'adam_comunidade_submission_moderated', $id, $status, $object_id );
 		wp_safe_redirect( Admin_Router::page_url( 'moderation' ) );
 		exit;
@@ -612,11 +839,16 @@ final class Portal {
 		return $ids;
 	}
 
-	private function insert_submission( string $submission_type, string $object_type, int $object_id, array $payload, string $email, string $verification ): void {
+	private function insert_submission( string $submission_type, string $object_type, int $object_id, array $payload, string $email, string $verification ): int {
 		global $wpdb;
 		$now = current_time( 'mysql', true );
-		$wpdb->insert( Schema::submissions_table(), array( 'submission_type' => $submission_type, 'object_type' => $object_type, 'object_id' => $object_id, 'user_id' => get_current_user_id(), 'contact_email' => $email, 'payload' => wp_json_encode( $payload ), 'verification_details' => $verification, 'status' => 'pending', 'created_at' => $now, 'updated_at' => $now ) );
-		do_action( 'adam_comunidade_submission_received', (int) $wpdb->insert_id, $object_type );
+		$result = $wpdb->insert( Schema::submissions_table(), array( 'submission_type' => $submission_type, 'object_type' => $object_type, 'object_id' => $object_id, 'user_id' => get_current_user_id(), 'contact_email' => $email, 'payload' => wp_json_encode( $payload ), 'verification_details' => $verification, 'status' => 'pending', 'created_at' => $now, 'updated_at' => $now ) );
+		if ( false === $result ) {
+			return 0;
+		}
+		$id = (int) $wpdb->insert_id;
+		do_action( 'adam_comunidade_submission_received', $id, $object_type );
+		return $id;
 	}
 
 	private function is_owner( int $user_id, string $type, int $id ): bool {
@@ -680,11 +912,35 @@ final class Portal {
 		}
 	}
 
+	/**
+	 * Retrieves a short-lived validation state only for its original form.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function form_state( string $type ): array {
+		$token = sanitize_key( wp_unslash( $_GET['adam_form_state'] ?? '' ) );
+		if ( '' === $token ) {
+			return array();
+		}
+		$state = get_transient( 'adam_submission_state_' . $token );
+		if ( ! is_array( $state ) || $type !== ( $state['type'] ?? '' ) ) {
+			return array();
+		}
+		return $state;
+	}
+
 	private static function forms(): Forms_Manager {
 		if ( null === self::$forms ) {
 			self::$forms = new Forms_Manager();
 		}
 		return self::$forms;
+	}
+
+	private static function emails(): Email_Service {
+		if ( null === self::$emails ) {
+			self::$emails = new Email_Service();
+		}
+		return self::$emails;
 	}
 
 	private static function object_type_label( string $type ): string {

@@ -35,6 +35,7 @@ final class Module implements Module_Interface {
 		$directory = new Directory_Repository();
 		$discovery = new Discovery( $teams, $fields, $directory );
 		$forms     = new Forms_Manager();
+		$emails    = new Email_Service();
 
 		( new Cache() )->register();
 		$news->register();
@@ -45,14 +46,14 @@ final class Module implements Module_Interface {
 		( new Smart_Blocks( $discovery ) )->register();
 		( new Related_Content( $teams, $fields, $directory ) )->register();
 		( new Media() )->register();
-		( new Portal( $forms ) )->register();
+		( new Portal( $forms, $emails ) )->register();
 		( new Calendar() )->register();
 		( new Registry() )->register();
 		( new Integrations() )->register();
 		( new Notifications() )->register();
 
 		if ( is_admin() ) {
-			( new Forms_Admin_Controller( $forms ) )->register();
+			( new Forms_Admin_Controller( $forms, $emails ) )->register();
 		}
 
 		do_action( 'adam_comunidade_experience_registered', $this, $discovery );

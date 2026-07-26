@@ -76,6 +76,21 @@ defined( 'ABSPATH' ) || exit;
 				</div>
 			</section>
 		<?php $first = false; endforeach; ?>
+
+		<section class="adam-card adam-form-manager__emails">
+			<h2><?php esc_html_e( 'Emails automáticos de campos', 'adam-comunidade' ); ?></h2>
+			<p><?php esc_html_e( 'Estes emails usam o remetente e a identidade visual do ADAM Members. Pode editar o assunto, o cabeçalho e o conteúdo sem alterar código.', 'adam-comunidade' ); ?></p>
+			<p><code>{{field_name}}</code> <code>{{field_url}}</code> <code>{{admin_note}}</code> <code>{{adam_email}}</code></p>
+			<?php foreach ( $email_templates as $template_key => $template ) : ?>
+				<article class="adam-form-manager__email">
+					<h3><?php echo esc_html( $template['label'] ); ?></h3>
+					<label><input type="checkbox" name="email_templates[<?php echo esc_attr( $template_key ); ?>][enabled]" value="1" <?php checked( ! empty( $template['enabled'] ) ); ?>> <?php esc_html_e( 'Email ativado', 'adam-comunidade' ); ?></label>
+					<label><?php esc_html_e( 'Assunto', 'adam-comunidade' ); ?><input class="large-text" name="email_templates[<?php echo esc_attr( $template_key ); ?>][subject]" value="<?php echo esc_attr( $template['subject'] ); ?>"></label>
+					<label><?php esc_html_e( 'Cabeçalho', 'adam-comunidade' ); ?><input class="large-text" name="email_templates[<?php echo esc_attr( $template_key ); ?>][heading]" value="<?php echo esc_attr( $template['heading'] ); ?>"></label>
+					<label><?php esc_html_e( 'Conteúdo', 'adam-comunidade' ); ?><textarea class="large-text" rows="8" name="email_templates[<?php echo esc_attr( $template_key ); ?>][body]"><?php echo esc_textarea( $template['body'] ); ?></textarea></label>
+				</article>
+			<?php endforeach; ?>
+		</section>
 		<?php submit_button( __( 'Guardar formulários', 'adam-comunidade' ), 'primary adam-button' ); ?>
 	</form>
 </div>

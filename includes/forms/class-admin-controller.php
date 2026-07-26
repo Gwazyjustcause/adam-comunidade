@@ -10,13 +10,14 @@ namespace ADAM\Comunidade\Forms;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router;
+use ADAM\Comunidade\Experience\Email_Service;
 use ADAM\Comunidade\Helpers;
 
 /**
  * Connects the shared form manager to the central admin router.
  */
 final class Admin_Controller {
-	public function __construct( private Manager $manager ) {}
+	public function __construct( private Manager $manager, private Email_Service $emails ) {}
 
 	public function register(): void {
 		Router::register_page(
@@ -39,6 +40,7 @@ final class Admin_Controller {
 		foreach ( array_keys( $types ) as $type ) {
 			$forms[ $type ] = $this->manager->get( $type );
 		}
+		$email_templates = $this->emails->templates();
 		require Helpers::path( 'admin/views/forms/manager.php' );
 	}
 
@@ -47,6 +49,8 @@ final class Admin_Controller {
 		check_admin_referer( 'adam_comunidade_save_forms' );
 		$input = isset( $_POST['forms'] ) && is_array( $_POST['forms'] ) ? $_POST['forms'] : array();
 		$this->manager->save( $input );
+		$email_input = isset( $_POST['email_templates'] ) && is_array( $_POST['email_templates'] ) ? $_POST['email_templates'] : array();
+		$this->emails->save( $email_input );
 		wp_safe_redirect( add_query_arg( 'updated', '1', Router::page_url( 'forms' ) ) );
 		exit;
 	}
