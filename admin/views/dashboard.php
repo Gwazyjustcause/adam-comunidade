@@ -29,6 +29,21 @@ $adam_comunidade_roadmap = array(
 		<span class="adam-badge adam-badge--success"><?php esc_html_e( 'Active', 'adam-comunidade' ); ?></span>
 	</header>
 
+	<nav class="adam-header-actions" aria-label="<?php esc_attr_e( 'Quick actions', 'adam-comunidade' ); ?>">
+		<?php
+		$adam_quick_actions = array(
+			'teams'        => __( 'Add Team', 'adam-comunidade' ),
+			'fields'       => __( 'Add Field', 'adam-comunidade' ),
+			'partners'     => __( 'Add Partner', 'adam-comunidade' ),
+			'institutions' => __( 'Add Institution', 'adam-comunidade' ),
+			'brands'       => __( 'Add Brand', 'adam-comunidade' ),
+		);
+		foreach ( $adam_quick_actions as $adam_module => $adam_label ) :
+			?>
+			<a class="button button-primary adam-button" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( $adam_module, 'add' ) ); ?>"><?php echo esc_html( $adam_label ); ?></a>
+		<?php endforeach; ?>
+	</nav>
+
 	<div class="adam-card adam-status-card">
 		<div>
 			<span class="adam-card__eyebrow"><?php esc_html_e( 'Version', 'adam-comunidade' ); ?></span>
@@ -76,7 +91,7 @@ $adam_comunidade_roadmap = array(
 	</section>
 
 	<section aria-labelledby="adam-community-insights-heading">
-		<div class="adam-section-heading"><h2 id="adam-community-insights-heading"><?php esc_html_e( 'Community Insights', 'adam-comunidade' ); ?></h2><a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-moderation' ) ); ?>"><?php esc_html_e( 'Open moderation', 'adam-comunidade' ); ?></a></div>
+		<div class="adam-section-heading"><h2 id="adam-community-insights-heading"><?php esc_html_e( 'Community Insights', 'adam-comunidade' ); ?></h2><a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'moderation' ) ); ?>"><?php esc_html_e( 'Open moderation', 'adam-comunidade' ); ?></a></div>
 		<div class="adam-stat-grid">
 			<?php foreach ( array( __( 'Pending submissions', 'adam-comunidade' ) => $community_insights['pending'], __( 'Pending claims', 'adam-comunidade' ) => $community_insights['claims'], __( 'Verified owners', 'adam-comunidade' ) => $community_insights['owners'], __( 'Upcoming calendar entries', 'adam-comunidade' ) => $community_insights['calendar'] ) as $adam_label => $adam_value ) : ?><div class="adam-stat-card"><span class="adam-stat-card__value"><?php echo esc_html( (string) $adam_value ); ?></span><span class="adam-stat-card__label"><?php echo esc_html( $adam_label ); ?></span></div><?php endforeach; ?>
 		</div>
@@ -100,7 +115,7 @@ $adam_comunidade_roadmap = array(
 	<section aria-labelledby="adam-field-statistics-heading">
 		<div class="adam-section-heading">
 			<h2 id="adam-field-statistics-heading"><?php esc_html_e( 'Field Statistics', 'adam-comunidade' ); ?></h2>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-fields' ) ); ?>"><?php esc_html_e( 'Manage fields', 'adam-comunidade' ); ?></a>
+			<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields' ) ); ?>"><?php esc_html_e( 'Manage fields', 'adam-comunidade' ); ?></a>
 		</div>
 		<div class="adam-stat-grid adam-stat-grid--five">
 			<?php
@@ -124,12 +139,12 @@ $adam_comunidade_roadmap = array(
 	<section class="adam-card">
 		<div class="adam-card__header">
 			<h2><?php esc_html_e( 'Most Recently Updated Fields', 'adam-comunidade' ); ?></h2>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-fields' ) ); ?>"><?php esc_html_e( 'View all', 'adam-comunidade' ); ?></a>
+			<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields' ) ); ?>"><?php esc_html_e( 'View all', 'adam-comunidade' ); ?></a>
 		</div>
 		<?php if ( $updated_fields ) : ?><ul class="adam-dashboard-team-list">
 			<?php foreach ( $updated_fields as $adam_field ) : ?><li>
 				<?php echo wp_get_attachment_image( (int) $adam_field->cover_id, array( 52, 38 ) ); ?>
-				<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-field-edit&field_id=' . absint( $adam_field->id ) ) ); ?>"><?php echo esc_html( $adam_field->name ); ?></a><small><?php echo esc_html( $adam_field->municipality ?: $adam_field->district ); ?></small></div>
+				<div><a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields', 'edit', array( 'id' => absint( $adam_field->id ) ) ) ); ?>"><?php echo esc_html( $adam_field->name ); ?></a><small><?php echo esc_html( $adam_field->municipality ?: $adam_field->district ); ?></small></div>
 			</li><?php endforeach; ?>
 		</ul><?php else : ?><div class="adam-empty-state"><?php esc_html_e( 'No fields yet.', 'adam-comunidade' ); ?></div><?php endif; ?>
 	</section>
@@ -145,7 +160,7 @@ $adam_comunidade_roadmap = array(
 			<section class="adam-card">
 				<div class="adam-card__header">
 					<h2><?php echo esc_html( $adam_list_title ); ?></h2>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-teams' ) ); ?>">
+					<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams' ) ); ?>">
 						<?php esc_html_e( 'View all', 'adam-comunidade' ); ?>
 					</a>
 				</div>
@@ -155,7 +170,7 @@ $adam_comunidade_roadmap = array(
 							<li>
 								<?php echo wp_get_attachment_image( (int) $adam_list_team->logo_id, array( 38, 38 ) ); ?>
 								<div>
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-team-edit&team_id=' . absint( $adam_list_team->id ) ) ); ?>">
+									<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams', 'edit', array( 'id' => absint( $adam_list_team->id ) ) ) ); ?>">
 										<?php echo esc_html( $adam_list_team->name ); ?>
 									</a>
 									<small><?php echo esc_html( $adam_list_team->municipality ?: $adam_list_team->district ); ?></small>

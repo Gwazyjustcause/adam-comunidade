@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Experience\Templates;
+use ADAM\Comunidade\Managed_Pages;
 
 /**
  * Handles clean archives, singles, previews, SEO, and AJAX filtering.
@@ -34,8 +35,11 @@ final class Router {
 
 	public static function add_rewrite_rules(): void {
 		foreach ( Types::all() as $type => $definition ) {
-			add_rewrite_rule( '^' . $definition['slug'] . '/?$', 'index.php?adam_directory_type=' . $type, 'top' );
-			add_rewrite_rule( '^' . $definition['slug'] . '/([^/]+)/?$', 'index.php?adam_directory_type=' . $type . '&adam_directory_slug=$matches[1]', 'top' );
+			$path = Managed_Pages::path( (string) $definition['module_id'] );
+			$page_id = Managed_Pages::id( (string) $definition['module_id'] );
+			if ( $path && $page_id ) {
+				add_rewrite_rule( '^' . preg_quote( $path, '#' ) . '/([^/]+)/?$', 'index.php?page_id=' . $page_id . '&adam_directory_type=' . $type . '&adam_directory_slug=$matches[1]', 'top' );
+			}
 		}
 	}
 
@@ -47,14 +51,21 @@ final class Router {
 
 	public function template_include( string $template ): string {
 		$type = sanitize_key( (string) get_query_var( 'adam_directory_type' ) );
+		$slug = sanitize_title( (string) get_query_var( 'adam_directory_slug' ) );
+		if ( ! $type || ! $slug ) {
+			foreach ( Types::all() as $page_type => $page_definition ) {
+				if ( Managed_Pages::is_current( (string) $page_definition['module_id'] ) ) {
+					self::$current_type = $page_type;
+					return Templates::locate( 'directory/archive.php' );
+				}
+			}
+			return $template;
+		}
+
 		if ( ! Types::get( $type ) ) {
 			return $template;
 		}
 		self::$current_type = $type;
-		$slug = sanitize_title( (string) get_query_var( 'adam_directory_slug' ) );
-		if ( ! $slug ) {
-			return Templates::locate( 'directory/archive.php' );
-		}
 		$preview_id = absint( $_GET['adam_directory_preview'] ?? 0 );
 		$capability = (string) apply_filters( 'adam_comunidade_directory_capability', 'manage_options' );
 		$can_preview = $preview_id
@@ -83,12 +94,20 @@ final class Router {
 
 	public static function entry_url( object $entry ): string {
 		$definition = Types::get( $entry->entity_type );
-		return $definition ? home_url( user_trailingslashit( $definition['slug'] . '/' . $entry->slug ) ) : home_url( '/' );
+		return $definition
+			? trailingslashit( Managed_Pages::url( (string) $definition['module_id'] ) ) . user_trailingslashit( $entry->slug )
+			: home_url( '/' );
 	}
 
 	public function document_title( string $title ): string {
 		if ( self::$current_entry ) {
 			return self::$current_entry->meta_title ?: self::$current_entry->name;
+		}
+		if ( self::$current_type ) {
+			$definition = Types::get( self::$current_type );
+			if ( $definition && Managed_Pages::is_current( (string) $definition['module_id'] ) ) {
+				return $title;
+			}
 		}
 		$definition = Types::get( self::$current_type );
 		return $definition ? $definition['plural'] : $title;
@@ -104,7 +123,11 @@ final class Router {
 	}
 
 	public function enqueue_assets(): void {
-		if ( ! get_query_var( 'adam_directory_type' ) ) {
+		$is_archive = false;
+		foreach ( Types::all() as $definition ) {
+			$is_archive = $is_archive || Managed_Pages::is_current( (string) $definition['module_id'] );
+		}
+		if ( ! $is_archive && ! get_query_var( 'adam_directory_type' ) ) {
 			return;
 		}
 		wp_enqueue_style( 'adam-comunidade' );

@@ -13,6 +13,7 @@ use ADAM\Comunidade\Fields\Repository;
 use ADAM\Comunidade\Fields\Router;
 use ADAM\Comunidade\Fields\View;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
+use ADAM\Comunidade\Managed_Pages;
 
 $repository = new Repository();
 $query_search = sanitize_text_field( (string) filter_input( INPUT_GET, 'q' ) );
@@ -40,7 +41,7 @@ get_header();
 	<div class="adam-fields-container">
 		<header class="adam-fields-header">
 			<span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1><?php echo $route_district ? esc_html( sprintf( __( 'Campos em %s', 'adam-comunidade' ), $route_district ) ) : esc_html__( 'Campos Associados', 'adam-comunidade' ); ?></h1>
+			<h1><?php echo $route_district ? esc_html( sprintf( __( 'Campos em %s', 'adam-comunidade' ), $route_district ) ) : esc_html( get_the_title( Managed_Pages::id( 'fields' ) ) ); ?></h1>
 			<p><?php esc_html_e( 'Explore airsoft fields, facilities, rules, and directions.', 'adam-comunidade' ); ?></p>
 		</header>
 

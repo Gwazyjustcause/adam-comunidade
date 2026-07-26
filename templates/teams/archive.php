@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
 use ADAM\Comunidade\Teams\View;
+use ADAM\Comunidade\Managed_Pages;
 
 $adam_repository   = new Repository();
 $adam_result       = $adam_repository->query(
@@ -29,7 +30,7 @@ get_header();
 	<div class="adam-teams-container">
 		<header class="adam-teams-header">
 			<span class="adam-teams-kicker"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1><?php esc_html_e( 'Equipas Associadas', 'adam-comunidade' ); ?></h1>
+			<h1><?php echo esc_html( get_the_title( Managed_Pages::id( 'teams' ) ) ); ?></h1>
 			<p><?php esc_html_e( 'Discover associated airsoft teams across Portugal.', 'adam-comunidade' ); ?></p>
 		</header>
 

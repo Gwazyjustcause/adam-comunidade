@@ -15,6 +15,7 @@ use ADAM\Comunidade\Experience\Smart_Blocks;
 use ADAM\Comunidade\Fields\Amenity_Repository;
 use ADAM\Comunidade\Fields\Options as Field_Options;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 
 $discovery = new Discovery( new Team_Repository(), new Field_Repository(), new Directory_Repository() );
@@ -26,13 +27,13 @@ $institution_types = Types::get( 'institution' )['categories'];
 get_header();
 ?>
 <main class="adam-experience" id="main">
-	<header class="adam-experience-hero"><div class="adam-experience-container"><span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span><h1><?php esc_html_e( 'Comunidade', 'adam-comunidade' ); ?></h1><p><?php esc_html_e( 'Explore, compare, discover and connect with Portugal’s airsoft community.', 'adam-comunidade' ); ?></p></div></header>
+	<header class="adam-experience-hero"><div class="adam-experience-container"><span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span><h1><?php echo esc_html( get_the_title( Managed_Pages::id( 'community' ) ) ); ?></h1><p><?php esc_html_e( 'Explore, compare, discover and connect with Portugal’s airsoft community.', 'adam-comunidade' ); ?></p></div></header>
 	<div class="adam-experience-container">
 		<?php echo Builder::search_form(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php echo ( new Smart_Blocks( $discovery ) )->statistics(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
 		<section class="adam-advanced-map" data-adam-advanced-map data-markers="<?php echo esc_attr( wp_json_encode( $markers ) ); ?>">
-			<div class="adam-section-title"><div><span><?php esc_html_e( 'Live Directory', 'adam-comunidade' ); ?></span><h2><?php esc_html_e( 'Community Map', 'adam-comunidade' ); ?></h2></div><a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( home_url( '/comunidade/comparar/' ) ); ?>"><?php esc_html_e( 'Compare items', 'adam-comunidade' ); ?></a></div>
+			<div class="adam-section-title"><div><span><?php esc_html_e( 'Live Directory', 'adam-comunidade' ); ?></span><h2><?php esc_html_e( 'Community Map', 'adam-comunidade' ); ?></h2></div><a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( trailingslashit( Managed_Pages::url( 'community' ) ) . 'comparar/' ); ?>"><?php esc_html_e( 'Compare items', 'adam-comunidade' ); ?></a></div>
 			<form class="adam-map-filters" data-adam-map-filters>
 				<label><?php esc_html_e( 'District', 'adam-comunidade' ); ?><input name="district" type="text"></label>
 				<label><?php esc_html_e( 'Municipality', 'adam-comunidade' ); ?><input name="municipality" type="text"></label>

@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 $adam_current_status       = sanitize_key( (string) filter_input( INPUT_GET, 'team_status' ) );
 $adam_current_district     = sanitize_text_field( (string) filter_input( INPUT_GET, 'district' ) );
 $adam_current_municipality = sanitize_text_field( (string) filter_input( INPUT_GET, 'municipality' ) );
-$adam_base_url             = admin_url( 'admin.php?page=adam-comunidade-teams' );
+$adam_base_url             = \ADAM\Comunidade\Admin\Router::module_url( 'teams' );
 ?>
 <div class="wrap adam-comunidade-admin adam-teams-admin">
 	<header class="adam-page-header">
@@ -18,7 +18,7 @@ $adam_base_url             = admin_url( 'admin.php?page=adam-comunidade-teams' )
 			<h1><?php esc_html_e( 'Equipas', 'adam-comunidade' ); ?></h1>
 			<p><?php esc_html_e( 'Create, publish and maintain associated team pages.', 'adam-comunidade' ); ?></p>
 		</div>
-		<a class="button button-primary adam-button" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-team-edit' ) ); ?>">
+		<a class="button button-primary adam-button" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams', 'add' ) ); ?>">
 			<?php esc_html_e( 'Add Team', 'adam-comunidade' ); ?>
 		</a>
 	</header>

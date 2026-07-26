@@ -20,6 +20,7 @@ $adam_comunidade_options = array(
 	'adam_comunidade_experience_db_version',
 	'adam_comunidade_home_sections',
 	'adam_comunidade_cache_version',
+	'adam_comunidade_managed_pages_version',
 );
 
 if ( is_multisite() ) {

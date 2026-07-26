@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Admin;
 use ADAM\Comunidade\Admin\Assets as Admin_Assets;
-use ADAM\Comunidade\Admin\Menu;
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 
 /**
  * Loads and coordinates plugin services.
@@ -112,6 +112,7 @@ final class Loader {
 		load_plugin_textdomain( 'adam-comunidade', false, dirname( ADAM_COMUNIDADE_BASENAME ) . '/languages' );
 
 		$this->services['settings']    = new Settings();
+		$this->services['managed_pages'] = new Managed_Pages();
 		$this->services['assets']      = new Assets();
 		$this->services['post_types']  = new Post_Types();
 		$this->services['shortcodes']  = new Shortcodes();
@@ -124,7 +125,7 @@ final class Loader {
 		if ( is_admin() ) {
 			$admin = new Admin();
 			$this->services['admin']        = $admin;
-			$this->services['admin_menu']   = new Menu( $admin );
+			$this->services['admin_router'] = new Admin_Router();
 			$this->services['admin_assets'] = new Admin_Assets();
 		}
 

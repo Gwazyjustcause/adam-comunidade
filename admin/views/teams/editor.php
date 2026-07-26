@@ -25,14 +25,14 @@ if ( $team_id && $adam_slug ) {
 			'adam_preview' => $team_id,
 			'_wpnonce'     => wp_create_nonce( 'adam_team_preview_' . $team_id ),
 		),
-		home_url( '/equipas/' . $adam_slug . '/' )
+		trailingslashit( \ADAM\Comunidade\Managed_Pages::url( 'teams' ) ) . user_trailingslashit( $adam_slug )
 	);
 }
 ?>
 <div class="wrap adam-comunidade-admin adam-team-editor">
 	<header class="adam-page-header">
 		<div>
-			<a class="adam-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-teams' ) ); ?>">
+			<a class="adam-back-link" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams' ) ); ?>">
 				&larr; <?php esc_html_e( 'Back to teams', 'adam-comunidade' ); ?>
 			</a>
 			<h1><?php echo $team_id ? esc_html__( 'Edit Team', 'adam-comunidade' ) : esc_html__( 'Add Team', 'adam-comunidade' ); ?></h1>

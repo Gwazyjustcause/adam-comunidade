@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Directory\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Relationship_Repository;
 use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Router;
@@ -29,33 +30,22 @@ final class Controller {
 	) {}
 
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'add_menu' ), 20, 2 );
+		foreach ( Types::all() as $type => $definition ) {
+			Admin_Router::register_module(
+				(string) $definition['module_id'],
+				array(
+					'title'         => $definition['plural'],
+					'singular'      => $definition['singular'],
+					'singular_slug' => $type,
+					'controller'    => $this,
+					'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
+					'arguments'     => array( $type ),
+				)
+			);
+		}
 		add_action( 'admin_post_adam_directory_save', array( $this, 'save' ) );
 		add_action( 'admin_post_adam_directory_action', array( $this, 'action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-	}
-
-	public function add_menu( string $parent_slug, string $capability ): void {
-		foreach ( Types::all() as $type => $definition ) {
-			add_submenu_page(
-				$parent_slug,
-				$definition['plural'],
-				$definition['plural'],
-				$capability,
-				$definition['menu_slug'],
-				fn() => $this->render_list( $type )
-			);
-			$edit_slug = 'adam-comunidade-directory-edit-' . $type;
-			add_submenu_page(
-				$parent_slug,
-				sprintf( __( 'Edit %s', 'adam-comunidade' ), $definition['singular'] ),
-				sprintf( __( 'Add %s', 'adam-comunidade' ), $definition['singular'] ),
-				$capability,
-				$edit_slug,
-				fn() => $this->render_editor( $type )
-			);
-			remove_submenu_page( $parent_slug, $edit_slug );
-		}
 	}
 
 	public function enqueue_assets( string $hook_suffix ): void {
@@ -81,8 +71,7 @@ final class Controller {
 		);
 	}
 
-	public function render_list( string $type ): void {
-		$this->authorize();
+	public function list( string $type ): void {
 		$definition = $this->definition( $type );
 		$this->process_bulk( $type );
 		$page = max( 1, absint( $_GET['paged'] ?? 1 ) );
@@ -101,10 +90,16 @@ final class Controller {
 		require Helpers::path( 'admin/views/directory/list.php' );
 	}
 
-	public function render_editor( string $type ): void {
-		$this->authorize();
+	public function create( string $type ): void {
+		$this->editor( $type, 0 );
+	}
+
+	public function edit( string $type, int $entry_id ): void {
+		$this->editor( $type, $entry_id );
+	}
+
+	private function editor( string $type, int $entry_id ): void {
 		$definition = $this->definition( $type );
-		$entry_id   = absint( $_GET['entry_id'] ?? 0 );
 		$entry      = $entry_id ? $this->repository->find( $entry_id, $type ) : null;
 		if ( $entry_id && ! $entry ) {
 			wp_die( esc_html__( 'Directory entry not found.', 'adam-comunidade' ) );
@@ -126,7 +121,7 @@ final class Controller {
 	}
 
 	public function save(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		$type = sanitize_key( $_POST['entity_type'] ?? '' );
 		$this->definition( $type );
 		check_admin_referer( 'adam_directory_save_' . $type );
@@ -159,7 +154,7 @@ final class Controller {
 	}
 
 	public function action(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		$type     = sanitize_key( $_GET['entity_type'] ?? '' );
 		$entry_id = absint( $_GET['entry_id'] ?? 0 );
 		$action   = sanitize_key( $_GET['entry_action'] ?? '' );
@@ -211,8 +206,7 @@ final class Controller {
 		}
 		Logger::info( ucfirst( $type ) . ' ' . $action, array( 'entry_id' => $entry_id ) );
 		Helpers::add_admin_notice( __( 'Action completed.', 'adam-comunidade' ), 'success' );
-		wp_safe_redirect( admin_url( 'admin.php?page=' . $definition['menu_slug'] ) );
-		exit;
+		Admin_Router::redirect_module( (string) $definition['module_id'] );
 	}
 
 	private function process_bulk( string $type ): void {
@@ -250,19 +244,12 @@ final class Controller {
 		return $definition;
 	}
 
-	private function authorize(): void {
-		$capability = (string) apply_filters( 'adam_comunidade_directory_capability', 'manage_options' );
-		if ( ! current_user_can( $capability ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage the community directory.', 'adam-comunidade' ) );
-		}
-	}
-
 	private function redirect_editor( string $type, int $entry_id ): never {
-		$url = admin_url( 'admin.php?page=adam-comunidade-directory-edit-' . $type );
-		if ( $entry_id ) {
-			$url = add_query_arg( 'entry_id', $entry_id, $url );
-		}
-		wp_safe_redirect( $url );
-		exit;
+		$definition = $this->definition( $type );
+		Admin_Router::redirect_module(
+			(string) $definition['module_id'],
+			$entry_id ? 'edit' : 'add',
+			$entry_id ? array( 'id' => $entry_id ) : array()
+		);
 	}
 }

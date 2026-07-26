@@ -10,6 +10,7 @@ namespace ADAM\Comunidade\Experience;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Managed_Pages;
 
 /**
  * Routes the central hub, automatic region pages, and comparison tool.
@@ -30,8 +31,11 @@ final class Router {
 	}
 
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^comunidade/?$', 'index.php?adam_community_hub=1', 'top' );
-		add_rewrite_rule( '^comunidade/comparar/?$', 'index.php?adam_compare=1', 'top' );
+		$community_path = Managed_Pages::path( 'community' );
+		$community_id   = Managed_Pages::id( 'community' );
+		if ( $community_path && $community_id ) {
+			add_rewrite_rule( '^' . preg_quote( $community_path, '#' ) . '/comparar/?$', 'index.php?page_id=' . $community_id . '&adam_compare=1', 'top' );
+		}
 		foreach ( array_keys( self::regions() ) as $slug ) {
 			add_rewrite_rule( '^' . preg_quote( $slug, '#' ) . '/?$', 'index.php?adam_region=' . $slug, 'top' );
 		}
@@ -52,15 +56,15 @@ final class Router {
 	}
 
 	public function query_vars( array $vars ): array {
-		return array_merge( $vars, array( 'adam_community_hub', 'adam_compare', 'adam_region' ) );
+		return array_merge( $vars, array( 'adam_compare', 'adam_region' ) );
 	}
 
 	public function template( string $template ): string {
-		if ( get_query_var( 'adam_community_hub' ) ) {
-			return Templates::locate( 'experience/community.php' );
-		}
 		if ( get_query_var( 'adam_compare' ) ) {
 			return Templates::locate( 'experience/compare.php' );
+		}
+		if ( Managed_Pages::is_current( 'community' ) ) {
+			return Templates::locate( 'experience/community.php' );
 		}
 		if ( get_query_var( 'adam_region' ) ) {
 			return Templates::locate( 'experience/region.php' );
@@ -69,9 +73,6 @@ final class Router {
 	}
 
 	public function title( string $title ): string {
-		if ( get_query_var( 'adam_community_hub' ) ) {
-			return __( 'Comunidade', 'adam-comunidade' );
-		}
 		if ( get_query_var( 'adam_compare' ) ) {
 			return __( 'Compare Community Content', 'adam-comunidade' );
 		}
@@ -80,7 +81,7 @@ final class Router {
 	}
 
 	public function assets(): void {
-		if ( ! get_query_var( 'adam_community_hub' ) && ! get_query_var( 'adam_compare' ) && ! get_query_var( 'adam_region' ) && ! is_post_type_archive( 'adam_news' ) && ! is_singular( 'adam_news' ) ) {
+		if ( ! Managed_Pages::is_current( 'community' ) && ! get_query_var( 'adam_compare' ) && ! get_query_var( 'adam_region' ) && ! is_post_type_archive( 'adam_news' ) && ! is_singular( 'adam_news' ) ) {
 			return;
 		}
 		wp_enqueue_style( 'adam-comunidade' );

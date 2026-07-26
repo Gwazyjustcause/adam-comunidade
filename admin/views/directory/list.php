@@ -13,7 +13,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$edit_url = admin_url( 'admin.php?page=adam-comunidade-directory-edit-' . $type );
+$module_id = (string) $definition['module_id'];
+$edit_url  = \ADAM\Comunidade\Admin\Router::module_url( $module_id, 'add' );
 ?>
 <div class="wrap adam-comunidade-admin">
 	<div class="adam-admin-heading">
@@ -33,7 +34,7 @@ $edit_url = admin_url( 'admin.php?page=adam-comunidade-directory-edit-' . $type 
 	</div>
 
 	<form method="get" class="adam-directory-filters">
-		<input type="hidden" name="page" value="<?php echo esc_attr( $definition['menu_slug'] ); ?>">
+		<input type="hidden" name="page" value="<?php echo esc_attr( 'adam-comunidade-' . $module_id ); ?>">
 		<input type="search" name="s" value="<?php echo esc_attr( $args['search'] ); ?>" placeholder="<?php esc_attr_e( 'Search…', 'adam-comunidade' ); ?>">
 		<select name="status">
 			<option value=""><?php esc_html_e( 'All statuses', 'adam-comunidade' ); ?></option>
@@ -95,9 +96,9 @@ $edit_url = admin_url( 'admin.php?page=adam-comunidade-directory-edit-' . $type 
 					<th class="check-column"><input type="checkbox" name="entry_ids[]" value="<?php echo esc_attr( $entry->id ); ?>"></th>
 					<td><?php echo $entry->logo_id ? wp_get_attachment_image( $entry->logo_id, array( 48, 48 ) ) : '<span class="dashicons dashicons-format-image"></span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 					<td>
-						<strong><a href="<?php echo esc_url( add_query_arg( 'entry_id', $entry->id, $edit_url ) ); ?>"><?php echo esc_html( $entry->name ); ?></a></strong>
+						<strong><a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( $module_id, 'edit', array( 'id' => $entry->id ) ) ); ?>"><?php echo esc_html( $entry->name ); ?></a></strong>
 						<div class="row-actions">
-							<a href="<?php echo esc_url( add_query_arg( 'entry_id', $entry->id, $edit_url ) ); ?>"><?php esc_html_e( 'Edit', 'adam-comunidade' ); ?></a> |
+							<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( $module_id, 'edit', array( 'id' => $entry->id ) ) ); ?>"><?php esc_html_e( 'Edit', 'adam-comunidade' ); ?></a> |
 							<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( $action_base + array( 'entry_action' => 'duplicate' ), admin_url( 'admin-post.php' ) ), 'adam_directory_action_' . $entry->id ) ); ?>"><?php esc_html_e( 'Duplicate', 'adam-comunidade' ); ?></a> |
 							<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( $action_base + array( 'entry_action' => 'hide' ), admin_url( 'admin-post.php' ) ), 'adam_directory_action_' . $entry->id ) ); ?>"><?php esc_html_e( 'Hide', 'adam-comunidade' ); ?></a> |
 							<a class="submitdelete adam-directory-delete" href="<?php echo esc_url( wp_nonce_url( add_query_arg( $action_base + array( 'entry_action' => 'delete' ), admin_url( 'admin-post.php' ) ), 'adam_directory_action_' . $entry->id ) ); ?>"><?php esc_html_e( 'Delete', 'adam-comunidade' ); ?></a>

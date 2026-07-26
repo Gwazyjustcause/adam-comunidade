@@ -23,8 +23,7 @@ final class Types {
 			'partner' => array(
 				'plural'     => __( 'Parceiros', 'adam-comunidade' ),
 				'singular'   => __( 'Parceiro', 'adam-comunidade' ),
-				'slug'       => 'parceiros',
-				'menu_slug'  => 'adam-comunidade-partners',
+				'module_id'  => 'partners',
 				'categories' => array(
 					'sponsor'       => __( 'Sponsor', 'adam-comunidade' ),
 					'loja'          => __( 'Loja', 'adam-comunidade' ),
@@ -39,8 +38,7 @@ final class Types {
 			'institution' => array(
 				'plural'     => __( 'Instituições', 'adam-comunidade' ),
 				'singular'   => __( 'Instituição', 'adam-comunidade' ),
-				'slug'       => 'instituicoes',
-				'menu_slug'  => 'adam-comunidade-institutions',
+				'module_id'  => 'institutions',
 				'categories' => array(
 					'municipality'     => __( 'Município', 'adam-comunidade' ),
 					'parish'           => __( 'Junta de Freguesia', 'adam-comunidade' ),
@@ -55,8 +53,7 @@ final class Types {
 			'brand' => array(
 				'plural'     => __( 'Marcas', 'adam-comunidade' ),
 				'singular'   => __( 'Marca', 'adam-comunidade' ),
-				'slug'       => 'marcas',
-				'menu_slug'  => 'adam-comunidade-brands',
+				'module_id'  => 'brands',
 				'categories' => array(),
 				'icon'       => 'tag',
 				'marker'     => 'brand',
@@ -76,19 +73,4 @@ final class Types {
 		return self::all()[ sanitize_key( $type ) ] ?? null;
 	}
 
-	/**
-	 * Resolves a public slug to its type.
-	 *
-	 * @param string $slug Public archive slug.
-	 * @return string
-	 */
-	public static function from_slug( string $slug ): string {
-		foreach ( self::all() as $type => $definition ) {
-			if ( $definition['slug'] === $slug ) {
-				return $type;
-			}
-		}
-
-		return '';
-	}
 }

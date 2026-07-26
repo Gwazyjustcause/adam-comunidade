@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Helpers;
 
 /**
@@ -16,6 +17,18 @@ use ADAM\Comunidade\Helpers;
  */
 final class News {
 	public function register(): void {
+		if ( is_admin() ) {
+			Admin_Router::register_module(
+				'news',
+				array(
+					'title'         => __( 'Notícias', 'adam-comunidade' ),
+					'singular'      => __( 'News', 'adam-comunidade' ),
+					'singular_slug' => 'news',
+					'controller'    => $this,
+					'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
+				)
+			);
+		}
 		add_action( 'init', array( $this, 'register_content' ) );
 		add_action( 'add_meta_boxes_adam_news', array( $this, 'add_meta_box' ) );
 		add_action( 'save_post_adam_news', array( $this, 'save_meta' ), 10, 2 );
@@ -34,7 +47,7 @@ final class News {
 					'edit_item'     => __( 'Edit Community News', 'adam-comunidade' ),
 				),
 				'public'       => true,
-				'show_in_menu' => 'adam-comunidade',
+				'show_in_menu' => false,
 				'has_archive'  => 'noticias',
 				'rewrite'      => array( 'slug' => 'noticias', 'with_front' => false ),
 				'menu_icon'    => 'dashicons-megaphone',
@@ -53,6 +66,37 @@ final class News {
 				'rewrite'      => array( 'slug' => 'noticias/categoria' ),
 			)
 		);
+	}
+
+	/**
+	 * Opens the native WordPress list through the ADAM route.
+	 *
+	 * @return never
+	 */
+	public function list(): never {
+		wp_safe_redirect( admin_url( 'edit.php?post_type=adam_news' ) );
+		exit;
+	}
+
+	/**
+	 * Opens the native WordPress editor in create mode.
+	 *
+	 * @return never
+	 */
+	public function create(): never {
+		wp_safe_redirect( admin_url( 'post-new.php?post_type=adam_news' ) );
+		exit;
+	}
+
+	/**
+	 * Opens the native WordPress editor for one news item.
+	 *
+	 * @return never
+	 */
+	public function edit( int $post_id ): never {
+		$edit_url = $post_id ? get_edit_post_link( $post_id, 'raw' ) : '';
+		wp_safe_redirect( $edit_url ?: Admin_Router::module_url( 'news', 'add' ) );
+		exit;
 	}
 
 	public function add_meta_box(): void {

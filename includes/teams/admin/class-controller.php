@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Teams\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Teams\Options;
@@ -42,41 +43,25 @@ final class Controller {
 	 * @return void
 	 */
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'add_menu' ), 10, 2 );
+		Admin_Router::register_module(
+			'teams',
+			array(
+				'title'         => __( 'Equipas', 'adam-comunidade' ),
+				'singular'      => __( 'Team', 'adam-comunidade' ),
+				'singular_slug' => 'team',
+				'controller'    => $this,
+				'methods'       => array(
+					'list'   => 'list',
+					'create' => 'create',
+					'edit'   => 'edit',
+				),
+				'load'          => array( $this, 'add_screen_options' ),
+			)
+		);
 		add_action( 'admin_post_adam_team_save', array( $this, 'save' ) );
 		add_action( 'admin_post_adam_team_action', array( $this, 'single_action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( $this, 'save_screen_option' ), 10, 3 );
-	}
-
-	/**
-	 * Adds visible and hidden module screens.
-	 *
-	 * @param string $parent_slug Parent menu slug.
-	 * @param string $capability  Required capability.
-	 * @return void
-	 */
-	public function add_menu( string $parent_slug, string $capability ): void {
-		$hook = add_submenu_page(
-			$parent_slug,
-			__( 'Equipas', 'adam-comunidade' ),
-			__( 'Equipas', 'adam-comunidade' ),
-			$capability,
-			'adam-comunidade-teams',
-			array( $this, 'render_list' )
-		);
-
-		add_action( 'load-' . $hook, array( $this, 'add_screen_options' ) );
-
-		add_submenu_page(
-			$parent_slug,
-			__( 'Edit Team', 'adam-comunidade' ),
-			__( 'Add Team', 'adam-comunidade' ),
-			$capability,
-			'adam-comunidade-team-edit',
-			array( $this, 'render_editor' )
-		);
-		remove_submenu_page( $parent_slug, 'adam-comunidade-team-edit' );
 	}
 
 	/**
@@ -156,9 +141,7 @@ final class Controller {
 	 *
 	 * @return void
 	 */
-	public function render_list(): void {
-		$this->authorize();
-
+	public function list(): void {
 		$table = new Team_List_Table( $this->repository );
 		$this->process_bulk_action( $table );
 		$table->prepare_items();
@@ -175,10 +158,26 @@ final class Controller {
 	 *
 	 * @return void
 	 */
-	public function render_editor(): void {
-		$this->authorize();
+	public function create(): void {
+		$this->editor( 0 );
+	}
 
-		$team_id = filter_input( INPUT_GET, 'team_id', FILTER_VALIDATE_INT ) ?: 0;
+	/**
+	 * Renders the editor in update mode.
+	 *
+	 * @return void
+	 */
+	public function edit( int $team_id ): void {
+		$this->editor( $team_id );
+	}
+
+	/**
+	 * Loads the shared create/edit editor.
+	 *
+	 * @param int $team_id Team ID, or zero for create mode.
+	 * @return void
+	 */
+	private function editor( int $team_id ): void {
 		$team    = $team_id ? $this->repository->find( $team_id ) : null;
 
 		if ( $team_id && ! $team ) {
@@ -206,7 +205,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function save(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_team_save' );
 
 		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
@@ -268,7 +267,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function single_action(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 
 		$team_id = filter_input( INPUT_GET, 'team_id', FILTER_VALIDATE_INT ) ?: 0;
 		$action  = sanitize_key( (string) filter_input( INPUT_GET, 'team_action' ) );
@@ -296,8 +295,7 @@ final class Controller {
 		}
 
 		Logger::info( 'Team ' . $action, array( 'team_id' => $team_id, 'user_id' => get_current_user_id() ) );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-teams' ) );
-		exit;
+		Admin_Router::redirect_module( 'teams' );
 	}
 
 	/**
@@ -328,8 +326,7 @@ final class Controller {
 		if ( $ids ) {
 			Logger::info( 'Team bulk action: ' . $action, array( 'team_ids' => $ids ) );
 			Helpers::add_admin_notice( __( 'Bulk action completed.', 'adam-comunidade' ), 'success' );
-			wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-teams' ) );
-			exit;
+			Admin_Router::redirect_module( 'teams' );
 		}
 	}
 
@@ -372,32 +369,16 @@ final class Controller {
 	}
 
 	/**
-	 * Enforces the current module capability.
-	 *
-	 * @return void
-	 */
-	private function authorize(): void {
-		$capability = (string) apply_filters( 'adam_comunidade_teams_capability', 'manage_options' );
-
-		if ( ! current_user_can( $capability ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage teams.', 'adam-comunidade' ) );
-		}
-	}
-
-	/**
 	 * Redirects back to the editor and exits.
 	 *
 	 * @param int $team_id Team ID.
 	 * @return never
 	 */
 	private function redirect_editor( int $team_id ): never {
-		$url = admin_url( 'admin.php?page=adam-comunidade-team-edit' );
-
-		if ( $team_id ) {
-			$url = add_query_arg( 'team_id', $team_id, $url );
-		}
-
-		wp_safe_redirect( $url );
-		exit;
+		Admin_Router::redirect_module(
+			'teams',
+			$team_id ? 'edit' : 'add',
+			$team_id ? array( 'id' => $team_id ) : array()
+		);
 	}
 }

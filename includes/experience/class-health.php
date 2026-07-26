@@ -9,8 +9,11 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Schema as Directory_Schema;
 use ADAM\Comunidade\Fields\Schema as Fields_Schema;
+use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Teams\Schema as Teams_Schema;
 
 /**
@@ -18,26 +21,13 @@ use ADAM\Comunidade\Teams\Schema as Teams_Schema;
  */
 final class Health {
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 45, 2 );
+		Admin_Router::register_page( 'health', array( 'title' => __( 'System Health', 'adam-comunidade' ), 'controller' => $this, 'method' => 'page' ) );
 		add_action( 'admin_post_adam_health_repair', array( $this, 'repair' ) );
 	}
 
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'System Health', 'adam-comunidade' ), __( 'System Health', 'adam-comunidade' ), $capability, 'adam-comunidade-health', array( $this, 'page' ) );
-	}
-
 	public function page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot view system health.', 'adam-comunidade' ) );
-		}
 		$checks = self::checks();
-		?>
-		<div class="wrap"><h1><?php esc_html_e( 'ADAM Comunidade Health', 'adam-comunidade' ); ?></h1>
-		<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Check', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Status', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Details', 'adam-comunidade' ); ?></th></tr></thead><tbody>
-		<?php foreach ( $checks as $check ) : ?><tr><td><?php echo esc_html( $check['label'] ); ?></td><td><span class="adam-badge adam-badge--<?php echo esc_attr( $check['ok'] ? 'success' : 'warning' ); ?>"><?php echo esc_html( $check['ok'] ? __( 'Healthy', 'adam-comunidade' ) : __( 'Attention', 'adam-comunidade' ) ); ?></span></td><td><?php echo esc_html( $check['detail'] ); ?></td></tr><?php endforeach; ?>
-		</tbody></table>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="adam_health_repair"><?php wp_nonce_field( 'adam_health_repair' ); ?><?php submit_button( __( 'Run safe repair', 'adam-comunidade' ), 'secondary' ); ?></form></div>
-		<?php
+		require Helpers::path( 'admin/views/experience/health.php' );
 	}
 
 	/**
@@ -67,13 +57,17 @@ final class Health {
 			. 'LEFT JOIN ' . Fields_Schema::fields_table() . ' fields ON fields.id = rel.field_id '
 			. 'WHERE teams.id IS NULL OR fields.id IS NULL'
 		); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Internal schema tables only.
-		$rules = (array) get_option( 'rewrite_rules', array() );
+		$managed_pages_ok = ! in_array(
+			0,
+			array_map( static fn( string $module ): int => Managed_Pages::id( $module ), array_keys( Managed_Pages::definitions() ) ),
+			true
+		);
 		$administrator = get_role( 'administrator' );
 		$checks = array(
 			array( 'label' => __( 'Database tables', 'adam-comunidade' ), 'ok' => ! $missing, 'detail' => $missing ? sprintf( __( '%d table(s) missing.', 'adam-comunidade' ), count( $missing ) ) : __( 'All required tables exist.', 'adam-comunidade' ) ),
 			array( 'label' => __( 'PHP version', 'adam-comunidade' ), 'ok' => version_compare( PHP_VERSION, '8.1', '>=' ), 'detail' => PHP_VERSION ),
 			array( 'label' => __( 'WordPress version', 'adam-comunidade' ), 'ok' => version_compare( $wp_version, '6.8', '>=' ), 'detail' => $wp_version ),
-			array( 'label' => __( 'Friendly URLs', 'adam-comunidade' ), 'ok' => isset( $rules['^comunidade/?$'], $rules['^equipas/?$'], $rules['^campos/?$'] ), 'detail' => __( 'Community, team and field rewrite routes.', 'adam-comunidade' ) ),
+			array( 'label' => __( 'Managed pages', 'adam-comunidade' ), 'ok' => $managed_pages_ok, 'detail' => __( 'Community routes resolve through stored WordPress Page IDs.', 'adam-comunidade' ) ),
 			array( 'label' => __( 'Cron', 'adam-comunidade' ), 'ok' => ! defined( 'DISABLE_WP_CRON' ) || ! DISABLE_WP_CRON, 'detail' => ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ? __( 'WP-Cron is disabled.', 'adam-comunidade' ) : __( 'WP-Cron is available.', 'adam-comunidade' ) ),
 			array( 'label' => __( 'REST API', 'adam-comunidade' ), 'ok' => rest_url() && get_option( 'permalink_structure' ), 'detail' => rest_url( 'adam-comunidade/v2/' ) ),
 			array( 'label' => __( 'Media references', 'adam-comunidade' ), 'ok' => 0 === $missing_images, 'detail' => $missing_images < 0 ? __( 'Database repair required before checking media.', 'adam-comunidade' ) : ( $missing_images ? sprintf( __( '%d missing image reference(s).', 'adam-comunidade' ), $missing_images ) : __( 'Image references resolve to Media Library records.', 'adam-comunidade' ) ) ),
@@ -87,9 +81,7 @@ final class Health {
 	}
 
 	public function repair(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot repair plugin data.', 'adam-comunidade' ) );
-		}
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_health_repair' );
 		Teams_Schema::install();
 		Fields_Schema::install();
@@ -107,7 +99,7 @@ final class Health {
 		Router::add_rewrite_rules();
 		flush_rewrite_rules( false );
 		do_action( 'adam_comunidade_health_repaired' );
-		wp_safe_redirect( add_query_arg( 'repaired', 1, admin_url( 'admin.php?page=adam-comunidade-health' ) ) );
+		wp_safe_redirect( Admin_Router::page_url( 'health', array( 'repaired' => 1 ) ) );
 		exit;
 	}
 }

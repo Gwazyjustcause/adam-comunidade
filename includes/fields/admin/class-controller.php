@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Fields\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Fields\Amenity_Repository;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
@@ -52,50 +53,31 @@ final class Controller {
 	 * @return void
 	 */
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'add_menu' ), 10, 2 );
+		Admin_Router::register_module(
+			'fields',
+			array(
+				'title'         => __( 'Campos', 'adam-comunidade' ),
+				'singular'      => __( 'Field', 'adam-comunidade' ),
+				'singular_slug' => 'field',
+				'controller'    => $this,
+				'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
+				'load'          => array( $this, 'add_screen_options' ),
+			)
+		);
+		Admin_Router::register_page(
+			'field-amenities',
+			array(
+				'title'      => __( 'Field Amenities', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'render_amenities',
+				'visible'    => false,
+			)
+		);
 		add_action( 'admin_post_adam_field_save', array( $this, 'save' ) );
 		add_action( 'admin_post_adam_field_action', array( $this, 'single_action' ) );
 		add_action( 'admin_post_adam_amenities_save', array( $this, 'save_amenities' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( $this, 'save_screen_option' ), 10, 3 );
-	}
-
-	/**
-	 * Adds Campos and hidden editor/vocabulary screens.
-	 *
-	 * @param string $parent_slug Parent slug.
-	 * @param string $capability  Required capability.
-	 * @return void
-	 */
-	public function add_menu( string $parent_slug, string $capability ): void {
-		$hook = add_submenu_page(
-			$parent_slug,
-			__( 'Campos', 'adam-comunidade' ),
-			__( 'Campos', 'adam-comunidade' ),
-			$capability,
-			'adam-comunidade-fields',
-			array( $this, 'render_list' )
-		);
-		add_action( 'load-' . $hook, array( $this, 'add_screen_options' ) );
-
-		add_submenu_page(
-			$parent_slug,
-			__( 'Edit Field', 'adam-comunidade' ),
-			__( 'Add Field', 'adam-comunidade' ),
-			$capability,
-			'adam-comunidade-field-edit',
-			array( $this, 'render_editor' )
-		);
-		add_submenu_page(
-			$parent_slug,
-			__( 'Field Amenities', 'adam-comunidade' ),
-			__( 'Field Amenities', 'adam-comunidade' ),
-			$capability,
-			'adam-comunidade-field-amenities',
-			array( $this, 'render_amenities' )
-		);
-		remove_submenu_page( $parent_slug, 'adam-comunidade-field-edit' );
-		remove_submenu_page( $parent_slug, 'adam-comunidade-field-amenities' );
 	}
 
 	/**
@@ -179,8 +161,7 @@ final class Controller {
 	 *
 	 * @return void
 	 */
-	public function render_list(): void {
-		$this->authorize();
+	public function list(): void {
 		$table = new Field_List_Table( $this->repository );
 		$this->process_bulk_action( $table );
 		$table->prepare_items();
@@ -196,9 +177,26 @@ final class Controller {
 	 *
 	 * @return void
 	 */
-	public function render_editor(): void {
-		$this->authorize();
-		$field_id = filter_input( INPUT_GET, 'field_id', FILTER_VALIDATE_INT ) ?: 0;
+	public function create(): void {
+		$this->editor( 0 );
+	}
+
+	/**
+	 * Renders the editor in update mode.
+	 *
+	 * @return void
+	 */
+	public function edit( int $field_id ): void {
+		$this->editor( $field_id );
+	}
+
+	/**
+	 * Loads the shared create/edit editor.
+	 *
+	 * @param int $field_id Field ID, or zero for create mode.
+	 * @return void
+	 */
+	private function editor( int $field_id ): void {
 		$field    = $field_id ? $this->repository->find( $field_id ) : null;
 
 		if ( $field_id && ! $field ) {
@@ -241,7 +239,6 @@ final class Controller {
 	 * @return void
 	 */
 	public function render_amenities(): void {
-		$this->authorize();
 		$amenity_options = $this->amenities->all();
 		$icon_options    = Options::amenity_icons();
 
@@ -254,7 +251,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function save(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_field_save' );
 
 		$field_id = isset( $_POST['field_id'] ) ? absint( wp_unslash( $_POST['field_id'] ) ) : 0;
@@ -327,7 +324,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function save_amenities(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_amenities_save' );
 
 		$rows = isset( $_POST['amenities'] ) && is_array( $_POST['amenities'] )
@@ -353,7 +350,7 @@ final class Controller {
 
 		Logger::info( 'Field amenities changed', array( 'user_id' => get_current_user_id() ) );
 		Helpers::add_admin_notice( __( 'Amenities saved.', 'adam-comunidade' ), 'success' );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-field-amenities' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'field-amenities' ) );
 		exit;
 	}
 
@@ -363,7 +360,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function single_action(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		$field_id = filter_input( INPUT_GET, 'field_id', FILTER_VALIDATE_INT ) ?: 0;
 		$action   = sanitize_key( (string) filter_input( INPUT_GET, 'field_action' ) );
 		check_admin_referer( 'adam_field_action_' . $field_id );
@@ -389,8 +386,7 @@ final class Controller {
 		}
 
 		Logger::info( 'Field ' . $action, array( 'field_id' => $field_id ) );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-fields' ) );
-		exit;
+		Admin_Router::redirect_module( 'fields' );
 	}
 
 	/**
@@ -423,8 +419,7 @@ final class Controller {
 
 		if ( $ids ) {
 			Helpers::add_admin_notice( __( 'Bulk action completed.', 'adam-comunidade' ), 'success' );
-			wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-fields' ) );
-			exit;
+			Admin_Router::redirect_module( 'fields' );
 		}
 	}
 
@@ -506,26 +501,11 @@ final class Controller {
 	 *
 	 * @return void
 	 */
-	private function authorize(): void {
-		$capability = (string) apply_filters( 'adam_comunidade_fields_capability', 'manage_options' );
-		if ( ! current_user_can( $capability ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage fields.', 'adam-comunidade' ) );
-		}
-	}
-
-	/**
-	 * Redirects to editor.
-	 *
-	 * @param int $field_id Field ID.
-	 * @return never
-	 */
 	private function redirect_editor( int $field_id ): never {
-		$url = admin_url( 'admin.php?page=adam-comunidade-field-edit' );
-		if ( $field_id ) {
-			$url = add_query_arg( 'field_id', $field_id, $url );
-		}
-
-		wp_safe_redirect( $url );
-		exit;
+		Admin_Router::redirect_module(
+			'fields',
+			$field_id ? 'edit' : 'add',
+			$field_id ? array( 'id' => $field_id ) : array()
+		);
 	}
 }

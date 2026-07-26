@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 <div class="wrap adam-comunidade-admin adam-amenities-admin">
 	<header class="adam-page-header">
 		<div>
-			<a class="adam-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-fields' ) ); ?>">
+			<a class="adam-back-link" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields' ) ); ?>">
 				&larr; <?php esc_html_e( 'Back to fields', 'adam-comunidade' ); ?>
 			</a>
 			<h1><?php esc_html_e( 'Field Amenities', 'adam-comunidade' ); ?></h1>

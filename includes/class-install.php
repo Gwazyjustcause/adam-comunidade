@@ -34,6 +34,7 @@ final class Install {
 		Directory\Schema::install();
 		Experience\Schema::install();
 		( new Experience\News() )->register_content();
+		Managed_Pages::activate();
 		Teams\Router::add_rewrite_rules();
 		Fields\Router::add_rewrite_rules();
 		Directory\Router::add_rewrite_rules();

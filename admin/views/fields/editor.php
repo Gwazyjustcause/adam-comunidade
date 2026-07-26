@@ -21,14 +21,14 @@ if ( $field_id && $adam_slug ) {
 			'adam_field_preview' => $field_id,
 			'_wpnonce'           => wp_create_nonce( 'adam_field_preview_' . $field_id ),
 		),
-		home_url( '/campos/' . $adam_slug . '/' )
+		trailingslashit( \ADAM\Comunidade\Managed_Pages::url( 'fields' ) ) . user_trailingslashit( $adam_slug )
 	);
 }
 ?>
 <div class="wrap adam-comunidade-admin adam-field-editor">
 	<header class="adam-page-header">
 		<div>
-			<a class="adam-back-link" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-fields' ) ); ?>">&larr; <?php esc_html_e( 'Back to fields', 'adam-comunidade' ); ?></a>
+			<a class="adam-back-link" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields' ) ); ?>">&larr; <?php esc_html_e( 'Back to fields', 'adam-comunidade' ); ?></a>
 			<h1><?php echo $field_id ? esc_html__( 'Edit Field', 'adam-comunidade' ) : esc_html__( 'Add Field', 'adam-comunidade' ); ?></h1>
 		</div>
 		<?php if ( $adam_preview ) : ?>
@@ -133,7 +133,7 @@ if ( $field_id && $adam_slug ) {
 				</section>
 
 				<section class="adam-card adam-field-panel" id="adam-field-panel-facilities" hidden>
-					<div class="adam-card__header"><div><h2><?php esc_html_e( 'Facilities', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Reusable amenities can be renamed or extended from the amenities manager.', 'adam-comunidade' ); ?></p></div><a href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-field-amenities' ) ); ?>"><?php esc_html_e( 'Manage', 'adam-comunidade' ); ?></a></div>
+					<div class="adam-card__header"><div><h2><?php esc_html_e( 'Facilities', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Reusable amenities can be renamed or extended from the amenities manager.', 'adam-comunidade' ); ?></p></div><a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'field-amenities' ) ); ?>"><?php esc_html_e( 'Manage', 'adam-comunidade' ); ?></a></div>
 					<div class="adam-facility-switches"><?php foreach ( $amenity_options as $amenity ) : ?><label><span><?php echo esc_html( $amenity->label ); ?></span><span class="adam-switch"><input type="checkbox" name="field[amenities][]" value="<?php echo esc_attr( (string) $amenity->id ); ?>" <?php checked( in_array( (int) $amenity->id, $selected_amenities, true ) ); ?>><span></span></span></label><?php endforeach; ?></div>
 				</section>
 

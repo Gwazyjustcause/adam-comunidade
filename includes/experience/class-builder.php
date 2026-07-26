@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Helpers;
 
 /**
@@ -18,14 +19,10 @@ final class Builder {
 	private const OPTION = 'adam_comunidade_home_sections';
 
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 30, 2 );
+		Admin_Router::register_page( 'builder', array( 'title' => __( 'Homepage Builder', 'adam-comunidade' ), 'controller' => $this, 'method' => 'page' ) );
 		add_action( 'admin_post_adam_home_builder_save', array( $this, 'save' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_assets' ) );
 		add_action( 'adam_comunidade_register_shortcodes', array( $this, 'shortcode' ) );
-	}
-
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Homepage Builder', 'adam-comunidade' ), __( 'Homepage Builder', 'adam-comunidade' ), $capability, 'adam-comunidade-builder', array( $this, 'page' ) );
 	}
 
 	public function shortcode(): void {
@@ -33,13 +30,12 @@ final class Builder {
 	}
 
 	public function page(): void {
-		$this->authorize();
 		$sections = self::sections();
 		require Helpers::path( 'admin/views/experience/builder.php' );
 	}
 
 	public function save(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_home_builder_save' );
 		$input = isset( $_POST['sections'] ) && is_array( $_POST['sections'] ) ? wp_unslash( $_POST['sections'] ) : array();
 		$allowed = array_keys( self::definitions() );
@@ -55,7 +51,7 @@ final class Builder {
 		update_option( self::OPTION, array_values( $sections ), false );
 		do_action( 'adam_comunidade_home_builder_saved', $sections );
 		( new Cache() )->flush();
-		wp_safe_redirect( add_query_arg( array( 'page' => 'adam-comunidade-builder', 'updated' => 1 ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( Admin_Router::page_url( 'builder', array( 'updated' => 1 ) ) );
 		exit;
 	}
 
@@ -120,9 +116,4 @@ final class Builder {
 		return array( 'search' => __( 'Universal Search', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regions', 'adam-comunidade' ), 'statistics' => __( 'Community Statistics', 'adam-comunidade' ), 'teams' => __( 'Teams', 'adam-comunidade' ), 'fields' => __( 'Fields', 'adam-comunidade' ), 'partners' => __( 'Partner Spotlight', 'adam-comunidade' ), 'institutions' => __( 'Institutions', 'adam-comunidade' ), 'brands' => __( 'Featured Brand', 'adam-comunidade' ), 'news' => __( 'Latest News', 'adam-comunidade' ), 'events' => __( 'Upcoming Events', 'adam-comunidade' ), 'map' => __( 'Community Map', 'adam-comunidade' ) );
 	}
 
-	private function authorize(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot manage the homepage builder.', 'adam-comunidade' ) );
-		}
-	}
 }

@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Managed_Pages;
+
 /**
  * Records counters without storing visitor identities.
  */
@@ -23,7 +25,7 @@ final class Analytics {
 	public function assets(): void {
 		global $post;
 		$content = $post instanceof \WP_Post ? $post->post_content : '';
-		if ( ! get_query_var( 'adam_team_slug' ) && ! get_query_var( 'adam_field_slug' ) && ! get_query_var( 'adam_directory_type' ) && ! get_query_var( 'adam_community_hub' ) && ! get_query_var( 'adam_region' ) && ! str_contains( $content, '[adam_' ) ) {
+		if ( ! get_query_var( 'adam_team_slug' ) && ! get_query_var( 'adam_field_slug' ) && ! get_query_var( 'adam_directory_type' ) && ! Managed_Pages::is_current( 'community' ) && ! get_query_var( 'adam_region' ) && ! str_contains( $content, '[adam_' ) ) {
 			return;
 		}
 		wp_enqueue_script( 'adam-community-analytics', \ADAM\Comunidade\Helpers::url( 'assets/js/analytics.js' ), array(), ADAM_COMUNIDADE_VERSION, true );

@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Experience\Templates;
+use ADAM\Comunidade\Managed_Pages;
 
 /**
  * Owns clean URLs, previews, SEO, and AJAX discovery.
@@ -68,8 +69,11 @@ final class Router {
 	 * @return void
 	 */
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^campos/?$', 'index.php?adam_fields_archive=1', 'top' );
-		add_rewrite_rule( '^campos/([^/]+)/?$', 'index.php?adam_field_slug=$matches[1]', 'top' );
+		$path = Managed_Pages::path( 'fields' );
+		$page_id = Managed_Pages::id( 'fields' );
+		if ( $path && $page_id ) {
+			add_rewrite_rule( '^' . preg_quote( $path, '#' ) . '/([^/]+)/?$', 'index.php?page_id=' . $page_id . '&adam_field_slug=$matches[1]', 'top' );
+		}
 	}
 
 	/**
@@ -79,7 +83,6 @@ final class Router {
 	 * @return string[]
 	 */
 	public function query_vars( array $vars ): array {
-		$vars[] = 'adam_fields_archive';
 		$vars[] = 'adam_field_slug';
 
 		return $vars;
@@ -92,13 +95,11 @@ final class Router {
 	 * @return string
 	 */
 	public function template_include( string $template ): string {
-		if ( get_query_var( 'adam_fields_archive' ) ) {
-			return Templates::locate( 'fields/archive.php' );
-		}
-
 		$slug = sanitize_title( (string) get_query_var( 'adam_field_slug' ) );
 		if ( ! $slug ) {
-			return $template;
+			return Managed_Pages::is_current( 'fields' )
+				? Templates::locate( 'fields/archive.php' )
+				: $template;
 		}
 
 		$preview_id = filter_input( INPUT_GET, 'adam_field_preview', FILTER_VALIDATE_INT ) ?: 0;
@@ -149,7 +150,7 @@ final class Router {
 	 * @return string
 	 */
 	public static function field_url( object $field ): string {
-		return home_url( user_trailingslashit( 'campos/' . $field->slug ) );
+		return trailingslashit( Managed_Pages::url( 'fields' ) ) . user_trailingslashit( $field->slug );
 	}
 
 	/**
@@ -171,14 +172,12 @@ final class Router {
 		if ( self::$current_field ) {
 			return self::$current_field->meta_title ?: self::$current_field->name;
 		}
-		if ( get_query_var( 'adam_fields_archive' ) || self::$archive_location ) {
-			return self::$archive_location
-				? sprintf(
-					/* translators: %s: district. */
-					__( 'Fields in %s', 'adam-comunidade' ),
-					self::$archive_location
-				)
-				: __( 'Campos', 'adam-comunidade' );
+		if ( self::$archive_location ) {
+			return sprintf(
+				/* translators: %s: district. */
+				__( 'Fields in %s', 'adam-comunidade' ),
+				self::$archive_location
+			);
 		}
 
 		return $title;
@@ -208,7 +207,7 @@ final class Router {
 	 * @return void
 	 */
 	public function enqueue_assets(): void {
-		if ( ! get_query_var( 'adam_fields_archive' ) && ! get_query_var( 'adam_field_slug' ) ) {
+		if ( ! Managed_Pages::is_current( 'fields' ) && ! get_query_var( 'adam_field_slug' ) ) {
 			return;
 		}
 

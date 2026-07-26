@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Experience\Templates;
+use ADAM\Comunidade\Managed_Pages;
 
 /**
  * Owns clean team URLs and public data resolution.
@@ -61,8 +62,11 @@ final class Router {
 	 * @return void
 	 */
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^equipas/?$', 'index.php?adam_teams_archive=1', 'top' );
-		add_rewrite_rule( '^equipas/([^/]+)/?$', 'index.php?adam_team_slug=$matches[1]', 'top' );
+		$path = Managed_Pages::path( 'teams' );
+		$page_id = Managed_Pages::id( 'teams' );
+		if ( $path && $page_id ) {
+			add_rewrite_rule( '^' . preg_quote( $path, '#' ) . '/([^/]+)/?$', 'index.php?page_id=' . $page_id . '&adam_team_slug=$matches[1]', 'top' );
+		}
 	}
 
 	/**
@@ -72,7 +76,6 @@ final class Router {
 	 * @return string[]
 	 */
 	public function query_vars( array $vars ): array {
-		$vars[] = 'adam_teams_archive';
 		$vars[] = 'adam_team_slug';
 
 		return $vars;
@@ -85,14 +88,12 @@ final class Router {
 	 * @return string
 	 */
 	public function template_include( string $template ): string {
-		if ( get_query_var( 'adam_teams_archive' ) ) {
-			return Templates::locate( 'teams/archive.php' );
-		}
-
 		$slug = sanitize_title( (string) get_query_var( 'adam_team_slug' ) );
 
 		if ( ! $slug ) {
-			return $template;
+			return Managed_Pages::is_current( 'teams' )
+				? Templates::locate( 'teams/archive.php' )
+				: $template;
 		}
 
 		$preview_id = filter_input( INPUT_GET, 'adam_preview', FILTER_VALIDATE_INT ) ?: 0;
@@ -136,7 +137,7 @@ final class Router {
 	 * @return string
 	 */
 	public static function team_url( object $team ): string {
-		return home_url( user_trailingslashit( 'equipas/' . $team->slug ) );
+		return trailingslashit( Managed_Pages::url( 'teams' ) ) . user_trailingslashit( $team->slug );
 	}
 
 	/**
@@ -146,10 +147,6 @@ final class Router {
 	 * @return string
 	 */
 	public function document_title( string $title ): string {
-		if ( get_query_var( 'adam_teams_archive' ) ) {
-			return __( 'Equipas', 'adam-comunidade' );
-		}
-
 		if ( self::$current_team ) {
 			return self::$current_team->meta_title ?: self::$current_team->name;
 		}
@@ -180,7 +177,7 @@ final class Router {
 	 * @return void
 	 */
 	public function enqueue_assets(): void {
-		if ( ! get_query_var( 'adam_teams_archive' ) && ! get_query_var( 'adam_team_slug' ) ) {
+		if ( ! Managed_Pages::is_current( 'teams' ) && ! get_query_var( 'adam_team_slug' ) ) {
 			return;
 		}
 

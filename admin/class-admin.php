@@ -25,6 +25,24 @@ final class Admin {
 	 */
 	public function register(): void {
 		add_action( 'admin_notices', array( Helpers::class, 'render_admin_notices' ) );
+		Router::register_page(
+			'dashboard',
+			array(
+				'title'      => __( 'Dashboard', 'adam-comunidade' ),
+				'menu_title' => __( 'Dashboard', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'dashboard',
+			)
+		);
+		Router::register_page(
+			'settings',
+			array(
+				'title'      => __( 'Settings', 'adam-comunidade' ),
+				'menu_title' => __( 'Settings', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'settings',
+			)
+		);
 	}
 
 	/**
@@ -33,10 +51,6 @@ final class Admin {
 	 * @return void
 	 */
 	public function dashboard(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to access this page.', 'adam-comunidade' ) );
-		}
-
 		$team_repository = new Teams_Repository();
 		$team_counts     = $team_repository->status_counts();
 		$recent_teams    = $team_repository->query(
@@ -88,10 +102,6 @@ final class Admin {
 	 * @return void
 	 */
 	public function settings(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to access this page.', 'adam-comunidade' ) );
-		}
-
 		$view = Helpers::path( 'admin/views/settings.php' );
 
 		if ( is_readable( $view ) ) {

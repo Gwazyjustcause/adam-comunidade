@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Helpers;
 
 /**
@@ -21,7 +22,7 @@ final class Calendar {
 		add_filter( 'template_include', array( $this, 'template' ), 50 );
 		add_filter( 'pre_get_document_title', array( $this, 'title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ), 40 );
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 37, 2 );
+		Admin_Router::register_page( 'calendar', array( 'title' => __( 'Calendar', 'adam-comunidade' ), 'controller' => $this, 'method' => 'admin_page' ) );
 		add_action( 'admin_post_adam_calendar_save', array( $this, 'save' ) );
 	}
 
@@ -50,36 +51,15 @@ final class Calendar {
 		}
 	}
 
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Calendar', 'adam-comunidade' ), __( 'Calendar', 'adam-comunidade' ), $capability, 'adam-comunidade-calendar', array( $this, 'admin_page' ) );
-	}
-
 	public function admin_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot manage the calendar.', 'adam-comunidade' ) );
-		}
 		global $wpdb;
 		$entries = $wpdb->get_results( 'SELECT * FROM ' . Schema::calendar_table() . ' ORDER BY start_at DESC LIMIT 100' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		?>
-		<div class="wrap"><h1><?php esc_html_e( 'Community Calendar', 'adam-comunidade' ); ?></h1>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="adam-card">
-				<input type="hidden" name="action" value="adam_calendar_save"><?php wp_nonce_field( 'adam_calendar_save' ); ?>
-				<table class="form-table"><tr><th><label for="adam-calendar-title"><?php esc_html_e( 'Title', 'adam-comunidade' ); ?></label></th><td><input class="regular-text" id="adam-calendar-title" name="title" required></td></tr>
-				<tr><th><label for="adam-calendar-type"><?php esc_html_e( 'Type', 'adam-comunidade' ); ?></label></th><td><select id="adam-calendar-type" name="entry_type"><?php foreach ( self::types() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></td></tr>
-				<tr><th><label for="adam-calendar-start"><?php esc_html_e( 'Starts', 'adam-comunidade' ); ?></label></th><td><input id="adam-calendar-start" name="start_at" type="datetime-local" required></td></tr>
-				<tr><th><label for="adam-calendar-end"><?php esc_html_e( 'Ends', 'adam-comunidade' ); ?></label></th><td><input id="adam-calendar-end" name="end_at" type="datetime-local"></td></tr>
-				<tr><th><label for="adam-calendar-summary"><?php esc_html_e( 'Summary', 'adam-comunidade' ); ?></label></th><td><textarea class="large-text" id="adam-calendar-summary" name="summary"></textarea></td></tr></table>
-				<?php submit_button( __( 'Publish calendar entry', 'adam-comunidade' ) ); ?>
-			</form>
-			<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Title', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Type', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Starts', 'adam-comunidade' ); ?></th></tr></thead><tbody><?php foreach ( $entries as $entry ) : ?><tr><td><?php echo esc_html( $entry->title ); ?></td><td><?php echo esc_html( self::types()[ $entry->entry_type ] ?? $entry->entry_type ); ?></td><td><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $entry->start_at . ' UTC' ) ) ); ?></td></tr><?php endforeach; ?></tbody></table>
-		</div>
-		<?php
+		$types   = self::types();
+		require Helpers::path( 'admin/views/experience/calendar.php' );
 	}
 
 	public function save(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot manage the calendar.', 'adam-comunidade' ) );
-		}
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_calendar_save' );
 		$title = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
 		$type  = sanitize_key( wp_unslash( $_POST['entry_type'] ?? '' ) );
@@ -98,7 +78,7 @@ final class Calendar {
 		}
 		$wpdb->insert( Schema::calendar_table(), array( 'title' => $title, 'slug' => $slug, 'entry_type' => $type, 'summary' => sanitize_textarea_field( wp_unslash( $_POST['summary'] ?? '' ) ), 'start_at' => $start, 'end_at' => $end, 'status' => 'published', 'created_by' => get_current_user_id(), 'created_at' => $now, 'updated_at' => $now ) );
 		do_action( 'adam_comunidade_calendar_entry_published', (int) $wpdb->insert_id );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-calendar' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'calendar' ) );
 		exit;
 	}
 

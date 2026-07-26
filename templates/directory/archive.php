@@ -11,6 +11,7 @@ use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Router;
 use ADAM\Comunidade\Directory\Types;
 use ADAM\Comunidade\Directory\View;
+use ADAM\Comunidade\Managed_Pages;
 
 $type       = Router::current_type();
 $definition = Types::get( $type );
@@ -27,7 +28,7 @@ get_header();
 	<div class="adam-community-container">
 		<header class="adam-community-header">
 			<span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1><?php echo esc_html( $definition['plural'] ); ?></h1>
+			<h1><?php echo esc_html( get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ); ?></h1>
 			<p><?php esc_html_e( 'Discover the organisations that collaborate with and support the ADAM community.', 'adam-comunidade' ); ?></p>
 		</header>
 		<form class="adam-community-filters" data-directory-filters>

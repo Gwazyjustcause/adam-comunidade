@@ -16,6 +16,7 @@ defined( 'ABSPATH' ) || exit;
 $value = static fn( string $key, mixed $default = '' ): mixed => $entry->{$key} ?? $default;
 ?>
 <div class="wrap adam-comunidade-admin adam-directory-editor">
+	<p><a class="adam-back-link" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( (string) $definition['module_id'] ) ); ?>">&larr; <?php echo esc_html( sprintf( __( 'Back to %s', 'adam-comunidade' ), $definition['plural'] ) ); ?></a></p>
 	<h1><?php echo esc_html( $entry ? sprintf( __( 'Edit %s', 'adam-comunidade' ), $definition['singular'] ) : sprintf( __( 'Add %s', 'adam-comunidade' ), $definition['singular'] ) ); ?></h1>
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<input type="hidden" name="action" value="adam_directory_save">

@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 $adam_status       = sanitize_key( (string) filter_input( INPUT_GET, 'field_status' ) );
 $adam_district     = sanitize_text_field( (string) filter_input( INPUT_GET, 'district' ) );
 $adam_municipality = sanitize_text_field( (string) filter_input( INPUT_GET, 'municipality' ) );
-$adam_base_url     = admin_url( 'admin.php?page=adam-comunidade-fields' );
+$adam_base_url     = \ADAM\Comunidade\Admin\Router::module_url( 'fields' );
 ?>
 <div class="wrap adam-comunidade-admin adam-fields-admin">
 	<header class="adam-page-header">
@@ -19,10 +19,10 @@ $adam_base_url     = admin_url( 'admin.php?page=adam-comunidade-fields' );
 			<p><?php esc_html_e( 'Maintain the central directory of associated airsoft fields.', 'adam-comunidade' ); ?></p>
 		</div>
 		<div class="adam-header-actions">
-			<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-field-amenities' ) ); ?>">
+			<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'field-amenities' ) ); ?>">
 				<?php esc_html_e( 'Manage Amenities', 'adam-comunidade' ); ?>
 			</a>
-			<a class="button button-primary adam-button" href="<?php echo esc_url( admin_url( 'admin.php?page=adam-comunidade-field-edit' ) ); ?>">
+			<a class="button button-primary adam-button" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields', 'add' ) ); ?>">
 				<?php esc_html_e( 'Add Field', 'adam-comunidade' ); ?>
 			</a>
 		</div>

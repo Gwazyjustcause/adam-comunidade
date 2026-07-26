@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
+use ADAM\Comunidade\Helpers;
 /**
  * Uses WordPress responsive media APIs and modern output formats.
  */
@@ -19,39 +21,22 @@ final class Media {
 		add_filter( 'wp_get_attachment_image_attributes', array( $this, 'attributes' ), 10, 3 );
 		add_filter( 'wp_preload_resources', array( $this, 'preloads' ) );
 		add_shortcode( 'adam_rich_media', array( $this, 'shortcode' ) );
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 38, 2 );
+		Admin_Router::register_page( 'media', array( 'title' => __( 'Rich Media', 'adam-comunidade' ), 'controller' => $this, 'method' => 'admin_page' ) );
 		add_action( 'admin_post_adam_rich_media_save', array( $this, 'save' ) );
 		add_action( 'adam_comunidade_team_after_content', array( $this, 'for_team' ), 15 );
 		add_action( 'adam_comunidade_field_after_content', array( $this, 'for_field' ), 15 );
 		add_action( 'adam_comunidade_directory_entry_content', array( $this, 'for_directory' ), 15 );
 	}
 
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Rich Media', 'adam-comunidade' ), __( 'Rich Media', 'adam-comunidade' ), $capability, 'adam-comunidade-media', array( $this, 'admin_page' ) );
-	}
-
 	public function admin_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot manage rich media.', 'adam-comunidade' ) );
-		}
 		global $wpdb;
 		$items = $wpdb->get_results( 'SELECT * FROM ' . Schema::media_table() . ' ORDER BY object_type, object_id, sort_order LIMIT 200' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		?>
-		<div class="wrap"><h1><?php esc_html_e( 'Rich Media', 'adam-comunidade' ); ?></h1><p><?php esc_html_e( 'Attach 360 images, YouTube videos, Instagram posts, virtual tours or downloads to any community listing.', 'adam-comunidade' ); ?></p>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="adam-card"><input type="hidden" name="action" value="adam_rich_media_save"><?php wp_nonce_field( 'adam_rich_media_save' ); ?>
-		<table class="form-table"><tr><th><?php esc_html_e( 'Listing', 'adam-comunidade' ); ?></th><td><select name="object_type"><?php foreach ( array( 'team', 'field', 'partner', 'institution', 'brand' ) as $type ) : ?><option value="<?php echo esc_attr( $type ); ?>"><?php echo esc_html( ucfirst( $type ) ); ?></option><?php endforeach; ?></select> <input type="number" min="1" name="object_id" required placeholder="<?php esc_attr_e( 'Listing ID', 'adam-comunidade' ); ?>"></td></tr>
-		<tr><th><?php esc_html_e( 'Media type', 'adam-comunidade' ); ?></th><td><select name="media_type"><?php foreach ( self::types() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></td></tr>
-		<tr><th><?php esc_html_e( 'URL', 'adam-comunidade' ); ?></th><td><input class="large-text" type="url" name="media_url" required></td></tr>
-		<tr><th><?php esc_html_e( 'Caption', 'adam-comunidade' ); ?></th><td><input class="large-text" name="caption"></td></tr>
-		<tr><th><?php esc_html_e( 'Order', 'adam-comunidade' ); ?></th><td><input type="number" min="0" name="sort_order" value="0"></td></tr></table><?php submit_button( __( 'Add media', 'adam-comunidade' ) ); ?></form>
-		<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'Listing', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Type', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'URL', 'adam-comunidade' ); ?></th></tr></thead><tbody><?php foreach ( $items as $item ) : ?><tr><td><?php echo esc_html( $item->object_type . ' #' . $item->object_id ); ?></td><td><?php echo esc_html( self::types()[ $item->media_type ] ?? $item->media_type ); ?></td><td><a href="<?php echo esc_url( $item->media_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $item->caption ?: $item->media_url ); ?></a></td></tr><?php endforeach; ?></tbody></table></div>
-		<?php
+		$types = self::types();
+		require Helpers::path( 'admin/views/experience/media.php' );
 	}
 
 	public function save(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot manage rich media.', 'adam-comunidade' ) );
-		}
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_rich_media_save' );
 		$type = sanitize_key( wp_unslash( $_POST['media_type'] ?? '' ) );
 		$url  = esc_url_raw( wp_unslash( $_POST['media_url'] ?? '' ), array( 'http', 'https' ) );
@@ -60,7 +45,7 @@ final class Media {
 		}
 		global $wpdb;
 		$wpdb->insert( Schema::media_table(), array( 'object_type' => sanitize_key( wp_unslash( $_POST['object_type'] ?? '' ) ), 'object_id' => absint( $_POST['object_id'] ?? 0 ), 'media_type' => $type, 'media_url' => $url, 'caption' => sanitize_text_field( wp_unslash( $_POST['caption'] ?? '' ) ), 'sort_order' => absint( $_POST['sort_order'] ?? 0 ) ) );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-media' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'media' ) );
 		exit;
 	}
 

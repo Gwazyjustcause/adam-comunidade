@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
 use ADAM\Comunidade\Helpers;
@@ -24,7 +25,8 @@ final class Admin_Tools {
 	public function __construct( private Directory_Repository $directory ) {}
 
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 40, 2 );
+		Admin_Router::register_page( 'analytics', array( 'title' => __( 'Analytics', 'adam-comunidade' ), 'controller' => $this, 'method' => 'analytics_page' ) );
+		Admin_Router::register_page( 'tools', array( 'title' => __( 'Import & Export', 'adam-comunidade' ), 'controller' => $this, 'method' => 'tools_page' ) );
 		add_action( 'admin_post_adam_analytics_export', array( $this, 'analytics_export' ) );
 		add_action( 'admin_post_adam_community_export', array( $this, 'community_export' ) );
 		add_action( 'admin_post_adam_community_import', array( $this, 'community_import' ) );
@@ -37,13 +39,7 @@ final class Admin_Tools {
 		}
 	}
 
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Analytics', 'adam-comunidade' ), __( 'Analytics', 'adam-comunidade' ), $capability, 'adam-comunidade-analytics', array( $this, 'analytics_page' ) );
-		add_submenu_page( $parent, __( 'Import & Export', 'adam-comunidade' ), __( 'Import & Export', 'adam-comunidade' ), $capability, 'adam-comunidade-tools', array( $this, 'tools_page' ) );
-	}
-
 	public function analytics_page(): void {
-		$this->authorize();
 		$views    = Analytics::top( 'view', 10 );
 		$searches = Analytics::top( 'search', 10 );
 		$clicks   = Analytics::top( 'click', 10 );
@@ -53,12 +49,11 @@ final class Admin_Tools {
 	}
 
 	public function tools_page(): void {
-		$this->authorize();
 		require Helpers::path( 'admin/views/experience/tools.php' );
 	}
 
 	public function analytics_export(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_analytics_export' );
 		$this->csv_headers( 'adam-community-analytics.csv' );
 		$output = fopen( 'php://output', 'w' );
@@ -73,7 +68,7 @@ final class Admin_Tools {
 	}
 
 	public function community_export(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_community_export' );
 		$format = sanitize_key( $_GET['format'] ?? 'json' );
 		if ( 'csv' === $format ) {
@@ -140,7 +135,7 @@ final class Admin_Tools {
 	}
 
 	public function community_import(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_community_import' );
 		if ( empty( $_FILES['import_file']['tmp_name'] ) || ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
 			wp_die( esc_html__( 'Choose a valid import file.', 'adam-comunidade' ) );
@@ -149,7 +144,7 @@ final class Admin_Tools {
 		$count = str_ends_with( strtolower( $filename ), '.csv' ) ? $this->import_csv( $_FILES['import_file']['tmp_name'] ) : $this->import_json( $_FILES['import_file']['tmp_name'] );
 		do_action( 'adam_comunidade_import_completed', $count, $filename );
 		( new Cache() )->flush();
-		wp_safe_redirect( add_query_arg( array( 'page' => 'adam-comunidade-tools', 'imported' => $count ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( Admin_Router::page_url( 'tools', array( 'imported' => $count ) ) );
 		exit;
 	}
 
@@ -290,9 +285,4 @@ final class Admin_Tools {
 		return $items;
 	}
 
-	private function authorize(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot access these tools.', 'adam-comunidade' ) );
-		}
-	}
 }

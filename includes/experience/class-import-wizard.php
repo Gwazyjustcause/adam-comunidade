@@ -9,8 +9,10 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Validator;
+use ADAM\Comunidade\Helpers;
 
 /**
  * Imports directory records in bounded, reviewable batches.
@@ -19,36 +21,22 @@ final class Import_Wizard {
 	private const FIELDS = array( 'entity_type', 'name', 'slug', 'status', 'short_description', 'full_description', 'website', 'email', 'phone', 'address', 'district', 'category', 'country', 'featured' );
 
 	public function register(): void {
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'menu' ), 42, 2 );
+		Admin_Router::register_page( 'import-wizard', array( 'title' => __( 'Import Wizard', 'adam-comunidade' ), 'controller' => $this, 'method' => 'page' ) );
 		add_action( 'admin_post_adam_import_preview', array( $this, 'preview' ) );
 		add_action( 'admin_post_adam_import_commit', array( $this, 'commit' ) );
 		add_action( 'admin_post_adam_import_rollback', array( $this, 'rollback' ) );
 	}
 
-	public function menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Import Wizard', 'adam-comunidade' ), __( 'Import Wizard', 'adam-comunidade' ), $capability, 'adam-comunidade-import-wizard', array( $this, 'page' ) );
-	}
-
 	public function page(): void {
-		$this->authorize();
 		$key   = $this->key( 'preview' );
 		$batch = get_transient( $key );
-		?>
-		<div class="wrap"><h1><?php esc_html_e( 'Import Wizard', 'adam-comunidade' ); ?></h1>
-		<?php if ( ! $batch ) : ?>
-			<div class="adam-card"><h2><?php esc_html_e( '1. Upload', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'CSV, Excel (.xlsx), and JSON are supported. Nothing is changed until you confirm the preview.', 'adam-comunidade' ); ?></p><form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data"><input type="hidden" name="action" value="adam_import_preview"><?php wp_nonce_field( 'adam_import_preview' ); ?><input type="file" name="import_file" accept=".csv,.xlsx,.json" required> <?php submit_button( __( 'Preview import', 'adam-comunidade' ), 'primary', 'submit', false ); ?></form></div>
-		<?php else : ?>
-			<div class="adam-card"><h2><?php esc_html_e( '2. Map and review', 'adam-comunidade' ); ?></h2><form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post"><input type="hidden" name="action" value="adam_import_commit"><?php wp_nonce_field( 'adam_import_commit' ); ?>
-			<table class="widefat striped"><thead><tr><?php foreach ( $batch['headers'] as $header ) : ?><th><?php echo esc_html( $header ); ?><select name="mapping[<?php echo esc_attr( $header ); ?>]"><option value=""><?php esc_html_e( 'Ignore', 'adam-comunidade' ); ?></option><?php foreach ( self::FIELDS as $field ) : ?><option value="<?php echo esc_attr( $field ); ?>" <?php selected( sanitize_key( $header ), $field ); ?>><?php echo esc_html( $field ); ?></option><?php endforeach; ?></select></th><?php endforeach; ?></tr></thead><tbody><?php foreach ( array_slice( $batch['rows'], 0, 10 ) as $row ) : ?><tr><?php foreach ( $batch['headers'] as $header ) : ?><td><?php echo esc_html( $row[ $header ] ?? '' ); ?></td><?php endforeach; ?></tr><?php endforeach; ?></tbody></table>
-			<p><?php echo esc_html( sprintf( _n( '%d row ready for validation.', '%d rows ready for validation.', count( $batch['rows'] ), 'adam-comunidade' ), count( $batch['rows'] ) ) ); ?></p><?php submit_button( __( 'Validate and import', 'adam-comunidade' ) ); ?></form></div>
-		<?php endif; ?>
-		<?php $rollback = get_transient( $this->key( 'rollback' ) ); if ( $rollback ) : ?><div class="adam-card"><h2><?php esc_html_e( 'Rollback', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'The most recent batch can be reverted while this recovery window remains open.', 'adam-comunidade' ); ?></p><form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post"><input type="hidden" name="action" value="adam_import_rollback"><?php wp_nonce_field( 'adam_import_rollback' ); ?><?php submit_button( __( 'Rollback last import', 'adam-comunidade' ), 'secondary' ); ?></form></div><?php endif; ?>
-		</div>
-		<?php
+		$rollback = get_transient( $this->key( 'rollback' ) );
+		$fields   = self::FIELDS;
+		require Helpers::path( 'admin/views/experience/import-wizard.php' );
 	}
 
 	public function preview(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_import_preview' );
 		if ( empty( $_FILES['import_file']['tmp_name'] ) || ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
 			wp_die( esc_html__( 'Choose a valid import file.', 'adam-comunidade' ) );
@@ -65,12 +53,12 @@ final class Import_Wizard {
 		}
 		$headers = array_values( array_unique( array_merge( ...array_map( 'array_keys', $rows ) ) ) );
 		set_transient( $this->key( 'preview' ), array( 'headers' => $headers, 'rows' => array_slice( $rows, 0, 5000 ) ), 30 * MINUTE_IN_SECONDS );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-import-wizard' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'import-wizard' ) );
 		exit;
 	}
 
 	public function commit(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_import_commit' );
 		$batch   = get_transient( $this->key( 'preview' ) );
 		$mapping = array_map( 'sanitize_key', (array) wp_unslash( $_POST['mapping'] ?? array() ) );
@@ -108,12 +96,12 @@ final class Import_Wizard {
 		set_transient( $this->key( 'rollback' ), $undo, HOUR_IN_SECONDS );
 		delete_transient( $this->key( 'preview' ) );
 		do_action( 'adam_comunidade_import_batch_completed', $undo );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-import-wizard&imported=1' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'import-wizard', array( 'imported' => 1 ) ) );
 		exit;
 	}
 
 	public function rollback(): void {
-		$this->authorize();
+		Admin_Router::authorize();
 		check_admin_referer( 'adam_import_rollback' );
 		$undo = get_transient( $this->key( 'rollback' ) );
 		if ( ! $undo ) {
@@ -132,7 +120,7 @@ final class Import_Wizard {
 		}
 		delete_transient( $this->key( 'rollback' ) );
 		do_action( 'adam_comunidade_import_batch_rolled_back' );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-import-wizard&rolled_back=1' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'import-wizard', array( 'rolled_back' => 1 ) ) );
 		exit;
 	}
 
@@ -202,9 +190,4 @@ final class Import_Wizard {
 		return 'adam_import_' . $kind . '_' . get_current_user_id();
 	}
 
-	private function authorize(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot import community data.', 'adam-comunidade' ) );
-		}
-	}
 }

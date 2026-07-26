@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Managed_Pages;
+
 /**
  * Advertises stable integration points without hard dependencies.
  */
@@ -31,7 +33,7 @@ final class Integrations {
 	}
 
 	public function body_classes( array $classes ): array {
-		if ( get_query_var( 'adam_community_hub' ) || get_query_var( 'adam_submission' ) || get_query_var( 'adam_owner_dashboard' ) || get_query_var( 'adam_calendar' ) ) {
+		if ( Managed_Pages::is_current( 'community' ) || get_query_var( 'adam_submission' ) || get_query_var( 'adam_owner_dashboard' ) || get_query_var( 'adam_calendar' ) ) {
 			$classes[] = 'adam-comunidade-view';
 			$classes[] = 'adam-comunidade-theme-' . sanitize_html_class( wp_get_theme()->get_stylesheet() );
 		}

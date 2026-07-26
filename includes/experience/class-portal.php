@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
@@ -40,7 +41,7 @@ final class Portal {
 		add_action( 'admin_post_adam_owner_edit', array( $this, 'owner_edit' ) );
 		add_action( 'admin_post_adam_moderate_submission', array( $this, 'moderate' ) );
 		add_action( 'admin_post_adam_notification_read', array( $this, 'read_notification' ) );
-		add_action( 'adam_comunidade_admin_menu', array( $this, 'admin_menu' ), 35, 2 );
+		Admin_Router::register_page( 'moderation', array( 'title' => __( 'Moderation', 'adam-comunidade' ), 'controller' => $this, 'method' => 'moderation_page' ) );
 		add_action( 'adam_comunidade_team_after_content', array( $this, 'claim_team' ) );
 		add_action( 'adam_comunidade_field_after_content', array( $this, 'claim_field' ) );
 	}
@@ -77,10 +78,6 @@ final class Portal {
 		wp_enqueue_style( 'adam-comunidade' );
 		wp_enqueue_style( 'adam-experience', Helpers::url( 'assets/css/experience.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-experience' ), ADAM_COMUNIDADE_VERSION );
-	}
-
-	public function admin_menu( string $parent, string $capability ): void {
-		add_submenu_page( $parent, __( 'Moderation', 'adam-comunidade' ), __( 'Moderation', 'adam-comunidade' ), $capability, 'adam-comunidade-moderation', array( $this, 'moderation_page' ) );
 	}
 
 	/**
@@ -228,9 +225,6 @@ final class Portal {
 	}
 
 	public function moderation_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot moderate submissions.', 'adam-comunidade' ) );
-		}
 		global $wpdb;
 		$rows = $wpdb->get_results( 'SELECT * FROM ' . Schema::submissions_table() . " WHERE status IN ('pending','changes_requested') ORDER BY created_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		?>
@@ -248,9 +242,7 @@ final class Portal {
 	}
 
 	public function moderate(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You cannot moderate submissions.', 'adam-comunidade' ) );
-		}
+		Admin_Router::authorize();
 		global $wpdb;
 		$id = absint( $_POST['submission_id'] ?? 0 );
 		check_admin_referer( 'adam_moderate_' . $id, 'adam_nonce' );
@@ -274,7 +266,7 @@ final class Portal {
 		$wpdb->update( Schema::submissions_table(), array( 'status' => $status, 'object_id' => $object_id, 'admin_note' => sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ), 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
 		$this->notify( (int) $row->user_id, __( 'Submission reviewed', 'adam-comunidade' ), sprintf( __( 'Your %1$s submission is now %2$s.', 'adam-comunidade' ), $row->object_type, $status ) );
 		do_action( 'adam_comunidade_submission_moderated', $id, $status, $object_id );
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-moderation' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'moderation' ) );
 		exit;
 	}
 

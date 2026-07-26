@@ -9,6 +9,8 @@ namespace ADAM\Comunidade;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
+
 /**
  * Registers and validates plugin settings.
  */
@@ -147,13 +149,20 @@ final class Settings {
 	public function sanitize( mixed $input ): array {
 		$input    = is_array( $input ) ? $input : array();
 		$defaults = self::defaults();
+		$current  = wp_parse_args( get_option( self::OPTION_NAME, array() ), $defaults );
 
 		return array(
-			'debug_mode'      => empty( $input['debug_mode'] ) ? 0 : 1,
-			'enable_logs'     => empty( $input['enable_logs'] ) ? 0 : 1,
-			'primary_colour'   => sanitize_hex_color( $input['primary_colour'] ?? '' ) ?: $defaults['primary_colour'],
-			'secondary_colour' => sanitize_hex_color( $input['secondary_colour'] ?? '' ) ?: $defaults['secondary_colour'],
-			'accent_colour'    => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
+			'debug_mode'           => empty( $input['debug_mode'] ) ? 0 : 1,
+			'enable_logs'          => empty( $input['enable_logs'] ) ? 0 : 1,
+			'primary_colour'       => sanitize_hex_color( $input['primary_colour'] ?? '' ) ?: $defaults['primary_colour'],
+			'secondary_colour'     => sanitize_hex_color( $input['secondary_colour'] ?? '' ) ?: $defaults['secondary_colour'],
+			'accent_colour'        => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
+			'community_page_id'    => absint( $current['community_page_id'] ),
+			'teams_page_id'        => absint( $current['teams_page_id'] ),
+			'fields_page_id'       => absint( $current['fields_page_id'] ),
+			'partners_page_id'     => absint( $current['partners_page_id'] ),
+			'institutions_page_id' => absint( $current['institutions_page_id'] ),
+			'brands_page_id'       => absint( $current['brands_page_id'] ),
 		);
 	}
 
@@ -220,9 +229,7 @@ final class Settings {
 	 * @return void
 	 */
 	public function reset_cache(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to perform this action.', 'adam-comunidade' ) );
-		}
+		Admin_Router::authorize();
 
 		check_admin_referer( 'adam_comunidade_reset_cache' );
 
@@ -232,7 +239,7 @@ final class Settings {
 			'success'
 		);
 
-		wp_safe_redirect( admin_url( 'admin.php?page=adam-comunidade-settings' ) );
+		wp_safe_redirect( Admin_Router::page_url( 'settings' ) );
 		exit;
 	}
 
@@ -271,11 +278,17 @@ final class Settings {
 	 */
 	public static function defaults(): array {
 		return array(
-			'debug_mode'       => 0,
-			'enable_logs'      => 0,
-			'primary_colour'   => '#1d4ed8',
-			'secondary_colour' => '#0f172a',
-			'accent_colour'    => '#f59e0b',
+			'debug_mode'           => 0,
+			'enable_logs'          => 0,
+			'primary_colour'       => '#1d4ed8',
+			'secondary_colour'     => '#0f172a',
+			'accent_colour'        => '#f59e0b',
+			'community_page_id'    => 0,
+			'teams_page_id'        => 0,
+			'fields_page_id'       => 0,
+			'partners_page_id'     => 0,
+			'institutions_page_id' => 0,
+			'brands_page_id'       => 0,
 		);
 	}
 }

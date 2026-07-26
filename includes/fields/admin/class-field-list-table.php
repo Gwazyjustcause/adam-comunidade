@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Fields\Admin;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
 
@@ -156,7 +157,7 @@ final class Field_List_Table extends \WP_List_Table {
 	 * @return string
 	 */
 	protected function column_name( $item ): string {
-		$edit_url = admin_url( 'admin.php?page=adam-comunidade-field-edit&field_id=' . absint( $item->id ) );
+		$edit_url = Admin_Router::module_url( 'fields', 'edit', array( 'id' => absint( $item->id ) ) );
 		$actions  = array(
 			'edit'      => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'adam-comunidade' ) . '</a>',
 			'duplicate' => $this->action_link( $item, 'duplicate', __( 'Duplicate', 'adam-comunidade' ) ),
