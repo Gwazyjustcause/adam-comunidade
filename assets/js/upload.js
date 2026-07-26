@@ -168,6 +168,18 @@
 				caption.placeholder = 'Legenda';
 				meta.appendChild( caption );
 			}
+			const togglePattern = upload.dataset.togglePattern;
+			if ( 'library' === mode && multiple && togglePattern ) {
+				const toggle = document.createElement( 'label' );
+				toggle.className = 'adam-upload__toggle';
+				const checkbox = document.createElement( 'input' );
+				checkbox.type = 'checkbox';
+				checkbox.name = togglePattern.replace( '__ID__', item.id );
+				checkbox.value = '1';
+				checkbox.checked = true;
+				toggle.append( checkbox, document.createTextNode( ` ${ upload.dataset.toggleLabel || '' }` ) );
+				meta.appendChild( toggle );
+			}
 			card.appendChild( meta );
 
 			const remove = document.createElement( 'button' );

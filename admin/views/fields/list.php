@@ -19,6 +19,9 @@ $adam_base_url     = \ADAM\Comunidade\Admin\Router::module_url( 'fields' );
 			<p><?php esc_html_e( 'Mantenha o diretório de campos de airsoft legalmente autorizados. A associação é gerida como uma distinção em cada campo.', 'adam-comunidade' ); ?></p>
 		</div>
 		<div class="adam-header-actions">
+			<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'field-hero' ) ); ?>">
+				<?php esc_html_e( 'Gerir hero', 'adam-comunidade' ); ?>
+			</a>
 			<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'field-amenities' ) ); ?>">
 				<?php esc_html_e( 'Gerir comodidades', 'adam-comunidade' ); ?>
 			</a>

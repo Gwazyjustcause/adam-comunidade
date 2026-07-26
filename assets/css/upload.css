@@ -166,6 +166,20 @@
 	width: 100%;
 }
 
+.adam-upload__meta .adam-upload__toggle {
+	align-items: center;
+	display: flex;
+	font-size: 13px;
+	font-weight: 650;
+	gap: 6px;
+	margin-top: 5px;
+}
+
+.adam-upload__meta .adam-upload__toggle input {
+	margin: 0;
+	width: auto;
+}
+
 .adam-upload__remove {
 	align-items: center;
 	background: #fff;

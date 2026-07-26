@@ -8,6 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Fields\Amenity_Repository;
+use ADAM\Comunidade\Fields\Hero_Carousel;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
 use ADAM\Comunidade\Fields\Router;
@@ -55,22 +56,38 @@ $submission_url        = Portal::submission_url( 'field' );
 $directory_title       = get_the_title( Managed_Pages::id( 'fields' ) ) ?: __( 'Campos', 'adam-comunidade' );
 $associated_fields     = array_values( array_filter( $result['items'], static fn( object $field ): bool => ! empty( $field->is_associated ) ) );
 $independent_fields    = array_values( array_filter( $result['items'], static fn( object $field ): bool => empty( $field->is_associated ) ) );
-$hero_field            = $associated_fields[0] ?? $result['items'][0] ?? null;
-$hero_image_url        = $hero_field && ! empty( $hero_field->cover_id )
-	? wp_get_attachment_image_url( (int) $hero_field->cover_id, 'adam-field-cover' )
-	: false;
-$hero_style            = $hero_image_url ? "--adam-fields-hero-image:url('" . esc_url_raw( $hero_image_url ) . "')" : '';
+$hero_slides           = Hero_Carousel::slides( $repository );
+$hero_settings         = Hero_Carousel::settings();
+if ( ! $hero_slides ) {
+	$hero_field = $associated_fields[0] ?? $result['items'][0] ?? null;
+	if ( $hero_field && ! empty( $hero_field->cover_id ) ) {
+		$hero_image_url = wp_get_attachment_image_url( (int) $hero_field->cover_id, 'adam-field-cover' );
+		if ( $hero_image_url ) {
+			$hero_slides[] = array(
+				'id'  => (int) $hero_field->cover_id,
+				'url' => $hero_image_url,
+				'alt' => sprintf( __( 'Campo de airsoft %s', 'adam-comunidade' ), $hero_field->name ),
+			);
+		}
+	}
+}
 
 get_header();
 ?>
 <main class="adam-comunidade adam-fields-archive" id="main">
-	<section class="adam-fields-directory-hero"<?php echo $hero_style ? ' style="' . esc_attr( $hero_style ) . '"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+	<section class="adam-fields-directory-hero" data-adam-fields-carousel data-autoplay="<?php echo ! empty( $hero_settings['autoplay'] ) ? 'true' : 'false'; ?>" data-interval="<?php echo esc_attr( (string) absint( $hero_settings['interval'] ) ); ?>" aria-roledescription="<?php esc_attr_e( 'carousel', 'adam-comunidade' ); ?>" aria-label="<?php esc_attr_e( 'Campos de airsoft do Centro de Portugal', 'adam-comunidade' ); ?>">
+		<div class="adam-fields-hero-slides" aria-live="off">
+			<?php foreach ( $hero_slides as $hero_index => $hero_slide ) : ?>
+				<div class="adam-fields-hero-slide<?php echo 0 === $hero_index ? ' is-active' : ''; ?>" data-adam-fields-slide aria-hidden="<?php echo 0 === $hero_index ? 'false' : 'true'; ?>">
+					<img src="<?php echo esc_url( (string) $hero_slide['url'] ); ?>" alt="<?php echo esc_attr( (string) $hero_slide['alt'] ); ?>" <?php echo 0 === $hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
+				</div>
+			<?php endforeach; ?>
+		</div>
 		<div class="adam-fields-container">
 			<div class="adam-fields-hero-copy">
 				<span><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
 				<h1><?php echo $route_district ? esc_html( sprintf( __( 'Campos em %s', 'adam-comunidade' ), $route_district ) ) : esc_html( $directory_title ); ?></h1>
 				<p><?php esc_html_e( 'Descobre campos de airsoft legalmente autorizados no Centro de Portugal, consulta instalações, regras e localização.', 'adam-comunidade' ); ?></p>
-				<a class="adam-field-button adam-field-submit-button" href="<?php echo esc_url( $submission_url ); ?>"><?php esc_html_e( 'Adicionar Campo', 'adam-comunidade' ); ?></a>
 			</div>
 			<div class="adam-fields-stats" aria-label="<?php esc_attr_e( 'Directory statistics', 'adam-comunidade' ); ?>">
 				<div><span><?php esc_html_e( 'Associados ADAM', 'adam-comunidade' ); ?></span><strong><?php echo esc_html( (string) $statistics['associated'] ); ?></strong><small><?php esc_html_e( 'Com prioridade na listagem', 'adam-comunidade' ); ?></small></div>
@@ -78,6 +95,17 @@ get_header();
 				<div><span><?php esc_html_e( 'Autorização legal', 'adam-comunidade' ); ?></span><strong>100%</strong><small><?php esc_html_e( 'Apenas campos verificados', 'adam-comunidade' ); ?></small></div>
 			</div>
 		</div>
+		<?php if ( count( $hero_slides ) > 1 ) : ?>
+			<div class="adam-fields-hero-controls">
+				<button type="button" data-adam-fields-prev aria-label="<?php esc_attr_e( 'Imagem anterior', 'adam-comunidade' ); ?>">&#8592;</button>
+				<div class="adam-fields-hero-pagination" aria-label="<?php esc_attr_e( 'Escolher imagem', 'adam-comunidade' ); ?>">
+					<?php foreach ( $hero_slides as $hero_index => $hero_slide ) : ?>
+						<button type="button" data-adam-fields-indicator="<?php echo esc_attr( (string) $hero_index ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Mostrar imagem %d', 'adam-comunidade' ), $hero_index + 1 ) ); ?>" aria-current="<?php echo 0 === $hero_index ? 'true' : 'false'; ?>"></button>
+					<?php endforeach; ?>
+				</div>
+				<button type="button" data-adam-fields-next aria-label="<?php esc_attr_e( 'Imagem seguinte', 'adam-comunidade' ); ?>">&#8594;</button>
+			</div>
+		<?php endif; ?>
 	</section>
 
 	<div class="adam-fields-container adam-fields-directory-body">

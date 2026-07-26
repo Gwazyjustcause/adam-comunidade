@@ -11,12 +11,14 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Fields\Amenity_Repository;
+use ADAM\Comunidade\Fields\Hero_Carousel;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
 use ADAM\Comunidade\Fields\Validator;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 /**
  * Coordinates Campos administration.
@@ -73,9 +75,19 @@ final class Controller {
 				'visible'    => false,
 			)
 		);
+		Admin_Router::register_page(
+			'field-hero',
+			array(
+				'title'      => __( 'Hero dos campos', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'render_hero',
+				'visible'    => false,
+			)
+		);
 		add_action( 'admin_post_adam_field_save', array( $this, 'save' ) );
 		add_action( 'admin_post_adam_field_action', array( $this, 'single_action' ) );
 		add_action( 'admin_post_adam_amenities_save', array( $this, 'save_amenities' ) );
+		add_action( 'admin_post_adam_fields_hero_save', array( $this, 'save_hero' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( $this, 'save_screen_option' ), 10, 3 );
 	}
@@ -248,6 +260,24 @@ final class Controller {
 	}
 
 	/**
+	 * Renders the directory hero manager.
+	 */
+	public function render_hero(): void {
+		$hero_settings = Hero_Carousel::settings();
+		$hero_images   = array();
+		foreach ( (array) $hero_settings['images'] as $image ) {
+			$image      = (array) $image;
+			$attachment = Upload_Component::attachment( absint( $image['id'] ?? 0 ) );
+			if ( ! empty( $attachment['id'] ) ) {
+				$attachment['enabled'] = ! empty( $image['enabled'] );
+				$hero_images[]         = $attachment;
+			}
+		}
+
+		require Helpers::path( 'admin/views/fields/hero.php' );
+	}
+
+	/**
 	 * Saves a field and its related collections.
 	 *
 	 * @return void
@@ -353,6 +383,22 @@ final class Controller {
 		Logger::info( 'Field amenities changed', array( 'user_id' => get_current_user_id() ) );
 		Helpers::add_admin_notice( __( 'As comodidades foram guardadas.', 'adam-comunidade' ), 'success' );
 		wp_safe_redirect( Admin_Router::page_url( 'field-amenities' ) );
+		exit;
+	}
+
+	/**
+	 * Saves the directory hero source and curated images.
+	 */
+	public function save_hero(): void {
+		Admin_Router::authorize();
+		check_admin_referer( 'adam_fields_hero_save' );
+		$input = isset( $_POST['hero'] ) && is_array( $_POST['hero'] )
+			? wp_unslash( $_POST['hero'] )
+			: array();
+		Hero_Carousel::save( $input );
+		Logger::info( 'Fields hero carousel changed', array( 'user_id' => get_current_user_id() ) );
+		Helpers::add_admin_notice( __( 'O hero dos campos foi guardado.', 'adam-comunidade' ), 'success' );
+		wp_safe_redirect( Admin_Router::page_url( 'field-hero' ) );
 		exit;
 	}
 

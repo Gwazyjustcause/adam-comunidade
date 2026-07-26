@@ -25,15 +25,47 @@
 }
 
 .adam-fields-directory-hero {
-	background-image:
-		linear-gradient(90deg, rgba(8, 17, 8, .97), rgba(8, 17, 8, .76) 55%, rgba(8, 17, 8, .84)),
-		var(--adam-fields-hero-image, none),
-		radial-gradient(circle at 80% 35%, #344726, #101b10 58%, #071008);
-	background-position: center;
-	background-size: cover;
+	background: radial-gradient(circle at 80% 35%, #344726, #101b10 58%, #071008);
 	color: #fff;
 	min-height: 350px;
+	overflow: hidden;
 	padding: 58px 0 96px;
+	position: relative;
+}
+
+.adam-fields-directory-hero::after {
+	background: linear-gradient(90deg, rgba(8, 17, 8, .96), rgba(8, 17, 8, .67) 55%, rgba(8, 17, 8, .8));
+	content: "";
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+	z-index: 1;
+}
+
+.adam-fields-hero-slides,
+.adam-fields-hero-slide {
+	inset: 0;
+	position: absolute;
+}
+
+.adam-fields-hero-slide {
+	opacity: 0;
+	transition: opacity .85s ease-in-out;
+}
+
+.adam-fields-hero-slide.is-active {
+	opacity: 1;
+}
+
+.adam-fields-hero-slide img {
+	height: 100%;
+	object-fit: cover;
+	width: 100%;
+}
+
+.adam-fields-directory-hero > .adam-fields-container {
+	position: relative;
+	z-index: 2;
 }
 
 .adam-fields-hero-copy {
@@ -50,10 +82,12 @@
 }
 
 .adam-fields-hero-copy h1 {
+	color: #c9f6a1;
 	font-size: clamp(2.25rem, 5vw, 4rem);
 	letter-spacing: -0.04em;
 	line-height: 1.05;
 	margin: 8px 0 14px;
+	text-shadow: 0 2px 18px rgba(0, 0, 0, .55);
 }
 
 .adam-fields-hero-copy p {
@@ -63,9 +97,54 @@
 	max-width: 620px;
 }
 
-.adam-field-submit-button {
-	background: transparent;
-	border-color: #9ab71a;
+.adam-fields-hero-controls {
+	align-items: center;
+	bottom: 62px;
+	display: flex;
+	gap: 12px;
+	position: absolute;
+	right: max(24px, calc((100vw - 1200px) / 2 + 24px));
+	z-index: 3;
+}
+
+.adam-fields-hero-controls > button {
+	align-items: center;
+	background: rgba(8, 17, 8, .66);
+	border: 1px solid rgba(255, 255, 255, .55);
+	border-radius: 50%;
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	font-size: 1.15rem;
+	height: 40px;
+	justify-content: center;
+	width: 40px;
+}
+
+.adam-fields-hero-controls > button:hover,
+.adam-fields-hero-controls > button:focus-visible {
+	background: #78920e;
+}
+
+.adam-fields-hero-pagination {
+	display: flex;
+	gap: 7px;
+}
+
+.adam-fields-hero-pagination button {
+	background: rgba(255, 255, 255, .55);
+	border: 0;
+	border-radius: 999px;
+	cursor: pointer;
+	height: 8px;
+	padding: 0;
+	transition: background .2s ease, width .2s ease;
+	width: 8px;
+}
+
+.adam-fields-hero-pagination button[aria-current="true"] {
+	background: #c9f6a1;
+	width: 24px;
 }
 
 .adam-fields-stats {
@@ -743,7 +822,13 @@
 	}
 
 	.adam-fields-directory-hero {
-		padding: 44px 0 78px;
+		padding: 44px 0 104px;
+	}
+
+	.adam-fields-hero-controls {
+		bottom: 58px;
+		left: 24px;
+		right: auto;
 	}
 
 	.adam-fields-stats {
@@ -862,7 +947,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.adam-field-grid {
+	.adam-field-grid,
+	.adam-fields-hero-slide,
+	.adam-fields-hero-pagination button {
 		transition: none;
 	}
 }

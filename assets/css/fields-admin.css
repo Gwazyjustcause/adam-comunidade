@@ -8,6 +8,34 @@
 	gap: 9px;
 }
 
+.adam-fields-hero-settings {
+	margin-bottom: 20px;
+}
+
+.adam-fields-hero-settings > select,
+.adam-fields-hero-settings > label > select {
+	min-width: min(100%, 420px);
+}
+
+.adam-fields-hero-settings .adam-form-grid {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin-top: 20px;
+}
+
+.adam-fields-hero-settings .adam-form-grid label {
+	display: grid;
+	font-weight: 650;
+	gap: 7px;
+}
+
+@media (max-width: 782px) {
+	.adam-fields-hero-settings .adam-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 .adam-field-table-cover,
 .adam-field-cover-placeholder {
 	background: #e2e8f0;

@@ -35,7 +35,6 @@ $assert( str_contains( $editor, 'field[authorization_document_id]' ), 'Admin edi
 foreach (
 	array(
 		'Campos',
-		'Adicionar Campo',
 		'Todos os campos',
 		'Apenas Associados ADAM',
 		'Submeter Campo',

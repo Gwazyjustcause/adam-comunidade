@@ -83,6 +83,8 @@ final class Component {
 				'items'           => array(),
 				'error'           => '',
 				'caption_pattern' => '',
+				'toggle_pattern'  => '',
+				'toggle_label'    => '',
 			)
 		);
 		$id       = sanitize_html_class( (string) $config['id'] );
@@ -104,6 +106,8 @@ final class Component {
 			data-accept="<?php echo esc_attr( (string) $config['accept'] ); ?>"
 			data-max-size="<?php echo esc_attr( (string) max( 1, absint( $config['max_size_mb'] ) ) ); ?>"
 			data-caption-pattern="<?php echo esc_attr( (string) $config['caption_pattern'] ); ?>"
+			data-toggle-pattern="<?php echo esc_attr( (string) $config['toggle_pattern'] ); ?>"
+			data-toggle-label="<?php echo esc_attr( (string) $config['toggle_label'] ); ?>"
 		>
 			<?php if ( 'file' === $mode ) : ?>
 				<input class="adam-upload__input" data-adam-upload-input type="file" name="<?php echo esc_attr( (string) $config['name'] ); ?>" aria-label="<?php echo esc_attr( (string) $config['label'] ); ?>" accept="<?php echo esc_attr( (string) $config['accept'] ); ?>" <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $config['required'] ? 'required' : ''; ?> <?php echo $config['error'] ? 'aria-invalid="true"' : ''; ?>>
@@ -182,6 +186,12 @@ final class Component {
 				<small><span aria-hidden="true">✓</span> <?php echo esc_html( self::file_type_label( $mime, $filename ) ); ?><?php echo ! empty( $item['size'] ) ? ' · ' . esc_html( (string) $item['size'] ) : ''; ?></small>
 				<?php if ( $multiple && ! empty( $config['caption_pattern'] ) ) : ?>
 					<input type="text" name="<?php echo esc_attr( str_replace( '__ID__', (string) $id, (string) $config['caption_pattern'] ) ); ?>" value="<?php echo esc_attr( (string) ( $item['caption'] ?? '' ) ); ?>" placeholder="<?php esc_attr_e( 'Legenda', 'adam-comunidade' ); ?>">
+				<?php endif; ?>
+				<?php if ( $multiple && ! empty( $config['toggle_pattern'] ) ) : ?>
+					<label class="adam-upload__toggle">
+						<input type="checkbox" name="<?php echo esc_attr( str_replace( '__ID__', (string) $id, (string) $config['toggle_pattern'] ) ); ?>" value="1" <?php checked( ! isset( $item['enabled'] ) || ! empty( $item['enabled'] ) ); ?>>
+						<?php echo esc_html( (string) $config['toggle_label'] ); ?>
+					</label>
 				<?php endif; ?>
 			</div>
 			<button class="adam-upload__remove" type="button" data-adam-upload-remove aria-label="<?php echo esc_attr( sprintf( __( 'Remover %s', 'adam-comunidade' ), $filename ) ); ?>">&times;</button>

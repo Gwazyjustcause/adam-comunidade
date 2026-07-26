@@ -8,6 +8,79 @@
 	let requestController;
 	let debounceTimer;
 
+	document.querySelectorAll( '[data-adam-fields-carousel]' ).forEach( ( carousel ) => {
+		const slides = Array.from( carousel.querySelectorAll( '[data-adam-fields-slide]' ) );
+		const indicators = Array.from( carousel.querySelectorAll( '[data-adam-fields-indicator]' ) );
+		if ( slides.length < 2 ) {
+			return;
+		}
+		const reducedMotion = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+		const autoplay = 'true' === carousel.dataset.autoplay && ! reducedMotion;
+		const interval = Math.max( 3000, Number.parseInt( carousel.dataset.interval || '6000', 10 ) );
+		let current = 0;
+		let timer;
+		let touchStartX = null;
+
+		function show( index ) {
+			current = ( index + slides.length ) % slides.length;
+			slides.forEach( ( slide, slideIndex ) => {
+				const active = slideIndex === current;
+				slide.classList.toggle( 'is-active', active );
+				slide.setAttribute( 'aria-hidden', active ? 'false' : 'true' );
+			} );
+			indicators.forEach( ( indicator, indicatorIndex ) => {
+				indicator.setAttribute( 'aria-current', indicatorIndex === current ? 'true' : 'false' );
+			} );
+		}
+
+		function stop() {
+			window.clearInterval( timer );
+			timer = undefined;
+		}
+
+		function start() {
+			stop();
+			if ( autoplay && ! document.hidden ) {
+				timer = window.setInterval( () => show( current + 1 ), interval );
+			}
+		}
+
+		carousel.querySelector( '[data-adam-fields-prev]' )?.addEventListener( 'click', () => {
+			show( current - 1 );
+			start();
+		} );
+		carousel.querySelector( '[data-adam-fields-next]' )?.addEventListener( 'click', () => {
+			show( current + 1 );
+			start();
+		} );
+		indicators.forEach( ( indicator ) => indicator.addEventListener( 'click', () => {
+			show( Number.parseInt( indicator.dataset.adamFieldsIndicator, 10 ) );
+			start();
+		} ) );
+		carousel.addEventListener( 'mouseenter', stop );
+		carousel.addEventListener( 'mouseleave', start );
+		carousel.addEventListener( 'focusin', stop );
+		carousel.addEventListener( 'focusout', ( event ) => {
+			if ( ! carousel.contains( event.relatedTarget ) ) {
+				start();
+			}
+		} );
+		carousel.addEventListener( 'touchstart', ( event ) => {
+			touchStartX = event.changedTouches[ 0 ]?.clientX ?? null;
+			stop();
+		}, { passive: true } );
+		carousel.addEventListener( 'touchend', ( event ) => {
+			const touchEndX = event.changedTouches[ 0 ]?.clientX ?? touchStartX;
+			if ( null !== touchStartX && Math.abs( touchEndX - touchStartX ) > 45 ) {
+				show( current + ( touchEndX < touchStartX ? 1 : -1 ) );
+			}
+			touchStartX = null;
+			start();
+		}, { passive: true } );
+		document.addEventListener( 'visibilitychange', () => document.hidden ? stop() : start() );
+		start();
+	} );
+
 	async function filterFields( page = 1 ) {
 		if ( ! form || ! results || ! window.adamFields ) {
 			return;
