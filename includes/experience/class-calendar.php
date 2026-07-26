@@ -22,7 +22,7 @@ final class Calendar {
 		add_filter( 'template_include', array( $this, 'template' ), 50 );
 		add_filter( 'pre_get_document_title', array( $this, 'title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ), 40 );
-		Admin_Router::register_page( 'calendar', array( 'title' => __( 'Calendar', 'adam-comunidade' ), 'controller' => $this, 'method' => 'admin_page' ) );
+		Admin_Router::register_page( 'calendar', array( 'title' => __( 'Calendário', 'adam-comunidade' ), 'controller' => $this, 'method' => 'admin_page' ) );
 		add_action( 'admin_post_adam_calendar_save', array( $this, 'save' ) );
 	}
 
@@ -40,7 +40,7 @@ final class Calendar {
 	}
 
 	public function title( string $title ): string {
-		return get_query_var( 'adam_calendar' ) ? __( 'Community Calendar', 'adam-comunidade' ) : $title;
+		return get_query_var( 'adam_calendar' ) ? __( 'Calendário da Comunidade', 'adam-comunidade' ) : $title;
 	}
 
 	public function assets(): void {
@@ -66,7 +66,7 @@ final class Calendar {
 		$start = self::datetime( wp_unslash( $_POST['start_at'] ?? '' ) );
 		$end   = self::datetime( wp_unslash( $_POST['end_at'] ?? '' ) );
 		if ( ! $title || ! isset( self::types()[ $type ] ) || ! $start ) {
-			wp_die( esc_html__( 'Complete the required calendar fields.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'Preencha os campos obrigatórios do calendário.', 'adam-comunidade' ) );
 		}
 		global $wpdb;
 		$now = current_time( 'mysql', true );
@@ -98,7 +98,7 @@ final class Calendar {
 	 * @return array<string,string>
 	 */
 	public static function types(): array {
-		return apply_filters( 'adam_comunidade_calendar_types', array( 'announcement' => __( 'Announcement', 'adam-comunidade' ), 'open_day' => __( 'Open day', 'adam-comunidade' ), 'recruitment' => __( 'Recruitment', 'adam-comunidade' ), 'training' => __( 'Training', 'adam-comunidade' ) ) );
+		return apply_filters( 'adam_comunidade_calendar_types', array( 'announcement' => __( 'Anúncio', 'adam-comunidade' ), 'open_day' => __( 'Dia aberto', 'adam-comunidade' ), 'recruitment' => __( 'Recrutamento', 'adam-comunidade' ), 'training' => __( 'Treino', 'adam-comunidade' ) ) );
 	}
 
 	private static function datetime( string $value ): ?string {

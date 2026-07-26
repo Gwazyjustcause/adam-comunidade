@@ -57,7 +57,7 @@ final class Controller {
 			'fields',
 			array(
 				'title'         => __( 'Campos', 'adam-comunidade' ),
-				'singular'      => __( 'Field', 'adam-comunidade' ),
+				'singular'      => __( 'Campo', 'adam-comunidade' ),
 				'singular_slug' => 'field',
 				'controller'    => $this,
 				'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
@@ -67,7 +67,7 @@ final class Controller {
 		Admin_Router::register_page(
 			'field-amenities',
 			array(
-				'title'      => __( 'Field Amenities', 'adam-comunidade' ),
+				'title'      => __( 'Comodidades dos campos', 'adam-comunidade' ),
 				'controller' => $this,
 				'method'     => 'render_amenities',
 				'visible'    => false,
@@ -89,7 +89,7 @@ final class Controller {
 		add_screen_option(
 			'per_page',
 			array(
-				'label'   => __( 'Fields per page', 'adam-comunidade' ),
+				'label'   => __( 'Campos por página', 'adam-comunidade' ),
 				'default' => 20,
 				'option'  => 'adam_fields_per_page',
 			)
@@ -145,15 +145,15 @@ final class Controller {
 			'adam-comunidade-fields-admin',
 			'adamFieldsAdmin',
 			array(
-				'confirmDelete' => __( 'Permanently delete this field? Media files will be retained.', 'adam-comunidade' ),
-				'coverTitle'    => __( 'Choose Field Cover', 'adam-comunidade' ),
-				'galleryTitle'  => __( 'Choose Gallery Images', 'adam-comunidade' ),
-				'documentTitle' => __( 'Choose Legal Authorisation Document', 'adam-comunidade' ),
-				'useImage'      => __( 'Use image', 'adam-comunidade' ),
-				'useImages'     => __( 'Use images', 'adam-comunidade' ),
-				'useDocument'   => __( 'Use document', 'adam-comunidade' ),
-				'removeImage'   => __( 'Remove image', 'adam-comunidade' ),
-				'caption'       => __( 'Caption', 'adam-comunidade' ),
+				'confirmDelete' => __( 'Eliminar permanentemente este campo? Os ficheiros multimédia serão mantidos.', 'adam-comunidade' ),
+				'coverTitle'    => __( 'Escolher capa do campo', 'adam-comunidade' ),
+				'galleryTitle'  => __( 'Escolher imagens da galeria', 'adam-comunidade' ),
+				'documentTitle' => __( 'Escolher documento de autorização legal', 'adam-comunidade' ),
+				'useImage'      => __( 'Usar imagem', 'adam-comunidade' ),
+				'useImages'     => __( 'Usar imagens', 'adam-comunidade' ),
+				'useDocument'   => __( 'Usar documento', 'adam-comunidade' ),
+				'removeImage'   => __( 'Remover imagem', 'adam-comunidade' ),
+				'caption'       => __( 'Legenda', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -202,7 +202,7 @@ final class Controller {
 		$field    = $field_id ? $this->repository->find( $field_id ) : null;
 
 		if ( $field_id && ! $field ) {
-			wp_die( esc_html__( 'Field not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O campo não foi encontrado.', 'adam-comunidade' ) );
 		}
 
 		$form_state = get_transient( 'adam_field_form_' . get_current_user_id() );
@@ -258,7 +258,7 @@ final class Controller {
 
 		$field_id = isset( $_POST['field_id'] ) ? absint( wp_unslash( $_POST['field_id'] ) ) : 0;
 		if ( $field_id && ! $this->repository->find( $field_id ) ) {
-			wp_die( esc_html__( 'Field not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O campo não foi encontrado.', 'adam-comunidade' ) );
 		}
 
 		$input = isset( $_POST['field'] ) && is_array( $_POST['field'] )
@@ -285,7 +285,7 @@ final class Controller {
 		}
 
 		if ( ! $success ) {
-			Helpers::add_admin_notice( __( 'The field could not be saved.', 'adam-comunidade' ), 'error' );
+			Helpers::add_admin_notice( __( 'Não foi possível guardar o campo.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $field_id );
 		}
 
@@ -316,7 +316,7 @@ final class Controller {
 			$field_id ? 'Field updated' : 'Field created',
 			array( 'field_id' => $saved_id, 'user_id' => get_current_user_id() )
 		);
-		Helpers::add_admin_notice( __( 'Field saved successfully.', 'adam-comunidade' ), 'success' );
+		Helpers::add_admin_notice( __( 'O campo foi guardado com sucesso.', 'adam-comunidade' ), 'success' );
 		$this->redirect_editor( (int) $saved_id );
 	}
 
@@ -351,7 +351,7 @@ final class Controller {
 		}
 
 		Logger::info( 'Field amenities changed', array( 'user_id' => get_current_user_id() ) );
-		Helpers::add_admin_notice( __( 'Amenities saved.', 'adam-comunidade' ), 'success' );
+		Helpers::add_admin_notice( __( 'As comodidades foram guardadas.', 'adam-comunidade' ), 'success' );
 		wp_safe_redirect( Admin_Router::page_url( 'field-amenities' ) );
 		exit;
 	}
@@ -368,23 +368,23 @@ final class Controller {
 		check_admin_referer( 'adam_field_action_' . $field_id );
 
 		if ( ! $field_id || ! in_array( $action, array( 'duplicate', 'hide', 'delete' ), true ) ) {
-			wp_die( esc_html__( 'Invalid field action.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A ação do campo não é válida.', 'adam-comunidade' ) );
 		}
 
 		if ( 'duplicate' === $action ) {
 			$new_id = $this->duplicate( $field_id );
 			Helpers::add_admin_notice(
 				$new_id
-					? __( 'Field duplicated as a draft.', 'adam-comunidade' )
-					: __( 'The field could not be duplicated.', 'adam-comunidade' ),
+					? __( 'O campo foi duplicado como rascunho.', 'adam-comunidade' )
+					: __( 'Não foi possível duplicar o campo.', 'adam-comunidade' ),
 				$new_id ? 'success' : 'error'
 			);
 		} elseif ( 'hide' === $action ) {
 			$this->repository->set_status( array( $field_id ), 'hidden' );
-			Helpers::add_admin_notice( __( 'Field hidden.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'O campo foi ocultado.', 'adam-comunidade' ), 'success' );
 		} else {
 			$this->repository->delete( $field_id );
-			Helpers::add_admin_notice( __( 'Field deleted. Media files were retained.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'O campo foi eliminado. Os ficheiros multimédia foram mantidos.', 'adam-comunidade' ), 'success' );
 		}
 
 		Logger::info( 'Field ' . $action, array( 'field_id' => $field_id ) );
@@ -420,7 +420,7 @@ final class Controller {
 		}
 
 		if ( $ids ) {
-			Helpers::add_admin_notice( __( 'Bulk action completed.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A ação por lote foi concluída.', 'adam-comunidade' ), 'success' );
 			Admin_Router::redirect_module( 'fields' );
 		}
 	}
@@ -440,7 +440,7 @@ final class Controller {
 		$data                  = (array) $source;
 		$data['status']        = 'draft';
 		$data['playing_styles']= Options::decode_list( $source->playing_styles );
-		$base_name             = $source->name . ' ' . __( 'Copy', 'adam-comunidade' );
+		$base_name             = $source->name . ' ' . __( 'Cópia', 'adam-comunidade' );
 		$data['name']          = $base_name;
 		$data['slug']          = sanitize_title( $base_name );
 		$suffix                = 2;

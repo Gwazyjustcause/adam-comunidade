@@ -110,7 +110,7 @@ final class Router {
 		self::add_route(
 			'adam-comunidade-' . $singular . '-add',
 			array(
-				'title'      => sprintf( __( 'Add %s', 'adam-comunidade' ), $config['singular'] ),
+				'title'      => sprintf( __( 'Adicionar %s', 'adam-comunidade' ), $config['singular'] ),
 				'capability' => $config['capability'],
 				'controller' => $config['controller'],
 				'method'     => $methods['create'],
@@ -121,7 +121,7 @@ final class Router {
 		self::add_route(
 			'adam-comunidade-' . $singular . '-edit',
 			array(
-				'title'      => sprintf( __( 'Edit %s', 'adam-comunidade' ), $config['singular'] ),
+				'title'      => sprintf( __( 'Editar %s', 'adam-comunidade' ), $config['singular'] ),
 				'capability' => $config['capability'],
 				'controller' => $config['controller'],
 				'method'     => $methods['edit'],
@@ -214,21 +214,21 @@ final class Router {
 		$route = self::$routes[ $slug ] ?? null;
 
 		if ( ! $route ) {
-			wp_die( esc_html__( 'Admin route not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A página de administração não foi encontrada.', 'adam-comunidade' ) );
 		}
 
 		self::authorize( (string) $route['capability'] );
 		$callback = array( $route['controller'], $route['method'] );
 
 		if ( ! is_callable( $callback ) ) {
-			wp_die( esc_html__( 'Admin controller is not available.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O controlador da página não está disponível.', 'adam-comunidade' ) );
 		}
 
 		$arguments = (array) $route['arguments'];
 		if ( ! empty( $route['requires_id'] ) ) {
 			$id = absint( $_GET['id'] ?? 0 );
 			if ( ! $id ) {
-				wp_die( esc_html__( 'A valid item ID is required.', 'adam-comunidade' ) );
+				wp_die( esc_html__( 'É necessário indicar um identificador válido.', 'adam-comunidade' ) );
 			}
 			$arguments[] = $id;
 		}
@@ -295,7 +295,7 @@ final class Router {
 		$required = $capability ?: self::capability();
 
 		if ( ! current_user_can( $required ) ) {
-			wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'Não tem permissão para aceder a esta página.', 'adam-comunidade' ) );
 		}
 	}
 

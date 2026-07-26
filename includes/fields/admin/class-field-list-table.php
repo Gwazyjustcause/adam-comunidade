@@ -53,14 +53,14 @@ final class Field_List_Table extends \WP_List_Table {
 	public function get_columns(): array {
 		return array(
 			'cb'              => '<input type="checkbox">',
-			'cover'           => __( 'Cover', 'adam-comunidade' ),
-			'name'            => __( 'Name', 'adam-comunidade' ),
-			'district'        => __( 'District', 'adam-comunidade' ),
-			'municipality'    => __( 'Municipality', 'adam-comunidade' ),
-			'association'     => __( 'Association', 'adam-comunidade' ),
-			'associated_team' => __( 'Associated Team', 'adam-comunidade' ),
-			'status'          => __( 'Status', 'adam-comunidade' ),
-			'updated_at'      => __( 'Last Updated', 'adam-comunidade' ),
+			'cover'           => __( 'Capa', 'adam-comunidade' ),
+			'name'            => __( 'Nome', 'adam-comunidade' ),
+			'district'        => __( 'Distrito', 'adam-comunidade' ),
+			'municipality'    => __( 'Concelho', 'adam-comunidade' ),
+			'association'     => __( 'Associação', 'adam-comunidade' ),
+			'associated_team' => __( 'Equipa associada', 'adam-comunidade' ),
+			'status'          => __( 'Estado', 'adam-comunidade' ),
+			'updated_at'      => __( 'Última atualização', 'adam-comunidade' ),
 		);
 	}
 
@@ -86,9 +86,9 @@ final class Field_List_Table extends \WP_List_Table {
 	 */
 	protected function get_bulk_actions(): array {
 		return array(
-			'publish' => __( 'Publish', 'adam-comunidade' ),
-			'hide'    => __( 'Hide', 'adam-comunidade' ),
-			'delete'  => __( 'Delete', 'adam-comunidade' ),
+			'publish' => __( 'Publicar', 'adam-comunidade' ),
+			'hide'    => __( 'Ocultar', 'adam-comunidade' ),
+			'delete'  => __( 'Eliminar', 'adam-comunidade' ),
 		);
 	}
 
@@ -160,10 +160,10 @@ final class Field_List_Table extends \WP_List_Table {
 	protected function column_name( $item ): string {
 		$edit_url = Admin_Router::module_url( 'fields', 'edit', array( 'id' => absint( $item->id ) ) );
 		$actions  = array(
-			'edit'      => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'adam-comunidade' ) . '</a>',
-			'duplicate' => $this->action_link( $item, 'duplicate', __( 'Duplicate', 'adam-comunidade' ) ),
-			'hide'      => $this->action_link( $item, 'hide', __( 'Hide', 'adam-comunidade' ) ),
-			'delete'    => $this->action_link( $item, 'delete', __( 'Delete', 'adam-comunidade' ), true ),
+			'edit'      => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Editar', 'adam-comunidade' ) . '</a>',
+			'duplicate' => $this->action_link( $item, 'duplicate', __( 'Duplicar', 'adam-comunidade' ) ),
+			'hide'      => $this->action_link( $item, 'hide', __( 'Ocultar', 'adam-comunidade' ) ),
+			'delete'    => $this->action_link( $item, 'delete', __( 'Eliminar', 'adam-comunidade' ), true ),
 		);
 
 		return '<strong><a href="' . esc_url( $edit_url ) . '">' . esc_html( $item->name ) . '</a></strong>'

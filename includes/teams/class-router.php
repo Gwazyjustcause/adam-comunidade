@@ -250,7 +250,7 @@ final class Router {
 
 		if ( '' === $cards ) {
 			$cards = '<div class="adam-comunidade__empty adam-teams-empty">'
-				. esc_html__( 'No teams match the selected filters.', 'adam-comunidade' ) . '</div>';
+				. esc_html__( 'Nenhuma equipa corresponde aos filtros selecionados.', 'adam-comunidade' ) . '</div>';
 		}
 
 		wp_send_json_success(

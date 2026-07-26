@@ -295,7 +295,7 @@ final class Router {
 			: '';
 		if ( ! $cards ) {
 			$cards = '<div class="adam-comunidade__empty adam-fields-empty">'
-				. esc_html__( 'No fields match the selected filters.', 'adam-comunidade' )
+				. esc_html__( 'Nenhum campo corresponde aos filtros selecionados.', 'adam-comunidade' )
 				. '</div>';
 		}
 

@@ -46,71 +46,44 @@ final class Settings {
 
 		add_settings_section(
 			'adam_comunidade_general',
-			__( 'General', 'adam-comunidade' ),
+			__( 'Geral', 'adam-comunidade' ),
 			'__return_false',
 			'adam-comunidade-settings'
 		);
 		$this->add_field(
 			'plugin_version',
-			__( 'Plugin Version', 'adam-comunidade' ),
+			__( 'Versão do plugin', 'adam-comunidade' ),
 			'render_plugin_version',
 			'adam_comunidade_general'
 		);
-		$this->add_field(
-			'debug_mode',
-			__( 'Debug Mode', 'adam-comunidade' ),
-			'render_checkbox',
-			'adam_comunidade_general',
-			array( 'key' => 'debug_mode' )
-		);
-		$this->add_field(
-			'enable_logs',
-			__( 'Enable Logs', 'adam-comunidade' ),
-			'render_checkbox',
-			'adam_comunidade_general',
-			array( 'key' => 'enable_logs' )
-		);
-
 		add_settings_section(
 			'adam_comunidade_appearance',
-			__( 'Appearance', 'adam-comunidade' ),
+			__( 'Aspeto', 'adam-comunidade' ),
 			'__return_false',
 			'adam-comunidade-settings'
 		);
 		$this->add_field(
 			'primary_colour',
-			__( 'Primary Colour', 'adam-comunidade' ),
+			__( 'Cor principal', 'adam-comunidade' ),
 			'render_colour',
 			'adam_comunidade_appearance',
 			array( 'key' => 'primary_colour' )
 		);
 		$this->add_field(
 			'secondary_colour',
-			__( 'Secondary Colour', 'adam-comunidade' ),
+			__( 'Cor secundária', 'adam-comunidade' ),
 			'render_colour',
 			'adam_comunidade_appearance',
 			array( 'key' => 'secondary_colour' )
 		);
 		$this->add_field(
 			'accent_colour',
-			__( 'Accent Colour', 'adam-comunidade' ),
+			__( 'Cor de destaque', 'adam-comunidade' ),
 			'render_colour',
 			'adam_comunidade_appearance',
 			array( 'key' => 'accent_colour' )
 		);
 
-		add_settings_section(
-			'adam_comunidade_advanced',
-			__( 'Advanced', 'adam-comunidade' ),
-			'__return_false',
-			'adam-comunidade-settings'
-		);
-		$this->add_field(
-			'data_version',
-			__( 'Plugin Data Version', 'adam-comunidade' ),
-			'render_data_version',
-			'adam_comunidade_advanced'
-		);
 	}
 
 	/**
@@ -191,7 +164,7 @@ final class Settings {
 				value="1"
 				<?php checked( 1, self::get( $key ) ); ?>
 			>
-			<?php esc_html_e( 'Enabled', 'adam-comunidade' ); ?>
+			<?php esc_html_e( 'Ativado', 'adam-comunidade' ); ?>
 		</label>
 		<?php
 	}

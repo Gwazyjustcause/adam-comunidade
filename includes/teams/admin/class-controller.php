@@ -47,7 +47,7 @@ final class Controller {
 			'teams',
 			array(
 				'title'         => __( 'Equipas', 'adam-comunidade' ),
-				'singular'      => __( 'Team', 'adam-comunidade' ),
+				'singular'      => __( 'Equipa', 'adam-comunidade' ),
 				'singular_slug' => 'team',
 				'controller'    => $this,
 				'methods'       => array(
@@ -73,7 +73,7 @@ final class Controller {
 		add_screen_option(
 			'per_page',
 			array(
-				'label'   => __( 'Teams per page', 'adam-comunidade' ),
+				'label'   => __( 'Equipas por página', 'adam-comunidade' ),
 				'default' => 20,
 				'option'  => 'adam_teams_per_page',
 			)
@@ -126,12 +126,12 @@ final class Controller {
 			'adam-comunidade-teams-admin',
 			'adamTeamsAdmin',
 			array(
-				'confirmDelete' => __( 'Permanently delete this team? Media files will be retained.', 'adam-comunidade' ),
-				'logoTitle'     => __( 'Choose Team Logo', 'adam-comunidade' ),
-				'coverTitle'    => __( 'Choose Cover Image', 'adam-comunidade' ),
-				'galleryTitle'  => __( 'Choose Gallery Images', 'adam-comunidade' ),
-				'useImage'      => __( 'Use image', 'adam-comunidade' ),
-				'useImages'     => __( 'Use images', 'adam-comunidade' ),
+				'confirmDelete' => __( 'Eliminar permanentemente esta equipa? Os ficheiros multimédia serão mantidos.', 'adam-comunidade' ),
+				'logoTitle'     => __( 'Escolher logótipo da equipa', 'adam-comunidade' ),
+				'coverTitle'    => __( 'Escolher imagem de capa', 'adam-comunidade' ),
+				'galleryTitle'  => __( 'Escolher imagens da galeria', 'adam-comunidade' ),
+				'useImage'      => __( 'Usar imagem', 'adam-comunidade' ),
+				'useImages'     => __( 'Usar imagens', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -181,7 +181,7 @@ final class Controller {
 		$team    = $team_id ? $this->repository->find( $team_id ) : null;
 
 		if ( $team_id && ! $team ) {
-			wp_die( esc_html__( 'Team not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A equipa não foi encontrada.', 'adam-comunidade' ) );
 		}
 
 		$form_state = get_transient( 'adam_team_form_' . get_current_user_id() );
@@ -210,7 +210,7 @@ final class Controller {
 
 		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 		if ( $team_id && ! $this->repository->find( $team_id ) ) {
-			wp_die( esc_html__( 'Team not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A equipa não foi encontrada.', 'adam-comunidade' ) );
 		}
 
 		$input   = isset( $_POST['team'] ) && is_array( $_POST['team'] )
@@ -237,7 +237,7 @@ final class Controller {
 		}
 
 		if ( ! $success ) {
-			Helpers::add_admin_notice( __( 'The team could not be saved.', 'adam-comunidade' ), 'error' );
+			Helpers::add_admin_notice( __( 'Não foi possível guardar a equipa.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $team_id );
 		}
 
@@ -257,7 +257,7 @@ final class Controller {
 			array( 'team_id' => $saved_id, 'user_id' => get_current_user_id() )
 		);
 		do_action( 'adam_comunidade_team_saved', (int) $saved_id, $result );
-		Helpers::add_admin_notice( __( 'Team saved successfully.', 'adam-comunidade' ), 'success' );
+		Helpers::add_admin_notice( __( 'A equipa foi guardada com sucesso.', 'adam-comunidade' ), 'success' );
 		$this->redirect_editor( (int) $saved_id );
 	}
 
@@ -275,23 +275,23 @@ final class Controller {
 		check_admin_referer( 'adam_team_action_' . $team_id );
 
 		if ( ! $team_id || ! in_array( $action, array( 'duplicate', 'hide', 'delete' ), true ) ) {
-			wp_die( esc_html__( 'Invalid team action.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A ação da equipa não é válida.', 'adam-comunidade' ) );
 		}
 
 		if ( 'duplicate' === $action ) {
 			$new_id = $this->duplicate( $team_id );
 			Helpers::add_admin_notice(
 				$new_id
-					? __( 'Team duplicated as a draft.', 'adam-comunidade' )
-					: __( 'The team could not be duplicated.', 'adam-comunidade' ),
+					? __( 'A equipa foi duplicada como rascunho.', 'adam-comunidade' )
+					: __( 'Não foi possível duplicar a equipa.', 'adam-comunidade' ),
 				$new_id ? 'success' : 'error'
 			);
 		} elseif ( 'hide' === $action ) {
 			$this->repository->set_status( array( $team_id ), 'hidden' );
-			Helpers::add_admin_notice( __( 'Team hidden.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A equipa foi ocultada.', 'adam-comunidade' ), 'success' );
 		} else {
 			$this->repository->delete( $team_id );
-			Helpers::add_admin_notice( __( 'Team deleted. Media files were retained.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A equipa foi eliminada. Os ficheiros multimédia foram mantidos.', 'adam-comunidade' ), 'success' );
 		}
 
 		Logger::info( 'Team ' . $action, array( 'team_id' => $team_id, 'user_id' => get_current_user_id() ) );
@@ -325,7 +325,7 @@ final class Controller {
 
 		if ( $ids ) {
 			Logger::info( 'Team bulk action: ' . $action, array( 'team_ids' => $ids ) );
-			Helpers::add_admin_notice( __( 'Bulk action completed.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A ação por lote foi concluída.', 'adam-comunidade' ), 'success' );
 			Admin_Router::redirect_module( 'teams' );
 		}
 	}
@@ -348,7 +348,7 @@ final class Controller {
 		$data['playing_styles']   = Options::decode_list( $source->playing_styles );
 		$data['equipment_tags']   = Options::decode_list( $source->equipment_tags );
 		$data['status']            = 'draft';
-		$base_name                 = $source->name . ' ' . __( 'Copy', 'adam-comunidade' );
+		$base_name                 = $source->name . ' ' . __( 'Cópia', 'adam-comunidade' );
 		$data['name']              = $base_name;
 		$data['slug']              = sanitize_title( $base_name );
 		$suffix                    = 2;

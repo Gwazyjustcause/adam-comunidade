@@ -97,7 +97,7 @@ final class Smart_Blocks {
 	public function statistics( string $district = '' ): string {
 		$stats = $this->discovery->statistics( $district );
 		$values = array(
-			__( 'Teams', 'adam-comunidade' ) => $stats['teams'], __( 'Fields', 'adam-comunidade' ) => $stats['fields'], __( 'Partners', 'adam-comunidade' ) => $stats['partners'], __( 'Institutions', 'adam-comunidade' ) => $stats['institutions'], __( 'Brands', 'adam-comunidade' ) => $stats['brands'],
+			__( 'Equipas', 'adam-comunidade' ) => $stats['teams'], __( 'Campos', 'adam-comunidade' ) => $stats['fields'], __( 'Parceiros', 'adam-comunidade' ) => $stats['partners'], __( 'Instituições', 'adam-comunidade' ) => $stats['institutions'], __( 'Marcas', 'adam-comunidade' ) => $stats['brands'],
 		);
 		if ( $stats['members'] ) {
 			$values[ __( 'Registered Players', 'adam-comunidade' ) ] = $stats['members'];
@@ -123,15 +123,6 @@ final class Smart_Blocks {
 	}
 
 	public function popular_team(): string {
-		$repository = new Team_Repository();
-		foreach ( Analytics::top( 'view', 50 ) as $metric ) {
-			if ( 'team' === $metric->object_type ) {
-				$team = $repository->find( (int) $metric->object_id );
-				if ( $team && 'published' === $team->status ) {
-					return '<section class="adam-community-widget" data-adam-widget="popular-team"><h2>' . esc_html__( 'Popular Team', 'adam-comunidade' ) . '</h2><div class="adam-community-grid">' . Team_View::card( $team ) . '</div></section>';
-				}
-			}
-		}
 		return do_shortcode( '[adam_newest_teams number="1"]' );
 	}
 

@@ -20,9 +20,9 @@ final class Options {
 	 */
 	public static function statuses(): array {
 		return array(
-			'draft'     => __( 'Draft', 'adam-comunidade' ),
-			'published' => __( 'Published', 'adam-comunidade' ),
-			'hidden'    => __( 'Hidden', 'adam-comunidade' ),
+			'draft'     => __( 'Rascunho', 'adam-comunidade' ),
+			'published' => __( 'Publicado', 'adam-comunidade' ),
+			'hidden'    => __( 'Oculto', 'adam-comunidade' ),
 		);
 	}
 
@@ -35,11 +35,11 @@ final class Options {
 		return (array) apply_filters(
 			'adam_comunidade_field_availability_statuses',
 			array(
-				'open'              => __( 'Open', 'adam-comunidade' ),
-				'seasonal'          => __( 'Seasonal', 'adam-comunidade' ),
-				'temporary_closure' => __( 'Temporarily closed', 'adam-comunidade' ),
-				'private_events'    => __( 'Private events only', 'adam-comunidade' ),
-				'maintenance'       => __( 'Under maintenance', 'adam-comunidade' ),
+				'open'              => __( 'Aberto', 'adam-comunidade' ),
+				'seasonal'          => __( 'Sazonal', 'adam-comunidade' ),
+				'temporary_closure' => __( 'Temporariamente encerrado', 'adam-comunidade' ),
+				'private_events'    => __( 'Apenas eventos privados', 'adam-comunidade' ),
+				'maintenance'       => __( 'Em manutenção', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -53,7 +53,7 @@ final class Options {
 		$options = array(
 			'woodland'  => __( 'Woodland', 'adam-comunidade' ),
 			'cqb'       => __( 'CQB', 'adam-comunidade' ),
-			'hybrid'    => __( 'Hybrid', 'adam-comunidade' ),
+			'hybrid'    => __( 'Híbrido', 'adam-comunidade' ),
 			'milsim'    => __( 'MilSim', 'adam-comunidade' ),
 			'speedsoft' => __( 'Speedsoft', 'adam-comunidade' ),
 		);
@@ -68,23 +68,23 @@ final class Options {
 	 */
 	public static function amenity_icons(): array {
 		return array(
-			'check'     => __( 'Check', 'adam-comunidade' ),
-			'parking'   => __( 'Parking', 'adam-comunidade' ),
-			'shield'    => __( 'Shield', 'adam-comunidade' ),
-			'gauge'     => __( 'Gauge', 'adam-comunidade' ),
-			'bolt'      => __( 'Electricity', 'adam-comunidade' ),
-			'water'     => __( 'Water', 'adam-comunidade' ),
-			'camping'   => __( 'Camping', 'adam-comunidade' ),
-			'fire'      => __( 'Fire / BBQ', 'adam-comunidade' ),
-			'toilets'   => __( 'Toilets', 'adam-comunidade' ),
-			'shop'      => __( 'Shop', 'adam-comunidade' ),
-			'equipment' => __( 'Equipment', 'adam-comunidade' ),
-			'battery'   => __( 'Battery', 'adam-comunidade' ),
-			'food'      => __( 'Food', 'adam-comunidade' ),
-			'indoor'    => __( 'Indoor', 'adam-comunidade' ),
-			'moon'      => __( 'Night', 'adam-comunidade' ),
-			'changing'  => __( 'Changing Room', 'adam-comunidade' ),
-			'first-aid' => __( 'First Aid', 'adam-comunidade' ),
+			'check'     => __( 'Verificação', 'adam-comunidade' ),
+			'parking'   => __( 'Estacionamento', 'adam-comunidade' ),
+			'shield'    => __( 'Proteção', 'adam-comunidade' ),
+			'gauge'     => __( 'Cronógrafo', 'adam-comunidade' ),
+			'bolt'      => __( 'Eletricidade', 'adam-comunidade' ),
+			'water'     => __( 'Água', 'adam-comunidade' ),
+			'camping'   => __( 'Campismo', 'adam-comunidade' ),
+			'fire'      => __( 'Fogueira / churrasco', 'adam-comunidade' ),
+			'toilets'   => __( 'Casas de banho', 'adam-comunidade' ),
+			'shop'      => __( 'Loja', 'adam-comunidade' ),
+			'equipment' => __( 'Equipamento', 'adam-comunidade' ),
+			'battery'   => __( 'Carregamento de baterias', 'adam-comunidade' ),
+			'food'      => __( 'Alimentação', 'adam-comunidade' ),
+			'indoor'    => __( 'Interior', 'adam-comunidade' ),
+			'moon'      => __( 'Noturno', 'adam-comunidade' ),
+			'changing'  => __( 'Balneário', 'adam-comunidade' ),
+			'first-aid' => __( 'Primeiros socorros', 'adam-comunidade' ),
 		);
 	}
 

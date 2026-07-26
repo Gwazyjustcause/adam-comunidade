@@ -22,7 +22,7 @@ final class News {
 				'news',
 				array(
 					'title'         => __( 'Notícias', 'adam-comunidade' ),
-					'singular'      => __( 'News', 'adam-comunidade' ),
+					'singular'      => __( 'Notícia', 'adam-comunidade' ),
 					'singular_slug' => 'news',
 					'controller'    => $this,
 					'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
@@ -43,8 +43,8 @@ final class News {
 				'labels' => array(
 					'name'          => __( 'Notícias', 'adam-comunidade' ),
 					'singular_name' => __( 'Notícia', 'adam-comunidade' ),
-					'add_new_item'  => __( 'Add Community News', 'adam-comunidade' ),
-					'edit_item'     => __( 'Edit Community News', 'adam-comunidade' ),
+					'add_new_item'  => __( 'Adicionar notícia da Comunidade', 'adam-comunidade' ),
+					'edit_item'     => __( 'Editar notícia da Comunidade', 'adam-comunidade' ),
 				),
 				'public'       => true,
 				'show_in_menu' => false,
@@ -59,7 +59,7 @@ final class News {
 			'adam_news_category',
 			'adam_news',
 			array(
-				'labels'       => array( 'name' => __( 'News Categories', 'adam-comunidade' ), 'singular_name' => __( 'News Category', 'adam-comunidade' ) ),
+				'labels'       => array( 'name' => __( 'Categorias de notícias', 'adam-comunidade' ), 'singular_name' => __( 'Categoria de notícia', 'adam-comunidade' ) ),
 				'public'       => true,
 				'hierarchical' => true,
 				'show_in_rest' => true,
@@ -100,7 +100,7 @@ final class News {
 	}
 
 	public function add_meta_box(): void {
-		add_meta_box( 'adam-news-community', __( 'Community Relationships', 'adam-comunidade' ), array( $this, 'render_meta_box' ), 'adam_news', 'side' );
+		add_meta_box( 'adam-news-community', __( 'Relações na Comunidade', 'adam-comunidade' ), array( $this, 'render_meta_box' ), 'adam_news', 'side' );
 	}
 
 	public function render_meta_box( \WP_Post $post ): void {
@@ -108,12 +108,12 @@ final class News {
 		$type = (string) get_post_meta( $post->ID, '_adam_related_type', true );
 		$id   = (int) get_post_meta( $post->ID, '_adam_related_id', true );
 		?>
-		<p><label for="adam-related-type"><?php esc_html_e( 'Related module', 'adam-comunidade' ); ?></label>
-		<select id="adam-related-type" name="adam_related_type"><option value=""><?php esc_html_e( 'None', 'adam-comunidade' ); ?></option>
-		<?php foreach ( array( 'team' => __( 'Team', 'adam-comunidade' ), 'field' => __( 'Field', 'adam-comunidade' ), 'partner' => __( 'Partner', 'adam-comunidade' ), 'brand' => __( 'Brand', 'adam-comunidade' ), 'institution' => __( 'Institution', 'adam-comunidade' ) ) as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $type, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></p>
-		<p><label for="adam-related-id"><?php esc_html_e( 'Related item ID', 'adam-comunidade' ); ?></label><input id="adam-related-id" name="adam_related_id" type="number" min="0" value="<?php echo esc_attr( $id ); ?>"></p>
-		<p><label><input type="checkbox" name="adam_news_featured" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_featured', true ) ); ?>> <?php esc_html_e( 'Featured News', 'adam-comunidade' ); ?></label></p>
-		<p><label><input type="checkbox" name="adam_news_members_only" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_members_only', true ) ); ?>> <?php esc_html_e( 'ADAM Members only', 'adam-comunidade' ); ?></label></p>
+		<p><label for="adam-related-type"><?php esc_html_e( 'Módulo relacionado', 'adam-comunidade' ); ?></label>
+		<select id="adam-related-type" name="adam_related_type"><option value=""><?php esc_html_e( 'Nenhum', 'adam-comunidade' ); ?></option>
+		<?php foreach ( array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'brand' => __( 'Marca', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ) as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $type, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></p>
+		<p><label for="adam-related-id"><?php esc_html_e( 'ID do registo relacionado', 'adam-comunidade' ); ?></label><input id="adam-related-id" name="adam_related_id" type="number" min="0" value="<?php echo esc_attr( $id ); ?>"></p>
+		<p><label><input type="checkbox" name="adam_news_featured" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_featured', true ) ); ?>> <?php esc_html_e( 'Notícia em destaque', 'adam-comunidade' ); ?></label></p>
+		<p><label><input type="checkbox" name="adam_news_members_only" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_members_only', true ) ); ?>> <?php esc_html_e( 'Apenas membros ADAM', 'adam-comunidade' ); ?></label></p>
 		<?php
 	}
 

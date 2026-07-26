@@ -109,9 +109,6 @@ final class Router {
 	public function ajax_map(): void {
 		check_ajax_referer( 'adam_experience', 'nonce' );
 		$filters = $this->filters( $_POST );
-		if ( $filters['municipality'] ) {
-			Analytics::record( 'municipality', '', 0, $filters['municipality'] );
-		}
 		wp_send_json_success( $this->discovery->map_records( $filters ) );
 	}
 

@@ -57,7 +57,7 @@
 				item.innerHTML = [
 					`<input type="hidden" name="team[gallery][]" value="${ id }">`,
 					`<img src="${ imageUrl( attachment, 'thumbnail' ) }" alt="">`,
-					'<button type="button" class="adam-gallery-remove" aria-label="Remove image">&times;</button>',
+					'<button type="button" class="adam-gallery-remove" aria-label="Remover imagem">&times;</button>',
 				].join( '' );
 				list.appendChild( item );
 			} );

@@ -21,6 +21,7 @@ $adam_comunidade_options = array(
 	'adam_comunidade_home_sections',
 	'adam_comunidade_cache_version',
 	'adam_comunidade_managed_pages_version',
+	'adam_comunidade_public_forms',
 	'adam_comunidade_flush_rewrite_rules',
 );
 

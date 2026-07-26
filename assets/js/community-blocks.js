@@ -16,68 +16,68 @@
 	];
 
 	blocks.registerBlockType('adam-comunidade/community-section', {
-		title: i18n.__('ADAM Community Section', 'adam-comunidade'),
+		title: i18n.__('Secção da Comunidade ADAM', 'adam-comunidade'),
 		icon: 'screenoptions',
 		category: 'widgets',
 		edit: function (props) {
 			var a = props.attributes;
 			return el(element.Fragment, {},
-				el(InspectorControls, {}, el(PanelBody, { title: i18n.__('Community content', 'adam-comunidade') },
-					el(SelectControl, { label: i18n.__('Module', 'adam-comunidade'), value: a.type, options: typeOptions, onChange: function (value) { props.setAttributes({ type: value }); } }),
-					el(RangeControl, { label: i18n.__('Number of cards', 'adam-comunidade'), min: 1, max: 24, value: a.number, onChange: function (value) { props.setAttributes({ number: value }); } }),
-					el(SelectControl, { label: i18n.__('Order', 'adam-comunidade'), value: a.order, options: [{ label: 'Newest', value: 'newest' }, { label: 'Alphabetical', value: 'alphabetical' }, { label: 'Priority', value: 'priority' }], onChange: function (value) { props.setAttributes({ order: value }); } }),
-					el(TextControl, { label: i18n.__('Category key', 'adam-comunidade'), value: a.category, onChange: function (value) { props.setAttributes({ category: value }); } }),
-					el(ToggleControl, { label: i18n.__('Featured only', 'adam-comunidade'), checked: a.featured, onChange: function (value) { props.setAttributes({ featured: value }); } })
+				el(InspectorControls, {}, el(PanelBody, { title: i18n.__('Conteúdo da Comunidade', 'adam-comunidade') },
+					el(SelectControl, { label: i18n.__('Módulo', 'adam-comunidade'), value: a.type, options: typeOptions, onChange: function (value) { props.setAttributes({ type: value }); } }),
+					el(RangeControl, { label: i18n.__('Número de cartões', 'adam-comunidade'), min: 1, max: 24, value: a.number, onChange: function (value) { props.setAttributes({ number: value }); } }),
+					el(SelectControl, { label: i18n.__('Ordem', 'adam-comunidade'), value: a.order, options: [{ label: 'Mais recentes', value: 'newest' }, { label: 'Alfabética', value: 'alphabetical' }, { label: 'Prioridade', value: 'priority' }], onChange: function (value) { props.setAttributes({ order: value }); } }),
+					el(TextControl, { label: i18n.__('Chave da categoria', 'adam-comunidade'), value: a.category, onChange: function (value) { props.setAttributes({ category: value }); } }),
+					el(ToggleControl, { label: i18n.__('Apenas em destaque', 'adam-comunidade'), checked: a.featured, onChange: function (value) { props.setAttributes({ featured: value }); } })
 				)),
-				el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('ADAM Community Section', 'adam-comunidade')), el('p', {}, typeOptions.filter(function (item) { return item.value === a.type; })[0].label + ' · ' + a.number + ' cards'))
+				el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Secção da Comunidade ADAM', 'adam-comunidade')), el('p', {}, typeOptions.filter(function (item) { return item.value === a.type; })[0].label + ' · ' + a.number + ' cartões'))
 			);
 		},
 		save: function () { return null; }
 	});
 
 	blocks.registerBlockType('adam-comunidade/community-highlight', {
-		title: i18n.__('ADAM Community Spotlight', 'adam-comunidade'),
+		title: i18n.__('Destaque da Comunidade ADAM', 'adam-comunidade'),
 		icon: 'star-filled',
 		category: 'widgets',
 		edit: function (props) {
-			return el('div', {}, el(SelectControl, { label: i18n.__('Spotlight', 'adam-comunidade'), value: props.attributes.type, options: [
-				{ label: 'Featured Partner', value: 'featured_partner' }, { label: 'Newest Partner', value: 'newest_partner' }, { label: 'Random Partner', value: 'random_partner' }, { label: 'Featured Brand', value: 'featured_brand' }, { label: 'Institution Spotlight', value: 'institution_spotlight' }
+			return el('div', {}, el(SelectControl, { label: i18n.__('Destaque', 'adam-comunidade'), value: props.attributes.type, options: [
+				{ label: 'Parceiro em destaque', value: 'featured_partner' }, { label: 'Parceiro mais recente', value: 'newest_partner' }, { label: 'Parceiro aleatório', value: 'random_partner' }, { label: 'Marca em destaque', value: 'featured_brand' }, { label: 'Instituição em destaque', value: 'institution_spotlight' }
 			], onChange: function (value) { props.setAttributes({ type: value }); } }));
 		},
 		save: function () { return null; }
 	});
 
 	blocks.registerBlockType('adam-comunidade/community-map', {
-		title: i18n.__('ADAM Community Map', 'adam-comunidade'),
+		title: i18n.__('Mapa da Comunidade ADAM', 'adam-comunidade'),
 		icon: 'location-alt',
 		category: 'widgets',
-		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('ADAM Community Map (Beta)', 'adam-comunidade')), el('p', {}, i18n.__('Teams, fields, partners, and institutions with coordinates.', 'adam-comunidade'))); },
+		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Mapa da Comunidade ADAM (Beta)', 'adam-comunidade')), el('p', {}, i18n.__('Equipas, campos, parceiros e instituições com coordenadas.', 'adam-comunidade'))); },
 		save: function () { return null; }
 	});
 
 	blocks.registerBlockType('adam-comunidade/live-statistics', {
-		title: i18n.__('ADAM Live Statistics', 'adam-comunidade'),
+		title: i18n.__('Estatísticas ADAM', 'adam-comunidade'),
 		icon: 'chart-bar',
 		category: 'widgets',
-		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Live Community Statistics', 'adam-comunidade'))); },
+		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Estatísticas da Comunidade', 'adam-comunidade'))); },
 		save: function () { return null; }
 	});
 
 	blocks.registerBlockType('adam-comunidade/latest-news', {
-		title: i18n.__('ADAM Latest News', 'adam-comunidade'),
+		title: i18n.__('Notícias recentes da ADAM', 'adam-comunidade'),
 		icon: 'megaphone',
 		category: 'widgets',
 		edit: function (props) {
-			return el('div', {}, el(RangeControl, { label: i18n.__('Number of articles', 'adam-comunidade'), min: 1, max: 12, value: props.attributes.number, onChange: function (value) { props.setAttributes({ number: value }); } }));
+			return el('div', {}, el(RangeControl, { label: i18n.__('Número de artigos', 'adam-comunidade'), min: 1, max: 12, value: props.attributes.number, onChange: function (value) { props.setAttributes({ number: value }); } }));
 		},
 		save: function () { return null; }
 	});
 
 	blocks.registerBlockType('adam-comunidade/community-home', {
-		title: i18n.__('ADAM Community Homepage', 'adam-comunidade'),
+		title: i18n.__('Página inicial da Comunidade ADAM', 'adam-comunidade'),
 		icon: 'admin-home',
 		category: 'widgets',
-		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Configured Community Homepage', 'adam-comunidade')), el('p', {}, i18n.__('Sections use the order configured under ADAM Comunidade → Homepage Builder.', 'adam-comunidade'))); },
+		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Página inicial da Comunidade', 'adam-comunidade')), el('p', {}, i18n.__('As secções são preenchidas automaticamente pelo ADAM Comunidade.', 'adam-comunidade'))); },
 		save: function () { return null; }
 	});
 }(window.wp.blocks, window.wp.element, window.wp.components, window.wp.blockEditor, window.wp.i18n));

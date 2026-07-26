@@ -11,10 +11,10 @@ defined( 'ABSPATH' ) || exit;
 	<header class="adam-page-header">
 		<div>
 			<a class="adam-back-link" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'fields' ) ); ?>">
-				&larr; <?php esc_html_e( 'Back to fields', 'adam-comunidade' ); ?>
+				&larr; <?php esc_html_e( 'Voltar aos campos', 'adam-comunidade' ); ?>
 			</a>
-			<h1><?php esc_html_e( 'Field Amenities', 'adam-comunidade' ); ?></h1>
-			<p><?php esc_html_e( 'Rename, hide, reorder, and choose icons without changing the field editor.', 'adam-comunidade' ); ?></p>
+			<h1><?php esc_html_e( 'Comodidades dos campos', 'adam-comunidade' ); ?></h1>
+			<p><?php esc_html_e( 'Altere nomes, oculte, ordene e escolha ícones sem modificar o editor de campos.', 'adam-comunidade' ); ?></p>
 		</div>
 	</header>
 
@@ -24,10 +24,10 @@ defined( 'ABSPATH' ) || exit;
 		<div class="adam-card">
 			<table class="adam-table adam-amenities-table">
 				<thead><tr>
-					<th><?php esc_html_e( 'Label', 'adam-comunidade' ); ?></th>
-					<th><?php esc_html_e( 'Icon', 'adam-comunidade' ); ?></th>
-					<th><?php esc_html_e( 'Order', 'adam-comunidade' ); ?></th>
-					<th><?php esc_html_e( 'Visible', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Etiqueta', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Ícone', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Ordem', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Visível', 'adam-comunidade' ); ?></th>
 				</tr></thead>
 				<tbody>
 					<?php foreach ( $amenity_options as $amenity ) : ?>
@@ -47,8 +47,8 @@ defined( 'ABSPATH' ) || exit;
 		</div>
 
 		<div class="adam-card adam-new-amenity">
-			<h2><?php esc_html_e( 'Add Amenity', 'adam-comunidade' ); ?></h2>
-			<input type="text" name="new_amenity[label]" placeholder="<?php esc_attr_e( 'Amenity name', 'adam-comunidade' ); ?>">
+			<h2><?php esc_html_e( 'Adicionar comodidade', 'adam-comunidade' ); ?></h2>
+			<input type="text" name="new_amenity[label]" placeholder="<?php esc_attr_e( 'Nome da comodidade', 'adam-comunidade' ); ?>">
 			<select name="new_amenity[icon]">
 				<?php foreach ( $icon_options as $key => $label ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
@@ -56,6 +56,6 @@ defined( 'ABSPATH' ) || exit;
 			</select>
 			<input type="number" min="0" name="new_amenity[sort_order]" value="<?php echo esc_attr( (string) count( $amenity_options ) ); ?>">
 		</div>
-		<?php submit_button( __( 'Save Amenities', 'adam-comunidade' ), 'primary adam-button' ); ?>
+		<?php submit_button( __( 'Guardar comodidades', 'adam-comunidade' ), 'primary adam-button' ); ?>
 	</form>
 </div>

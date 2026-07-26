@@ -404,3 +404,110 @@
 @media (prefers-reduced-motion: reduce) {
 	.adam-spinner { animation-duration: 1.5s; }
 }
+.adam-approval-count,
+.adam-status-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background: #eef3df;
+	color: #4f6815;
+	font-weight: 600;
+}
+
+.adam-approval-card {
+	margin-top: 18px;
+}
+
+.adam-approval-card__header,
+.adam-approval-card__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+	gap: 24px;
+}
+
+.adam-approval-card__header {
+	align-items: start;
+	border-bottom: 1px solid #e2e4e7;
+	padding-bottom: 16px;
+}
+
+.adam-approval-card__header .adam-status-pill {
+	justify-self: end;
+}
+
+.adam-approval-card__layout {
+	padding: 20px 0;
+}
+
+.adam-approval-details {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1px;
+	margin: 0;
+	background: #e2e4e7;
+	border: 1px solid #e2e4e7;
+}
+
+.adam-approval-details div {
+	padding: 12px;
+	background: #fff;
+}
+
+.adam-approval-details dt {
+	margin-bottom: 4px;
+	color: #646970;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.adam-approval-details dd {
+	margin: 0;
+}
+
+.adam-approval-document {
+	display: flex;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f6f7f7;
+}
+
+.adam-moderation-photos {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-top: 14px;
+}
+
+.adam-moderation-photos img {
+	width: 100%;
+	height: 100px;
+	object-fit: cover;
+}
+
+.adam-approval-actions {
+	padding-top: 18px;
+	border-top: 1px solid #e2e4e7;
+}
+
+.adam-approval-actions > label {
+	display: grid;
+	gap: 6px;
+	margin-bottom: 12px;
+	font-weight: 600;
+}
+
+.adam-approval-actions textarea {
+	width: 100%;
+}
+
+@media (max-width: 900px) {
+	.adam-approval-card__header,
+	.adam-approval-card__layout,
+	.adam-approval-details {
+		grid-template-columns: 1fr;
+	}
+}

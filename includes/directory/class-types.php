@@ -25,7 +25,7 @@ final class Types {
 				'singular'   => __( 'Parceiro', 'adam-comunidade' ),
 				'module_id'  => 'partners',
 				'categories' => array(
-					'sponsor'       => __( 'Sponsor', 'adam-comunidade' ),
+					'sponsor'       => __( 'Patrocinador', 'adam-comunidade' ),
 					'loja'          => __( 'Loja', 'adam-comunidade' ),
 					'technical'     => __( 'Parceiro Técnico', 'adam-comunidade' ),
 					'institutional' => __( 'Parceiro Institucional', 'adam-comunidade' ),

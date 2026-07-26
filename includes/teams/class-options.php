@@ -20,9 +20,9 @@ final class Options {
 	 */
 	public static function statuses(): array {
 		return array(
-			'draft'     => __( 'Draft', 'adam-comunidade' ),
-			'published' => __( 'Published', 'adam-comunidade' ),
-			'hidden'    => __( 'Hidden', 'adam-comunidade' ),
+			'draft'     => __( 'Rascunho', 'adam-comunidade' ),
+			'published' => __( 'Publicado', 'adam-comunidade' ),
+			'hidden'    => __( 'Oculto', 'adam-comunidade' ),
 		);
 	}
 
@@ -35,13 +35,13 @@ final class Options {
 		return (array) apply_filters(
 			'adam_comunidade_recruitment_statuses',
 			array(
-				'recruiting'     => __( 'Recruiting', 'adam-comunidade' ),
-				'limited'        => __( 'Limited recruitment', 'adam-comunidade' ),
-				'not_recruiting' => __( 'Not recruiting', 'adam-comunidade' ),
+				'recruiting'     => __( 'A recrutar', 'adam-comunidade' ),
+				'limited'        => __( 'Recrutamento limitado', 'adam-comunidade' ),
+				'not_recruiting' => __( 'Sem recrutamento', 'adam-comunidade' ),
 				// Legacy values remain readable during upgrades.
-				'open'           => __( 'Recruiting', 'adam-comunidade' ),
-				'invite_only'    => __( 'Limited recruitment', 'adam-comunidade' ),
-				'closed'         => __( 'Not recruiting', 'adam-comunidade' ),
+				'open'           => __( 'A recrutar', 'adam-comunidade' ),
+				'invite_only'    => __( 'Recrutamento limitado', 'adam-comunidade' ),
+				'closed'         => __( 'Sem recrutamento', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -58,7 +58,7 @@ final class Options {
 			'milsim'     => __( 'MilSim', 'adam-comunidade' ),
 			'speedsoft'  => __( 'Speedsoft', 'adam-comunidade' ),
 			'casual'     => __( 'Casual', 'adam-comunidade' ),
-			'historical' => __( 'Historical', 'adam-comunidade' ),
+			'historical' => __( 'Histórico', 'adam-comunidade' ),
 		);
 
 		return (array) apply_filters( 'adam_comunidade_team_playing_styles', $options );
@@ -71,10 +71,10 @@ final class Options {
 	 */
 	public static function equipment_tags(): array {
 		$options = array(
-			'rentals'         => __( 'Rentals Available', 'adam-comunidade' ),
-			'night_vision'    => __( 'Night Vision Friendly', 'adam-comunidade' ),
-			'hpa'             => __( 'HPA Friendly', 'adam-comunidade' ),
-			'beginner_friendly' => __( 'Beginner Friendly', 'adam-comunidade' ),
+			'rentals'           => __( 'Aluguer disponível', 'adam-comunidade' ),
+			'night_vision'      => __( 'Compatível com visão noturna', 'adam-comunidade' ),
+			'hpa'               => __( 'Compatível com HPA', 'adam-comunidade' ),
+			'beginner_friendly' => __( 'Adequado para iniciantes', 'adam-comunidade' ),
 		);
 
 		return (array) apply_filters( 'adam_comunidade_team_equipment_tags', $options );

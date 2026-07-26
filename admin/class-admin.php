@@ -28,8 +28,8 @@ final class Admin {
 		Router::register_page(
 			'dashboard',
 			array(
-				'title'      => __( 'Dashboard', 'adam-comunidade' ),
-				'menu_title' => __( 'Dashboard', 'adam-comunidade' ),
+				'title'      => __( 'Painel', 'adam-comunidade' ),
+				'menu_title' => __( 'Painel', 'adam-comunidade' ),
 				'controller' => $this,
 				'method'     => 'dashboard',
 			)
@@ -37,8 +37,8 @@ final class Admin {
 		Router::register_page(
 			'settings',
 			array(
-				'title'      => __( 'Settings', 'adam-comunidade' ),
-				'menu_title' => __( 'Settings', 'adam-comunidade' ),
+				'title'      => __( 'Definições', 'adam-comunidade' ),
+				'menu_title' => __( 'Definições', 'adam-comunidade' ),
 				'controller' => $this,
 				'method'     => 'settings',
 			)

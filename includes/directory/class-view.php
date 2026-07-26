@@ -29,7 +29,7 @@ final class View {
 				<?php else : ?><span class="adam-community-card__placeholder" aria-hidden="true"></span><?php endif; ?>
 			</a>
 			<div class="adam-community-card__body">
-				<?php if ( $entry->featured ) : ?><span class="adam-community-badge"><?php esc_html_e( 'Featured', 'adam-comunidade' ); ?></span><?php endif; ?>
+				<?php if ( $entry->featured ) : ?><span class="adam-community-badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( ucwords( str_replace( '_', ' ', $entry->verification ) ) ); ?></span><?php endif; ?>
 				<h2><a href="<?php echo esc_url( Router::entry_url( $entry ) ); ?>"><?php echo esc_html( $entry->name ); ?></a></h2>
 				<?php if ( $entry->category && isset( $definition['categories'][ $entry->category ] ) ) : ?><p class="adam-community-card__meta"><?php echo esc_html( $definition['categories'][ $entry->category ] ); ?></p><?php endif; ?>
@@ -61,9 +61,9 @@ final class View {
 			array( '🌍', __( 'Website', 'adam-comunidade' ), $entry->website ),
 			array( 'f', 'Facebook', $entry->facebook ),
 			array( '◎', 'Instagram', $entry->instagram ),
-			array( '📧', __( 'Email', 'adam-comunidade' ), $entry->email ? 'mailto:' . $entry->email : '' ),
-			array( '📞', __( 'Phone', 'adam-comunidade' ), $entry->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $entry->phone ) : '' ),
-			array( '📍', __( 'Address', 'adam-comunidade' ), $entry->address ? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( $entry->address ) : '' ),
+			array( '📧', __( 'E-mail', 'adam-comunidade' ), $entry->email ? 'mailto:' . $entry->email : '' ),
+			array( '📞', __( 'Telefone', 'adam-comunidade' ), $entry->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $entry->phone ) : '' ),
+			array( '📍', __( 'Morada', 'adam-comunidade' ), $entry->address ? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( $entry->address ) : '' ),
 		);
 		ob_start();
 		foreach ( $contacts as $contact ) {

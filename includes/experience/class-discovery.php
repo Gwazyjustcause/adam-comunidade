@@ -56,9 +56,6 @@ final class Discovery {
 			},
 			180
 		);
-		if ( $term ) {
-			Analytics::record( 'search', '', 0, $term );
-		}
 		return $results;
 	}
 

@@ -39,7 +39,7 @@ final class Managed_Pages {
 			Admin_Router::register_page(
 				'urls',
 				array(
-					'title'      => __( 'URLs', 'adam-comunidade' ),
+					'title'      => __( 'Endereços', 'adam-comunidade' ),
 					'controller' => $this,
 					'method'     => 'admin_page',
 				)
@@ -59,37 +59,37 @@ final class Managed_Pages {
 	public static function definitions(): array {
 		return array(
 			'community' => array(
-				'label'         => __( 'Community', 'adam-comunidade' ),
+				'label'         => __( 'Comunidade', 'adam-comunidade' ),
 				'default_title' => __( 'Comunidade', 'adam-comunidade' ),
 				'default_slug'  => 'comunidade',
 				'option'        => 'community_page_id',
 			),
 			'teams' => array(
-				'label'         => __( 'Teams', 'adam-comunidade' ),
+				'label'         => __( 'Equipas', 'adam-comunidade' ),
 				'default_title' => __( 'Equipas Associadas', 'adam-comunidade' ),
 				'default_slug'  => 'equipas',
 				'option'        => 'teams_page_id',
 			),
 			'fields' => array(
-				'label'         => __( 'Fields', 'adam-comunidade' ),
+				'label'         => __( 'Campos', 'adam-comunidade' ),
 				'default_title' => __( 'Campos', 'adam-comunidade' ),
 				'default_slug'  => 'campos',
 				'option'        => 'fields_page_id',
 			),
 			'partners' => array(
-				'label'         => __( 'Partners', 'adam-comunidade' ),
+				'label'         => __( 'Parceiros', 'adam-comunidade' ),
 				'default_title' => __( 'Parceiros', 'adam-comunidade' ),
 				'default_slug'  => 'parceiros',
 				'option'        => 'partners_page_id',
 			),
 			'institutions' => array(
-				'label'         => __( 'Institutions', 'adam-comunidade' ),
+				'label'         => __( 'Instituições', 'adam-comunidade' ),
 				'default_title' => __( 'Instituições', 'adam-comunidade' ),
 				'default_slug'  => 'instituicoes',
 				'option'        => 'institutions_page_id',
 			),
 			'brands' => array(
-				'label'         => __( 'Brands', 'adam-comunidade' ),
+				'label'         => __( 'Marcas', 'adam-comunidade' ),
 				'default_title' => __( 'Marcas', 'adam-comunidade' ),
 				'default_slug'  => 'marcas',
 				'option'        => 'brands_page_id',
@@ -271,7 +271,7 @@ final class Managed_Pages {
 		$changed  = false;
 		$requested_ids = array_filter( array_map( 'absint', $page_ids ) );
 		if ( count( $requested_ids ) !== count( array_unique( $requested_ids ) ) ) {
-			Helpers::add_admin_notice( __( 'Each Community module must use a different WordPress page.', 'adam-comunidade' ), 'error' );
+			Helpers::add_admin_notice( __( 'Cada módulo da Comunidade deve utilizar uma página WordPress diferente.', 'adam-comunidade' ), 'error' );
 			wp_safe_redirect( Admin_Router::page_url( 'urls' ) );
 			exit;
 		}
@@ -306,7 +306,7 @@ final class Managed_Pages {
 
 		if ( $changed ) {
 			self::regenerate_rewrite_rules();
-			Helpers::add_admin_notice( __( 'Community URLs updated.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'Os endereços da Comunidade foram atualizados.', 'adam-comunidade' ), 'success' );
 		}
 		wp_safe_redirect( Admin_Router::page_url( 'urls' ) );
 		exit;
@@ -326,7 +326,7 @@ final class Managed_Pages {
 			self::ensure( $module, true );
 			self::$synchronizing = false;
 			self::regenerate_rewrite_rules();
-			Helpers::add_admin_notice( __( 'Managed page recovered successfully.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A página gerida foi recuperada com sucesso.', 'adam-comunidade' ), 'success' );
 		}
 		wp_safe_redirect( wp_get_referer() ?: Admin_Router::page_url( 'urls' ) );
 		exit;
@@ -356,9 +356,9 @@ final class Managed_Pages {
 			);
 			printf(
 				'<div class="notice notice-warning"><p>%1$s <a class="button button-secondary" href="%2$s">%3$s</a></p></div>',
-				esc_html( sprintf( __( 'The managed %s page is missing or in the Trash.', 'adam-comunidade' ), $definition['label'] ) ),
+				esc_html( sprintf( __( 'A página gerida de %s está em falta ou no Lixo.', 'adam-comunidade' ), $definition['label'] ) ),
 				esc_url( $url ),
-				esc_html__( 'Recreate page', 'adam-comunidade' )
+				esc_html__( 'Recriar página', 'adam-comunidade' )
 			);
 		}
 	}
@@ -374,7 +374,7 @@ final class Managed_Pages {
 			return;
 		}
 		echo '<div class="notice notice-info"><p>'
-			. esc_html__( 'This page is managed by ADAM Comunidade. The page content is generated automatically.', 'adam-comunidade' )
+			. esc_html__( 'Esta página é gerida pelo ADAM Comunidade. O conteúdo é gerado automaticamente.', 'adam-comunidade' )
 			. '</p></div>';
 	}
 

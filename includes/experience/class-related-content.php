@@ -54,7 +54,7 @@ final class Related_Content {
 	public function for_directory( object $entry ): void {
 		echo $this->related_news( $entry->entity_type, (int) $entry->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		if ( 'partner' === $entry->entity_type && $entry->member_benefits && self::is_member() ) {
-			echo '<section class="adam-community-section adam-member-only"><span class="adam-community-badge">' . esc_html__( 'ADAM Members', 'adam-comunidade' ) . '</span><h2>' . esc_html__( 'Member-only benefits', 'adam-comunidade' ) . '</h2>' . wp_kses_post( wpautop( $entry->member_benefits ) ) . '</section>';
+			echo '<section class="adam-community-section adam-member-only"><span class="adam-community-badge">' . esc_html__( 'ADAM Members', 'adam-comunidade' ) . '</span><h2>' . esc_html__( 'Benefícios exclusivos para membros', 'adam-comunidade' ) . '</h2>' . wp_kses_post( wpautop( $entry->member_benefits ) ) . '</section>';
 		}
 	}
 

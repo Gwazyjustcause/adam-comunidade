@@ -63,10 +63,10 @@ final class Controller {
 			'adam-comunidade-directory-admin',
 			'adamDirectoryAdmin',
 			array(
-				'mediaTitle'    => __( 'Choose media', 'adam-comunidade' ),
-				'useMedia'      => __( 'Use selected media', 'adam-comunidade' ),
-				'galleryTitle'  => __( 'Choose gallery images', 'adam-comunidade' ),
-				'confirmDelete' => __( 'Permanently delete this item? Media files will be retained.', 'adam-comunidade' ),
+				'mediaTitle'    => __( 'Escolher ficheiro multimédia', 'adam-comunidade' ),
+				'useMedia'      => __( 'Usar ficheiro selecionado', 'adam-comunidade' ),
+				'galleryTitle'  => __( 'Escolher imagens da galeria', 'adam-comunidade' ),
+				'confirmDelete' => __( 'Eliminar permanentemente este registo? Os ficheiros multimédia serão mantidos.', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -102,7 +102,7 @@ final class Controller {
 		$definition = $this->definition( $type );
 		$entry      = $entry_id ? $this->repository->find( $entry_id, $type ) : null;
 		if ( $entry_id && ! $entry ) {
-			wp_die( esc_html__( 'Directory entry not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O registo do diretório não foi encontrado.', 'adam-comunidade' ) );
 		}
 		$gallery = $entry ? $this->repository->gallery( $entry_id ) : array();
 		$selected = array(
@@ -127,18 +127,18 @@ final class Controller {
 		check_admin_referer( 'adam_directory_save_' . $type );
 		$entry_id = absint( $_POST['entry_id'] ?? 0 );
 		if ( $entry_id && ! $this->repository->find( $entry_id, $type ) ) {
-			wp_die( esc_html__( 'Directory entry not found.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O registo do diretório não foi encontrado.', 'adam-comunidade' ) );
 		}
 		$input = isset( $_POST['entry'] ) && is_array( $_POST['entry'] ) ? wp_unslash( $_POST['entry'] ) : array();
 		$data  = Validator::sanitize( $type, $input );
 		if ( ! $data['name'] || ! $data['slug'] || $this->repository->exists( $type, 'name', $data['name'], $entry_id ) || $this->repository->exists( $type, 'slug', $data['slug'], $entry_id ) ) {
-			Helpers::add_admin_notice( __( 'Name and slug are required and must be unique within this directory.', 'adam-comunidade' ), 'error' );
+			Helpers::add_admin_notice( __( 'O nome e o slug são obrigatórios e têm de ser únicos neste diretório.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $type, $entry_id );
 		}
 		$saved_id = $entry_id;
 		$success  = $entry_id ? $this->repository->update( $entry_id, $data ) : false !== ( $saved_id = $this->repository->create( $data ) );
 		if ( ! $success ) {
-			Helpers::add_admin_notice( __( 'The entry could not be saved.', 'adam-comunidade' ), 'error' );
+			Helpers::add_admin_notice( __( 'Não foi possível guardar o registo.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $type, $entry_id );
 		}
 		$this->repository->sync_gallery( (int) $saved_id, $this->gallery_items( $input ) );
@@ -149,7 +149,7 @@ final class Controller {
 		$this->relationships->sync( $type, (int) $saved_id, 'supports', 'field', (array) ( $relations['field'] ?? array() ) );
 		do_action( 'adam_comunidade_directory_entry_saved', $type, (int) $saved_id, $data );
 		Logger::info( ucfirst( $type ) . ( $entry_id ? ' updated' : ' created' ), array( 'entry_id' => $saved_id ) );
-		Helpers::add_admin_notice( __( 'Entry saved successfully.', 'adam-comunidade' ), 'success' );
+		Helpers::add_admin_notice( __( 'O registo foi guardado com sucesso.', 'adam-comunidade' ), 'success' );
 		$this->redirect_editor( $type, (int) $saved_id );
 	}
 
@@ -162,7 +162,7 @@ final class Controller {
 		check_admin_referer( 'adam_directory_action_' . $entry_id );
 		$entry = $this->repository->find( $entry_id, $type );
 		if ( ! $entry || ! in_array( $action, array( 'duplicate', 'hide', 'delete' ), true ) ) {
-			wp_die( esc_html__( 'Invalid directory action.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A ação do diretório não é válida.', 'adam-comunidade' ) );
 		}
 		if ( 'delete' === $action ) {
 			$this->repository->delete( $entry_id );
@@ -170,7 +170,7 @@ final class Controller {
 			$this->repository->update( $entry_id, array( 'status' => 'hidden' ) );
 		} else {
 			$data         = (array) $entry;
-			$data['name'] = $entry->name . ' ' . __( 'Copy', 'adam-comunidade' );
+			$data['name'] = $entry->name . ' ' . __( 'Cópia', 'adam-comunidade' );
 			$data['slug'] = sanitize_title( $data['name'] );
 			$data['status'] = 'draft';
 			foreach ( array( 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'published_at' ) as $key ) {
@@ -178,7 +178,7 @@ final class Controller {
 			}
 			$suffix = 2;
 			while ( $this->repository->exists( $type, 'name', $data['name'] ) || $this->repository->exists( $type, 'slug', $data['slug'] ) ) {
-				$data['name'] = $entry->name . ' ' . __( 'Copy', 'adam-comunidade' ) . ' ' . $suffix++;
+				$data['name'] = $entry->name . ' ' . __( 'Cópia', 'adam-comunidade' ) . ' ' . $suffix++;
 				$data['slug'] = sanitize_title( $data['name'] );
 			}
 			$new_id = $this->repository->create( $data );
@@ -205,7 +205,7 @@ final class Controller {
 			}
 		}
 		Logger::info( ucfirst( $type ) . ' ' . $action, array( 'entry_id' => $entry_id ) );
-		Helpers::add_admin_notice( __( 'Action completed.', 'adam-comunidade' ), 'success' );
+		Helpers::add_admin_notice( __( 'A ação foi concluída.', 'adam-comunidade' ), 'success' );
 		Admin_Router::redirect_module( (string) $definition['module_id'] );
 	}
 
@@ -239,7 +239,7 @@ final class Controller {
 	private function definition( string $type ): array {
 		$definition = Types::get( $type );
 		if ( ! $definition ) {
-			wp_die( esc_html__( 'Invalid directory type.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'O tipo de diretório não é válido.', 'adam-comunidade' ) );
 		}
 		return $definition;
 	}
