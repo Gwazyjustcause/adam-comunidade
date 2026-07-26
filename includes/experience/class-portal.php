@@ -12,6 +12,8 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
+use ADAM\Comunidade\Fields\Amenity_Repository;
+use ADAM\Comunidade\Fields\Options as Field_Options;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Fields\Schema as Field_Schema;
@@ -135,6 +137,9 @@ final class Portal {
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-experience' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_script( 'adam-experience', Helpers::url( 'assets/js/experience.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
 		Upload_Component::enqueue_assets();
+		if ( 'field' === sanitize_key( (string) get_query_var( 'adam_submission' ) ) && function_exists( 'wp_enqueue_editor' ) ) {
+			wp_enqueue_editor();
+		}
 	}
 
 	/**
@@ -225,7 +230,10 @@ final class Portal {
 				<input type="hidden" name="object_type" value="<?php echo esc_attr( $type ); ?>">
 				<?php wp_nonce_field( 'adam_public_submission', 'adam_nonce' ); ?>
 				<?php foreach ( $form['fields'] as $key => $field ) : ?>
-					<?php if ( ! empty( $field['visible'] ) ) : self::render_field( $key, $field, (string) ( $values[ $key ] ?? '' ), (string) ( $errors[ $key ] ?? '' ) ); endif; ?>
+					<?php if ( ! empty( $field['visible'] ) ) : ?>
+						<?php if ( 'field' === $type && 'recommended_players' === $key ) : ?><div class="adam-portal-form__wide adam-portal-section-heading"><h2><?php esc_html_e( 'Capacidade', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Indique valores aproximados para ajudar visitantes e o planeamento de eventos.', 'adam-comunidade' ); ?></p></div><?php endif; ?>
+						<?php self::render_field( $key, $field, $values[ $key ] ?? '', (string) ( $errors[ $key ] ?? '' ) ); ?>
+					<?php endif; ?>
 				<?php endforeach; ?>
 				<label class="adam-portal-consent adam-portal-form__wide<?php echo isset( $errors['consent'] ) ? ' has-error' : ''; ?>">
 					<input name="consent" type="checkbox" value="1" required <?php checked( ! empty( $values['consent'] ) ); ?> <?php echo isset( $errors['consent'] ) ? 'aria-invalid="true" aria-describedby="adam-error-consent"' : ''; ?>>
@@ -244,10 +252,10 @@ final class Portal {
 	 * @param string              $key Field key.
 	 * @param array<string,mixed> $field Field configuration.
 	 */
-	private static function render_field( string $key, array $field, string $value = '', string $error = '' ): void {
+	private static function render_field( string $key, array $field, mixed $value = '', string $error = '' ): void {
 		$type     = (string) $field['type'];
 		$required = ! empty( $field['required'] );
-		$is_wide  = in_array( $type, array( 'textarea', 'file' ), true );
+		$is_wide  = in_array( $type, array( 'textarea', 'richtext', 'playing_styles', 'amenities', 'file' ), true );
 		$multiple = 'file' === $type && absint( $field['max_files'] ) > 1;
 		$name     = $multiple ? $key . '[]' : $key;
 		if ( 'file' === $type ) {
@@ -277,14 +285,44 @@ final class Portal {
 			<?php
 			return;
 		}
+		if ( in_array( $type, array( 'playing_styles', 'amenities' ), true ) ) {
+			$selected = array_map( 'strval', (array) $value );
+			$options  = 'playing_styles' === $type
+				? Field_Options::playing_styles()
+				: array_column( ( new Amenity_Repository() )->all( 'field', true ), 'label', 'id' );
+			?>
+			<fieldset class="adam-portal-form__wide adam-portal-options<?php echo $error ? ' has-error' : ''; ?>">
+				<legend><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></legend>
+				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
+				<div class="adam-portal-options__grid">
+					<?php foreach ( $options as $option_key => $option_label ) : ?>
+						<label><input type="checkbox" name="<?php echo esc_attr( $key ); ?>[]" value="<?php echo esc_attr( (string) $option_key ); ?>" <?php checked( in_array( (string) $option_key, $selected, true ) ); ?>> <span><?php echo esc_html( (string) $option_label ); ?></span></label>
+					<?php endforeach; ?>
+				</div>
+				<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
+			</fieldset>
+			<?php
+			return;
+		}
+		if ( 'richtext' === $type ) {
+			?>
+			<div class="adam-portal-form__wide adam-portal-richtext<?php echo $error ? ' has-error' : ''; ?>">
+				<h2><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></h2>
+				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
+				<?php wp_editor( wp_kses_post( (string) $value ), 'adam_public_' . sanitize_key( $key ), array( 'textarea_name' => $key, 'textarea_rows' => 9, 'media_buttons' => false, 'teeny' => true ) ); ?>
+				<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
+			</div>
+			<?php
+			return;
+		}
 		?>
 		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( $error ? 'has-error' : '' ) ); ?>">
 			<?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?>
 			<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
 			<?php if ( 'textarea' === $type ) : ?>
-				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>><?php echo esc_textarea( $value ); ?></textarea>
+				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>><?php echo esc_textarea( (string) $value ); ?></textarea>
 			<?php else : ?>
-				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>>
+				<input name="<?php echo esc_attr( $name ); ?>" type="<?php echo esc_attr( $type ); ?>" value="<?php echo esc_attr( (string) $value ); ?>" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo 'number' === $type ? 'min="0" step="1"' : ''; ?> <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>>
 			<?php endif; ?>
 			<?php if ( ! empty( $field['help_text'] ) ) : ?><small><?php echo esc_html( $field['help_text'] ); ?></small><?php endif; ?>
 			<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
@@ -352,6 +390,28 @@ final class Portal {
 				}
 				continue;
 			}
+			if ( in_array( $field['type'], array( 'playing_styles', 'amenities' ), true ) ) {
+				$raw = isset( $_POST[ $key ] ) && is_array( $_POST[ $key ] )
+					? wp_unslash( $_POST[ $key ] )
+					: array();
+				if ( 'playing_styles' === $field['type'] ) {
+					$allowed = array_keys( Field_Options::playing_styles() );
+					$value   = array_values( array_intersect( array_map( 'sanitize_key', $raw ), $allowed ) );
+					$payload['playing_styles'] = $value;
+				} else {
+					$allowed = array_map(
+						static fn( object $amenity ): int => (int) $amenity->id,
+						( new Amenity_Repository() )->all( 'field', true )
+					);
+					$value = array_values( array_intersect( array_map( 'absint', $raw ), $allowed ) );
+					$payload['amenity_ids'] = $value;
+				}
+				$values[ $key ] = $value;
+				if ( ! empty( $field['required'] ) && ! $value ) {
+					$errors[ $key ] = sprintf( __( 'Preencha o campo obrigatório: %s.', 'adam-comunidade' ), $field['label'] );
+				}
+				continue;
+			}
 
 			$value = trim( (string) wp_unslash( $_POST[ $key ] ?? '' ) );
 			$values[ $key ] = $value;
@@ -370,6 +430,13 @@ final class Portal {
 			} elseif ( 'verification_details' !== $key ) {
 				$payload[ $key ] = $value;
 			}
+		}
+		if (
+			'field' === $type
+			&& ! empty( $payload['max_players'] )
+			&& absint( $payload['recommended_players'] ?? 0 ) > absint( $payload['max_players'] )
+		) {
+			$errors['recommended_players'] = __( 'O número recomendado de jogadores não pode exceder o máximo.', 'adam-comunidade' );
 		}
 
 		if ( empty( $_POST['consent'] ) ) {
@@ -449,6 +516,18 @@ final class Portal {
 		}
 		if ( 'textarea' === $type ) {
 			return sanitize_textarea_field( $value );
+		}
+		if ( 'richtext' === $type ) {
+			return wp_kses_post( $value );
+		}
+		if ( 'number' === $type ) {
+			if ( '' === $value ) {
+				return '';
+			}
+			if ( ! ctype_digit( $value ) ) {
+				return new \WP_Error( 'invalid_number', __( 'Introduza um número inteiro igual ou superior a zero.', 'adam-comunidade' ) );
+			}
+			return (string) absint( $value );
 		}
 		return sanitize_text_field( $value );
 	}
@@ -683,6 +762,9 @@ final class Portal {
 				foreach ( (array) ( $form['fields'] ?? array() ) as $key => $field ) {
 					$labels[ $key ] = $field['label'];
 				}
+				$labels['amenity_ids'] = $labels['amenities'] ?? __( 'Comodidades', 'adam-comunidade' );
+				$playing_style_labels  = Field_Options::playing_styles();
+				$amenity_labels        = array_column( ( new Amenity_Repository() )->all( 'field' ), 'label', 'id' );
 				?>
 				<article class="adam-card adam-approval-card">
 					<header class="adam-approval-card__header">
@@ -700,8 +782,23 @@ final class Portal {
 							<dl class="adam-approval-details">
 								<div><dt><?php esc_html_e( 'E-mail de contacto', 'adam-comunidade' ); ?></dt><dd><a href="mailto:<?php echo esc_attr( $row->contact_email ); ?>"><?php echo esc_html( $row->contact_email ); ?></a></dd></div>
 								<?php foreach ( $payload as $key => $value ) : ?>
-									<?php if ( in_array( $key, array( 'authorization_document_id', 'gallery_ids', 'cover_id', 'verification', 'is_associated', 'slug', 'email' ), true ) || is_array( $value ) || '' === (string) $value ) { continue; } ?>
-									<div><dt><?php echo esc_html( $labels[ $key ] ?? ucwords( str_replace( '_', ' ', $key ) ) ); ?></dt><dd><?php echo nl2br( esc_html( (string) $value ) ); ?></dd></div>
+									<?php
+									if ( in_array( $key, array( 'authorization_document_id', 'gallery_ids', 'cover_id', 'verification', 'is_associated', 'slug', 'email' ), true ) ) {
+										continue;
+									}
+									if ( is_array( $value ) ) {
+										$display_values = 'playing_styles' === $key
+											? array_map( static fn( string $style ): string => (string) ( $playing_style_labels[ $style ] ?? $style ), array_map( 'strval', $value ) )
+											: ( 'amenity_ids' === $key
+												? array_map( static fn( int $amenity_id ): string => (string) ( $amenity_labels[ $amenity_id ] ?? $amenity_id ), array_map( 'absint', $value ) )
+												: array_map( 'strval', $value ) );
+										$value = implode( ', ', array_filter( $display_values ) );
+									}
+									if ( '' === (string) $value ) {
+										continue;
+									}
+									?>
+									<div><dt><?php echo esc_html( $labels[ $key ] ?? ucwords( str_replace( '_', ' ', $key ) ) ); ?></dt><dd><?php echo 'rules' === $key ? wp_kses_post( wpautop( (string) $value ) ) : nl2br( esc_html( (string) $value ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></dd></div>
 								<?php endforeach; ?>
 								<?php if ( $row->verification_details ) : ?><div><dt><?php esc_html_e( 'Informação para verificação', 'adam-comunidade' ); ?></dt><dd><?php echo nl2br( esc_html( $row->verification_details ) ); ?></dd></div><?php endif; ?>
 							</dl>
@@ -844,6 +941,12 @@ final class Portal {
 					static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ),
 					array_slice( array_filter( array_map( 'absint', (array) $payload['gallery_ids'] ) ), 0, 5 )
 				)
+			);
+		}
+		if ( 'field' === $row->object_type && array_key_exists( 'amenity_ids', $payload ) ) {
+			$repo->sync_amenities(
+				$result_id,
+				array_values( array_filter( array_map( 'absint', (array) $payload['amenity_ids'] ) ) )
 			);
 		}
 		return $result_id;

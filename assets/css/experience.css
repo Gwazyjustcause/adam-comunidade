@@ -189,6 +189,73 @@
 	gap: 6px;
 }
 
+.adam-portal-options {
+	border: 1px solid #cad6cc;
+	border-radius: 12px;
+	margin: 8px 0;
+	padding: 20px;
+}
+
+.adam-portal-options legend,
+.adam-portal-richtext h2,
+.adam-portal-section-heading h2 {
+	color: #152026;
+	font-size: 1.2rem;
+	font-weight: 800;
+	margin: 0;
+}
+
+.adam-portal-options legend {
+	padding: 0 8px;
+}
+
+.adam-portal-options__grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+	margin-top: 14px;
+}
+
+.adam-portal-options__grid label {
+	align-items: center;
+	background: #f4f7f4;
+	border: 1px solid #d5dfd7;
+	border-radius: 9px;
+	display: flex;
+	font-weight: 650;
+	grid-template-columns: auto 1fr;
+	padding: 11px 12px;
+}
+
+.adam-portal-options__grid input {
+	height: 18px;
+	margin: 0;
+	min-height: 18px;
+	padding: 0;
+	width: 18px;
+}
+
+.adam-portal-richtext {
+	display: grid;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.adam-portal-richtext .wp-editor-wrap {
+	font-weight: 400;
+}
+
+.adam-portal-section-heading {
+	border-top: 1px solid #d8e0da;
+	margin-top: 8px;
+	padding-top: 20px;
+}
+
+.adam-portal-section-heading p {
+	color: #5c6870;
+	margin: 5px 0 0;
+}
+
 .adam-portal-form label.has-error input,
 .adam-portal-form label.has-error textarea,
 .adam-portal-form [aria-invalid="true"] {

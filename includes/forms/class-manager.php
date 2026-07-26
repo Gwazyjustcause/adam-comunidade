@@ -48,6 +48,16 @@ final class Manager {
 
 		$form           = wp_parse_args( $stored[ $type ], $defaults[ $type ] );
 		$form['fields'] = $this->merge_fields( (array) ( $stored[ $type ]['fields'] ?? array() ), $defaults[ $type ]['fields'] );
+		foreach ( $this->semantic_types() as $key => $field_type ) {
+			if ( isset( $form['fields'][ $key ] ) ) {
+				$form['fields'][ $key ]['type'] = $field_type;
+			}
+		}
+		foreach ( array( 'playing_styles', 'amenities', 'rules', 'recommended_players', 'max_players' ) as $optional_key ) {
+			if ( isset( $form['fields'][ $optional_key ] ) ) {
+				$form['fields'][ $optional_key ]['required'] = false;
+			}
+		}
 
 		return $form;
 	}
@@ -127,6 +137,9 @@ final class Manager {
 			'tel'      => __( 'Telefone', 'adam-comunidade' ),
 			'number'   => __( 'Número', 'adam-comunidade' ),
 			'textarea' => __( 'Texto longo', 'adam-comunidade' ),
+			'richtext' => __( 'Editor de texto formatado', 'adam-comunidade' ),
+			'playing_styles' => __( 'Estilos de jogo configurados', 'adam-comunidade' ),
+			'amenities' => __( 'Comodidades configuradas', 'adam-comunidade' ),
 			'file'     => __( 'Ficheiro', 'adam-comunidade' ),
 		);
 	}
@@ -169,6 +182,11 @@ final class Manager {
 						array( 'address' => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ) ),
 						array_slice( $common, 4, null, true ),
 						array(
+							'playing_styles' => $this->field( 'playing_styles', __( 'Estilos de jogo', 'adam-comunidade' ), 'playing_styles', false, '', __( 'Selecione todos os estilos aplicáveis ao campo.', 'adam-comunidade' ) ),
+							'amenities' => $this->field( 'amenities', __( 'Comodidades', 'adam-comunidade' ), 'amenities', false, '', __( 'Indique as instalações e serviços disponíveis.', 'adam-comunidade' ) ),
+							'rules' => $this->field( 'rules', __( 'Regras do campo', 'adam-comunidade' ), 'richtext', false, '', __( 'Inclua limites de FPS/Joule, regras de medic, BB Bio, pirotecnia, distâncias mínimas, idade e outras regras locais.', 'adam-comunidade' ) ),
+							'recommended_players' => $this->field( 'recommended_players', __( 'Número recomendado de jogadores', 'adam-comunidade' ), 'number', false, '0' ),
+							'max_players' => $this->field( 'max_players', __( 'Máximo de jogadores', 'adam-comunidade' ), 'number', false, '0' ),
 							'authorization_document' => $this->field( 'authorization_document', __( 'Comprovativo de autorização legal', 'adam-comunidade' ), 'file', true, '', __( 'PDF, JPG ou PNG. Documento obrigatório para análise administrativa.', 'adam-comunidade' ), '.pdf,.jpg,.jpeg,.png', 1 ),
 							'field_photos' => $this->field( 'field_photos', __( 'Fotografias do campo', 'adam-comunidade' ), 'file', false, '', __( 'Até cinco fotografias em JPG, PNG ou WebP.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 5 ),
 						)
@@ -218,5 +236,18 @@ final class Manager {
 
 	private function sanitize_type( string $type ): string {
 		return isset( $this->field_types()[ $type ] ) ? $type : 'text';
+	}
+
+	/**
+	 * Field keys whose control type is tied to shared plugin configuration.
+	 *
+	 * @return array<string,string>
+	 */
+	private function semantic_types(): array {
+		return array(
+			'playing_styles' => 'playing_styles',
+			'amenities'      => 'amenities',
+			'rules'          => 'richtext',
+		);
 	}
 }
