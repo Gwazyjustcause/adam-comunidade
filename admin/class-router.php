@@ -30,6 +30,20 @@ final class Router {
 	private static array $modules = array();
 
 	/**
+	 * Pages registered with WordPress during admin_menu.
+	 *
+	 * @var array<string,array<string,mixed>>
+	 */
+	private static array $registered_pages = array();
+
+	/**
+	 * Chronological log of every add_menu_page() and add_submenu_page() call.
+	 *
+	 * @var array<int,array<string,mixed>>
+	 */
+	private static array $registration_log = array();
+
+	/**
 	 * Hooks the router into WordPress after modules have registered their routes.
 	 *
 	 * @return void
@@ -142,14 +156,23 @@ final class Router {
 			return;
 		}
 
-		add_menu_page(
+		$menu_callback = self::callback( self::PARENT_SLUG );
+		$menu_hook     = add_menu_page(
 			__( 'ADAM Comunidade', 'adam-comunidade' ),
 			__( 'ADAM Comunidade', 'adam-comunidade' ),
 			(string) $dashboard['capability'],
 			self::PARENT_SLUG,
-			self::callback( self::PARENT_SLUG ),
+			$menu_callback,
 			'dashicons-groups',
 			26
+		);
+		self::record_registration(
+			self::PARENT_SLUG,
+			'',
+			$menu_hook,
+			$dashboard,
+			$menu_callback,
+			'menu'
 		);
 
 		$routes   = array( self::PARENT_SLUG => $dashboard ) + self::$routes;
@@ -160,23 +183,21 @@ final class Router {
 		}
 
 		foreach ( $routes as $slug => $route ) {
+			$parent_slug = ! empty( $route['visible'] ) ? self::PARENT_SLUG : '';
+			$callback    = self::callback( $slug );
 			$hook = add_submenu_page(
-				self::PARENT_SLUG,
+				$parent_slug,
 				(string) $route['title'],
 				(string) ( $route['menu_title'] ?: $route['title'] ),
 				(string) $route['capability'],
 				$slug,
-				self::callback( $slug )
+				$callback
 			);
 
-			if ( ! empty( $route['load'] ) && is_callable( $route['load'] ) ) {
-				add_action( 'load-' . $hook, $route['load'] );
-			}
-		}
+			self::record_registration( $slug, $parent_slug, $hook, $route, $callback, 'submenu' );
 
-		foreach ( $routes as $slug => $route ) {
-			if ( empty( $route['visible'] ) ) {
-				remove_submenu_page( self::PARENT_SLUG, $slug );
+			if ( $hook && ! empty( $route['load'] ) && is_callable( $route['load'] ) ) {
+				add_action( 'load-' . $hook, $route['load'] );
 			}
 		}
 	}
@@ -295,6 +316,24 @@ final class Router {
 	}
 
 	/**
+	 * Exposes the exact pages handed to WordPress during admin_menu.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function registered_pages(): array {
+		return self::$registered_pages;
+	}
+
+	/**
+	 * Returns the chronological WordPress menu-registration audit.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function registration_log(): array {
+		return self::$registration_log;
+	}
+
+	/**
 	 * Adds a normalized route to the registry.
 	 *
 	 * @param string              $slug  Page slug.
@@ -328,6 +367,47 @@ final class Router {
 		return static function () use ( $slug ): void {
 			self::dispatch( $slug );
 		};
+	}
+
+	/**
+	 * Records and safely logs one WordPress page registration.
+	 *
+	 * @param string              $slug        Registered menu slug.
+	 * @param string              $parent_slug WordPress parent slug, empty for hidden routes.
+	 * @param string|false        $hook         Hook suffix returned by WordPress.
+	 * @param array<string,mixed> $route        Normalized route.
+	 * @param callable            $callback     WordPress page callback.
+	 * @param string              $registration_type WordPress menu API used.
+	 * @return void
+	 */
+	private static function record_registration(
+		string $slug,
+		string $parent_slug,
+		string|false $hook,
+		array $route,
+		callable $callback,
+		string $registration_type
+	): void {
+		$controller_callback = array( $route['controller'], $route['method'] );
+		$registration        = array(
+			'type'                => $registration_type,
+			'slug'                => $slug,
+			'parent_slug'         => $parent_slug,
+			'hook'                => $hook,
+			'capability'          => (string) $route['capability'],
+			'visible'             => (bool) $route['visible'],
+			'callback_callable'   => is_callable( $callback ),
+			'controller_callable' => is_callable( $controller_callback ),
+		);
+
+		self::$registered_pages[ $slug ] = $registration;
+		self::$registration_log[]        = $registration;
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				'[ADAM Comunidade] Admin page registered: ' . wp_json_encode( $registration )
+			);
+		}
 	}
 
 	/**

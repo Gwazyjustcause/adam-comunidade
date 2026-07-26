@@ -9,6 +9,7 @@ define( 'ABSPATH', __DIR__ );
 
 $GLOBALS['adam_test_submenus'] = array();
 $GLOBALS['adam_test_removed']  = array();
+$GLOBALS['adam_test_actions']  = array();
 
 function sanitize_key( string $key ): string {
 	return preg_replace( '/[^a-z0-9_-]/', '', strtolower( $key ) ) ?? '';
@@ -49,7 +50,7 @@ function add_query_arg( array|string $args, string|false $value = false, string|
 }
 
 function add_action( string $hook, callable $callback, int $priority = 10 ): void {
-	unset( $hook, $callback, $priority );
+	$GLOBALS['adam_test_actions'][ $hook ][ $priority ][] = $callback;
 }
 
 function add_menu_page(
@@ -75,7 +76,9 @@ function add_submenu_page(
 ): string {
 	unset( $page_title, $menu_title );
 	$GLOBALS['adam_test_submenus'][ $menu_slug ] = compact( 'parent_slug', 'capability', 'callback' );
-	return $parent_slug . '_page_' . $menu_slug;
+	return $parent_slug
+		? 'adam-comunidade_page_' . $menu_slug
+		: 'admin_page_' . $menu_slug;
 }
 
 function remove_submenu_page( string $parent_slug, string $menu_slug ): void {
@@ -154,7 +157,18 @@ foreach ( $modules as $module => $definition ) {
 	);
 }
 
-( new Router() )->register_pages();
+$router = new Router();
+$router->register();
+assert(
+	isset( $GLOBALS['adam_test_actions']['admin_menu'][100][0] ),
+	'The central router must register pages on admin_menu.'
+);
+$router->register_pages();
+assert( 'menu' === Router::registration_log()[0]['type'], 'The top-level add_menu_page() call must be audited.' );
+assert(
+	count( $GLOBALS['adam_test_submenus'] ) + 1 === count( Router::registration_log() ),
+	'Every WordPress menu API call must be included in the registration audit.'
+);
 
 $expected = array(
 	'adam-comunidade-dashboard',
@@ -180,6 +194,9 @@ foreach ( $expected as $slug ) {
 	assert( isset( Router::routes()[ $slug ] ), 'Missing route: ' . $slug );
 	assert( isset( $GLOBALS['adam_test_submenus'][ $slug ] ), 'Page not registered with WordPress: ' . $slug );
 	assert( 'manage_options' === $GLOBALS['adam_test_submenus'][ $slug ]['capability'], 'Wrong capability: ' . $slug );
+	assert( isset( Router::registered_pages()[ $slug ] ), 'Missing registration diagnostic: ' . $slug );
+	assert( Router::registered_pages()[ $slug ]['callback_callable'], 'Invalid WordPress callback: ' . $slug );
+	assert( Router::registered_pages()[ $slug ]['controller_callable'], 'Invalid controller callback: ' . $slug );
 }
 
 foreach ( $modules as $module => $definition ) {
@@ -209,10 +226,27 @@ unset( $_GET['id'] );
 $registered_slugs = array_keys( $GLOBALS['adam_test_submenus'] );
 assert( 'adam-comunidade-settings' === end( $registered_slugs ), 'Settings must be the final submenu.' );
 
-$removed_slugs = array_column( $GLOBALS['adam_test_removed'], 'menu_slug' );
 foreach ( $modules as $module => $definition ) {
-	assert( in_array( 'adam-comunidade-' . $definition[0] . '-add', $removed_slugs, true ) );
-	assert( in_array( 'adam-comunidade-' . $definition[0] . '-edit', $removed_slugs, true ) );
+	$add_slug  = 'adam-comunidade-' . $definition[0] . '-add';
+	$edit_slug = 'adam-comunidade-' . $definition[0] . '-edit';
+	assert( '' === $GLOBALS['adam_test_submenus'][ $add_slug ]['parent_slug'], 'Add route must be registered as hidden: ' . $add_slug );
+	assert( '' === $GLOBALS['adam_test_submenus'][ $edit_slug ]['parent_slug'], 'Edit route must be registered as hidden: ' . $edit_slug );
+	assert( 'admin_page_' . $add_slug === Router::registered_pages()[ $add_slug ]['hook'] );
+	assert( 'admin_page_' . $edit_slug === Router::registered_pages()[ $edit_slug ]['hook'] );
+}
+assert( array() === $GLOBALS['adam_test_removed'], 'Registered routes must never be removed from WordPress menus.' );
+
+foreach (
+	array(
+		'adam-comunidade-field-add',
+		'adam-comunidade-team-add',
+		'adam-comunidade-partner-add',
+		'adam-comunidade-institution-add',
+	) as $required_hidden_route
+) {
+	assert( isset( Router::registered_pages()[ $required_hidden_route ] ), 'Required route was not registered: ' . $required_hidden_route );
+	assert( 'manage_options' === Router::registered_pages()[ $required_hidden_route ]['capability'] );
+	assert( Router::registered_pages()[ $required_hidden_route ]['controller_callable'] );
 }
 
 $source_files = array_merge(
