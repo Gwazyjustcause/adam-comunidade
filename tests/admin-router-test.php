@@ -74,9 +74,9 @@ function add_submenu_page(
 	string $menu_slug,
 	callable $callback
 ): string {
-	unset( $page_title, $menu_title );
-	$GLOBALS['adam_test_submenus'][ $menu_slug ] = compact( 'parent_slug', 'capability', 'callback' );
-	return $parent_slug
+	unset( $menu_title );
+	$GLOBALS['adam_test_submenus'][ $menu_slug ] = compact( 'parent_slug', 'page_title', 'capability', 'callback' );
+	return 'adam-comunidade-dashboard' === $parent_slug
 		? 'adam-comunidade_page_' . $menu_slug
 		: 'admin_page_' . $menu_slug;
 }
@@ -131,6 +131,15 @@ $controller = new class() {
 
 Router::register_page( 'dashboard', array( 'title' => 'Dashboard', 'controller' => $controller, 'method' => 'dashboard' ) );
 Router::register_page( 'settings', array( 'title' => 'Settings', 'controller' => $controller, 'method' => 'settings' ) );
+Router::register_page(
+	'fallback-title',
+	array(
+		'title'      => null,
+		'controller' => $controller,
+		'method'     => 'settings',
+		'visible'    => false,
+	)
+);
 
 $modules = array(
 	'teams'        => array( 'team', '' ),
@@ -197,7 +206,9 @@ foreach ( $expected as $slug ) {
 	assert( isset( Router::registered_pages()[ $slug ] ), 'Missing registration diagnostic: ' . $slug );
 	assert( Router::registered_pages()[ $slug ]['callback_callable'], 'Invalid WordPress callback: ' . $slug );
 	assert( Router::registered_pages()[ $slug ]['controller_callable'], 'Invalid controller callback: ' . $slug );
+	assert( '' !== Router::registered_pages()[ $slug ]['page_title'], 'Empty page title: ' . $slug );
 }
+assert( 'Fallback Title' === Router::registered_pages()['adam-comunidade-fallback-title']['page_title'] );
 
 foreach ( $modules as $module => $definition ) {
 	$singular = $definition[0];
@@ -229,24 +240,29 @@ assert( 'adam-comunidade-settings' === end( $registered_slugs ), 'Settings must 
 foreach ( $modules as $module => $definition ) {
 	$add_slug  = 'adam-comunidade-' . $definition[0] . '-add';
 	$edit_slug = 'adam-comunidade-' . $definition[0] . '-edit';
-	assert( '' === $GLOBALS['adam_test_submenus'][ $add_slug ]['parent_slug'], 'Add route must be registered as hidden: ' . $add_slug );
-	assert( '' === $GLOBALS['adam_test_submenus'][ $edit_slug ]['parent_slug'], 'Edit route must be registered as hidden: ' . $edit_slug );
+	assert( 'options.php' === $GLOBALS['adam_test_submenus'][ $add_slug ]['parent_slug'], 'Add route must be registered as hidden: ' . $add_slug );
+	assert( 'options.php' === $GLOBALS['adam_test_submenus'][ $edit_slug ]['parent_slug'], 'Edit route must be registered as hidden: ' . $edit_slug );
 	assert( 'admin_page_' . $add_slug === Router::registered_pages()[ $add_slug ]['hook'] );
 	assert( 'admin_page_' . $edit_slug === Router::registered_pages()[ $edit_slug ]['hook'] );
+	assert( '' !== $GLOBALS['adam_test_submenus'][ $add_slug ]['page_title'] );
+	assert( '' !== $GLOBALS['adam_test_submenus'][ $edit_slug ]['page_title'] );
 }
 assert( array() === $GLOBALS['adam_test_removed'], 'Registered routes must never be removed from WordPress menus.' );
 
 foreach (
 	array(
-		'adam-comunidade-field-add',
-		'adam-comunidade-team-add',
-		'adam-comunidade-partner-add',
-		'adam-comunidade-institution-add',
-	) as $required_hidden_route
+		'adam-comunidade-field-add'       => 'Add Field',
+		'adam-comunidade-field-edit'      => 'Edit Field',
+		'adam-comunidade-team-add'        => 'Add Team',
+		'adam-comunidade-team-edit'       => 'Edit Team',
+		'adam-comunidade-partner-add'     => 'Add Partner',
+		'adam-comunidade-institution-add' => 'Add Institution',
+	) as $required_hidden_route => $expected_page_title
 ) {
 	assert( isset( Router::registered_pages()[ $required_hidden_route ] ), 'Required route was not registered: ' . $required_hidden_route );
 	assert( 'manage_options' === Router::registered_pages()[ $required_hidden_route ]['capability'] );
 	assert( Router::registered_pages()[ $required_hidden_route ]['controller_callable'] );
+	assert( $expected_page_title === Router::registered_pages()[ $required_hidden_route ]['page_title'] );
 }
 
 $source_files = array_merge(

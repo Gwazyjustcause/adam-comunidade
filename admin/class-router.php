@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Router {
 	public const PARENT_SLUG = 'adam-comunidade-dashboard';
+	private const HIDDEN_PARENT_SLUG = 'options.php';
 
 	/**
 	 * Registered routes keyed by page slug.
@@ -156,10 +157,11 @@ final class Router {
 			return;
 		}
 
+		$menu_title    = trim( (string) __( 'ADAM Comunidade', 'adam-comunidade' ) ) ?: 'ADAM Comunidade';
 		$menu_callback = self::callback( self::PARENT_SLUG );
 		$menu_hook     = add_menu_page(
-			__( 'ADAM Comunidade', 'adam-comunidade' ),
-			__( 'ADAM Comunidade', 'adam-comunidade' ),
+			$menu_title,
+			$menu_title,
 			(string) $dashboard['capability'],
 			self::PARENT_SLUG,
 			$menu_callback,
@@ -170,7 +172,7 @@ final class Router {
 			self::PARENT_SLUG,
 			'',
 			$menu_hook,
-			$dashboard,
+			array_merge( $dashboard, array( 'title' => $menu_title ) ),
 			$menu_callback,
 			'menu'
 		);
@@ -183,7 +185,7 @@ final class Router {
 		}
 
 		foreach ( $routes as $slug => $route ) {
-			$parent_slug = ! empty( $route['visible'] ) ? self::PARENT_SLUG : '';
+			$parent_slug = ! empty( $route['visible'] ) ? self::PARENT_SLUG : self::HIDDEN_PARENT_SLUG;
 			$callback    = self::callback( $slug );
 			$hook = add_submenu_page(
 				$parent_slug,
@@ -341,7 +343,8 @@ final class Router {
 	 * @return void
 	 */
 	private static function add_route( string $slug, array $route ): void {
-		self::$routes[ sanitize_key( $slug ) ] = wp_parse_args(
+		$slug       = sanitize_key( $slug );
+		$normalized = wp_parse_args(
 			$route,
 			array(
 				'title'      => '',
@@ -355,6 +358,24 @@ final class Router {
 				'requires_id' => false,
 			)
 		);
+		$title      = trim( (string) $normalized['title'] );
+
+		if ( '' === $title ) {
+			$title = ucwords(
+				str_replace(
+					'-',
+					' ',
+					str_replace( 'adam-comunidade-', '', $slug )
+				)
+			);
+		}
+
+		$normalized['title'] = $title ?: __( 'ADAM Comunidade', 'adam-comunidade' );
+		if ( '' === trim( (string) $normalized['menu_title'] ) ) {
+			$normalized['menu_title'] = $normalized['title'];
+		}
+
+		self::$routes[ $slug ] = $normalized;
 	}
 
 	/**
@@ -393,6 +414,7 @@ final class Router {
 			'type'                => $registration_type,
 			'slug'                => $slug,
 			'parent_slug'         => $parent_slug,
+			'page_title'          => (string) $route['title'],
 			'hook'                => $hook,
 			'capability'          => (string) $route['capability'],
 			'visible'             => (bool) $route['visible'],
