@@ -26,10 +26,7 @@ final class Module implements Module_Interface {
 		$news = new News();
 		if ( Schema::VERSION !== get_option( 'adam_comunidade_experience_db_version' ) ) {
 			Schema::install();
-			$news->register_content();
-			Router::add_rewrite_rules();
-			Api_V2::add_rewrite_rules();
-			flush_rewrite_rules( false );
+			\ADAM\Comunidade\Install::schedule_rewrite_flush();
 		}
 		$teams     = new Team_Repository();
 		$fields    = new Field_Repository();

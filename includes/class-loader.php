@@ -109,6 +109,7 @@ final class Loader {
 
 		$this->booted = true;
 
+		// WordPress 6.7+ requires plugin translations to load on init or later.
 		load_plugin_textdomain( 'adam-comunidade', false, dirname( ADAM_COMUNIDADE_BASENAME ) . '/languages' );
 
 		$this->services['settings']    = new Settings();

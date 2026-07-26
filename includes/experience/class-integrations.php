@@ -16,7 +16,7 @@ use ADAM\Comunidade\Managed_Pages;
  */
 final class Integrations {
 	public function register(): void {
-		add_action( 'plugins_loaded', array( $this, 'discover' ), 20 );
+		add_action( 'init', array( $this, 'discover' ), 5 );
 		add_filter( 'body_class', array( $this, 'body_classes' ) );
 	}
 

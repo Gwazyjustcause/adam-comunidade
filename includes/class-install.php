@@ -14,6 +14,11 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Install {
 	/**
+	 * Option used to defer rewrite regeneration until a complete init request.
+	 */
+	public const REWRITE_FLUSH_OPTION = 'adam_comunidade_flush_rewrite_rules';
+
+	/**
 	 * Runs activation tasks.
 	 *
 	 * @return void
@@ -22,8 +27,8 @@ final class Install {
 		if ( version_compare( PHP_VERSION, '8.1', '<' ) ) {
 			deactivate_plugins( ADAM_COMUNIDADE_BASENAME );
 			wp_die(
-				esc_html__( 'ADAM Comunidade requires PHP 8.1 or newer.', 'adam-comunidade' ),
-				esc_html__( 'Plugin activation error', 'adam-comunidade' ),
+				'ADAM Comunidade requires PHP 8.1 or newer.',
+				'Plugin activation error',
 				array( 'back_link' => true )
 			);
 		}
@@ -33,17 +38,15 @@ final class Install {
 		Fields\Schema::install();
 		Directory\Schema::install();
 		Experience\Schema::install();
-		( new Experience\News() )->register_content();
-		Managed_Pages::activate();
-		Teams\Router::add_rewrite_rules();
-		Fields\Router::add_rewrite_rules();
-		Directory\Router::add_rewrite_rules();
-		Directory\Rest_API::add_rewrite_rules();
-		Experience\Router::add_rewrite_rules();
-		Experience\Api_V2::add_rewrite_rules();
-		Experience\Portal::add_rewrite_rules();
-		Experience\Calendar::add_rewrite_rules();
+		self::schedule_rewrite_flush();
+	}
 
-		flush_rewrite_rules();
+	/**
+	 * Schedules one rewrite flush after all plugin routes have been registered.
+	 *
+	 * @return void
+	 */
+	public static function schedule_rewrite_flush(): void {
+		update_option( self::REWRITE_FLUSH_OPTION, 1, false );
 	}
 }

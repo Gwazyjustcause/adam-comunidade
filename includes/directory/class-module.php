@@ -26,9 +26,7 @@ final class Module implements Module_Interface {
 		}
 		if ( Schema::VERSION !== get_option( 'adam_comunidade_directory_db_version' ) ) {
 			Schema::install();
-			Router::add_rewrite_rules();
-			Rest_API::add_rewrite_rules();
-			flush_rewrite_rules( false );
+			\ADAM\Comunidade\Install::schedule_rewrite_flush();
 		}
 		$repository    = new Repository();
 		$relationships = new Relationship_Repository();

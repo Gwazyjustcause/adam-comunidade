@@ -29,11 +29,11 @@ ADAM\Comunidade\Loader::register_autoloader();
 register_activation_hook( __FILE__, array( ADAM\Comunidade\Install::class, 'activate' ) );
 
 /**
- * Boots the plugin after all plugins are loaded.
+ * Boots the plugin when WordPress is ready for translations.
  *
  * @return void
  */
 function adam_comunidade_boot(): void {
 	ADAM\Comunidade\Loader::instance()->boot();
 }
-add_action( 'plugins_loaded', 'adam_comunidade_boot' );
+add_action( 'init', 'adam_comunidade_boot', 0 );

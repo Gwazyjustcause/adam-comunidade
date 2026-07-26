@@ -117,11 +117,17 @@ final class Managed_Pages {
 	 * @return void
 	 */
 	public function maybe_install(): void {
-		if ( self::VERSION === get_option( 'adam_comunidade_managed_pages_version' ) ) {
-			return;
+		$requires_install = self::VERSION !== get_option( 'adam_comunidade_managed_pages_version' );
+		$requires_flush   = (bool) get_option( Install::REWRITE_FLUSH_OPTION );
+
+		if ( $requires_install ) {
+			self::activate();
 		}
-		self::activate();
-		self::regenerate_rewrite_rules();
+
+		if ( $requires_install || $requires_flush ) {
+			self::regenerate_rewrite_rules();
+			delete_option( Install::REWRITE_FLUSH_OPTION );
+		}
 	}
 
 	/**
@@ -557,7 +563,11 @@ final class Managed_Pages {
 		Teams\Router::add_rewrite_rules();
 		Fields\Router::add_rewrite_rules();
 		Directory\Router::add_rewrite_rules();
+		Directory\Rest_API::add_rewrite_rules();
 		Experience\Router::add_rewrite_rules();
+		Experience\Api_V2::add_rewrite_rules();
+		Experience\Portal::add_rewrite_rules();
+		Experience\Calendar::add_rewrite_rules();
 		flush_rewrite_rules( false );
 	}
 }

@@ -40,6 +40,11 @@ function update_option( string $name, mixed $value, bool $autoload = false ): bo
 	return true;
 }
 
+function delete_option( string $name ): bool {
+	unset( $GLOBALS['adam_options'][ $name ] );
+	return true;
+}
+
 function get_post( int $post_id ): ?object {
 	return $GLOBALS['adam_posts'][ $post_id ] ?? null;
 }
