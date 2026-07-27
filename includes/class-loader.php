@@ -121,6 +121,7 @@ final class Loader {
 		$this->services['modules']->add( new Teams\Module() );
 		$this->services['modules']->add( new Fields\Module() );
 		$this->services['modules']->add( new Directory\Module() );
+		$this->services['modules']->add( new Events\Module() );
 		$this->services['modules']->add( new Experience\Module() );
 
 		if ( is_admin() ) {

@@ -17,7 +17,7 @@ final class Cache {
 	private const VERSION_OPTION = 'adam_comunidade_cache_version';
 
 	public function register(): void {
-		foreach ( array( 'adam_comunidade_team_saved', 'adam_comunidade_field_saved', 'adam_comunidade_directory_entry_saved', 'save_post_adam_news', 'deleted_post' ) as $hook ) {
+		foreach ( array( 'adam_comunidade_team_saved', 'adam_comunidade_field_saved', 'adam_comunidade_directory_entry_saved', 'adam_comunidade_event_created', 'adam_comunidade_event_updated', 'adam_comunidade_event_deleted', 'save_post_adam_news', 'deleted_post' ) as $hook ) {
 			add_action( $hook, array( $this, 'flush' ) );
 		}
 		add_action( 'adam_comunidade_reset_cache', array( $this, 'flush' ) );

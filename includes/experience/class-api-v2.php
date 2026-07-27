@@ -16,6 +16,7 @@ use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
 use ADAM\Comunidade\Public_Privacy;
+use ADAM\Comunidade\Events\Api as Events_Api;
 
 /**
  * Filterable read-only endpoints for the ADAM Bot and external applications.
@@ -34,12 +35,12 @@ final class Api_V2 {
 	}
 
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^api/v2/(teams|fields|partners|brands|institutions|news|search|map|statistics)/?$', 'index.php?rest_route=/adam-comunidade/v2/$matches[1]', 'top' );
-		add_rewrite_rule( '^api/(teams|fields|partners|brands|institutions|news)/?$', 'index.php?rest_route=/adam-comunidade/v2/$matches[1]', 'top' );
+		add_rewrite_rule( '^api/v2/(teams|fields|partners|brands|institutions|news|events|search|map|statistics)/?$', 'index.php?rest_route=/adam-comunidade/v2/$matches[1]', 'top' );
+		add_rewrite_rule( '^api/(teams|fields|partners|brands|institutions|news|events)/?$', 'index.php?rest_route=/adam-comunidade/v2/$matches[1]', 'top' );
 	}
 
 	public function routes(): void {
-		foreach ( array( 'teams', 'fields', 'partners', 'brands', 'institutions', 'news', 'search', 'map', 'statistics' ) as $endpoint ) {
+		foreach ( array( 'teams', 'fields', 'partners', 'brands', 'institutions', 'news', 'events', 'search', 'map', 'statistics' ) as $endpoint ) {
 			register_rest_route(
 				'adam-comunidade/v2',
 				'/' . $endpoint,
@@ -95,6 +96,28 @@ final class Api_V2 {
 				$result = $this->fields->query( $args + array( 'municipality' => (string) $request['municipality'], 'playing_style' => (string) $request['playing_style'], 'featured' => $request['featured'] ? 1 : '' ) );
 				$data = array_map( fn( object $item ): array => $this->item( $item, 'field', Field_Router::field_url( $item ) ), $result['items'] );
 			}
+		} elseif ( 'events' === $endpoint ) {
+			$events = function_exists( 'adam_comunidade_events' )
+				? Events_Api::instance()->get_events( array( 'status' => 'published', 'search' => (string) $request['search'] ) )
+				: array();
+			$total = count( $events );
+			$events = array_slice( $events, ( $page - 1 ) * $per_page, $per_page );
+			$data = array_map(
+				static fn( object $event ): array => array(
+					'id' => $event->id(),
+					'type' => 'event',
+					'title' => $event->title(),
+					'summary' => $event->short_description(),
+					'date' => $event->event_date(),
+					'start_time' => $event->start_time(),
+					'end_time' => $event->end_time(),
+					'location' => $event->location(),
+					'cover_image' => $event->cover_image(),
+					'url' => Events_Api::instance()->event_url( $event ),
+				),
+				$events
+			);
+			$result = array( 'total' => $total, 'pages' => (int) ceil( $total / $per_page ) );
 		} elseif ( 'news' === $endpoint ) {
 			$posts = News::latest( $per_page, (string) $request['search'], (string) $request['district'], (bool) $request['featured'], false );
 			$data = array_map( static fn( \WP_Post $post ): array => array( 'id' => $post->ID, 'type' => 'news', 'title' => get_the_title( $post ), 'summary' => get_the_excerpt( $post ), 'content' => apply_filters( 'the_content', $post->post_content ), 'url' => get_permalink( $post ), 'published_at' => get_post_time( DATE_ATOM, true, $post ) ), $posts );

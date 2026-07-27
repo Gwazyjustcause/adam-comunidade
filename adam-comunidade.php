@@ -3,7 +3,7 @@
  * Plugin Name:       ADAM Comunidade
  * Plugin URI:        https://adam.pt/
  * Description:       Community management foundation for ADAM.
- * Version:           6.15.0
+ * Version:           6.16.0
  * Requires at least: 6.8
  * Requires PHP:      8.1
  * Author:            ADAM
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ADAM_COMUNIDADE_VERSION', '6.15.0' );
+define( 'ADAM_COMUNIDADE_VERSION', '6.16.0' );
 define( 'ADAM_COMUNIDADE_DB_VERSION', '6.2.0' );
 define( 'ADAM_COMUNIDADE_FILE', __FILE__ );
 define( 'ADAM_COMUNIDADE_PATH', plugin_dir_path( __FILE__ ) );
@@ -25,6 +25,18 @@ define( 'ADAM_COMUNIDADE_BASENAME', plugin_basename( __FILE__ ) );
 require_once ADAM_COMUNIDADE_PATH . 'includes/class-loader.php';
 
 ADAM\Comunidade\Loader::register_autoloader();
+
+/**
+ * Returns the stable public Events API.
+ *
+ * Consumers such as ADAM Sócios and ADAM Bot must use this facade instead of
+ * reaching into the module's repositories or controllers.
+ *
+ * @return \ADAM\Comunidade\Events\Api
+ */
+function adam_comunidade_events(): \ADAM\Comunidade\Events\Api {
+	return \ADAM\Comunidade\Events\Api::instance();
+}
 
 register_activation_hook( __FILE__, array( ADAM\Comunidade\Install::class, 'activate' ) );
 

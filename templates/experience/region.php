@@ -17,6 +17,7 @@ use ADAM\Comunidade\Fields\View as Field_View;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\View as Team_View;
 use ADAM\Comunidade\Public_Hero;
+use ADAM\Comunidade\Events\Api as Events_Api;
 
 $region_slug = sanitize_title( (string) get_query_var( 'adam_region' ) );
 $district = \ADAM\Comunidade\Experience\Router::regions()[ $region_slug ] ?? ucwords( str_replace( '-', ' ', $region_slug ) );
@@ -31,6 +32,7 @@ $featured_fields = $fields_repo->query( array( 'status' => 'published', 'distric
 $partners = $directory_repo->query( 'partner', array( 'status' => 'published', 'district' => $district, 'per_page' => 6 ) )['items'];
 $institutions = $directory_repo->query( 'institution', array( 'status' => 'published', 'district' => $district, 'per_page' => 6 ) )['items'];
 $markers = $discovery->map_records( array( 'district' => $district ) );
+$upcoming_events = function_exists( 'adam_comunidade_events' ) ? Events_Api::instance()->upcoming_events( 3 ) : array();
 $section = static fn( string $title, array $cards ): string => $cards ? '<section class="adam-community-widget"><h2>' . esc_html( $title ) . '</h2><div class="adam-community-grid">' . implode( '', $cards ) . '</div></section>' : '';
 
 get_header();
@@ -47,7 +49,22 @@ get_header();
 		<?php echo $section( __( 'Parceiros', 'adam-comunidade' ), array_map( array( Directory_View::class, 'card' ), $partners ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php echo $section( __( 'Instituições', 'adam-comunidade' ), array_map( array( Directory_View::class, 'card' ), $institutions ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php echo Builder::news_cards( 4 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-		<section class="adam-community-widget"><h2><?php esc_html_e( 'Próximos eventos', 'adam-comunidade' ); ?></h2><div class="adam-comunidade__empty"><?php esc_html_e( 'Os eventos aparecerão automaticamente quando o respetivo módulo estiver ativo.', 'adam-comunidade' ); ?></div></section>
+		<section class="adam-community-widget">
+			<h2><?php esc_html_e( 'Próximos eventos', 'adam-comunidade' ); ?></h2>
+			<?php if ( $upcoming_events ) : ?>
+				<div class="adam-community-grid">
+					<?php foreach ( $upcoming_events as $event ) : ?>
+						<article class="adam-event-card"><div>
+							<time datetime="<?php echo esc_attr( $event->event_date() ); ?>"><?php echo esc_html( wp_date( 'j \d\e F', $event->starts_at_timestamp() ) ); ?></time>
+							<h3><a href="<?php echo esc_url( Events_Api::instance()->event_url( $event ) ); ?>"><?php echo esc_html( $event->title() ); ?></a></h3>
+							<?php if ( $event->location() ) : ?><p><?php echo esc_html( $event->location() ); ?></p><?php endif; ?>
+						</div></article>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="adam-comunidade__empty"><?php esc_html_e( 'Ainda não existem eventos agendados.', 'adam-comunidade' ); ?></div>
+			<?php endif; ?>
+		</section>
 	</div>
 </main>
 <?php get_footer(); ?>

@@ -395,9 +395,10 @@ final class Router {
 			'adam-comunidade-partners'     => 50,
 			'adam-comunidade-institutions' => 60,
 			'adam-comunidade-news'         => 70,
-			'adam-comunidade-forms'        => 80,
-			'adam-comunidade-urls'         => 90,
-			'adam-comunidade-settings'     => 100,
+			'adam-comunidade-events'       => 80,
+			'adam-comunidade-forms'        => 90,
+			'adam-comunidade-urls'         => 100,
+			'adam-comunidade-settings'     => 110,
 		);
 
 		if ( isset( $preferred[ $slug ] ) ) {

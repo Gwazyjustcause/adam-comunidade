@@ -30,6 +30,7 @@ $order = array(
 	'adam-comunidade-partners',
 	'adam-comunidade-institutions',
 	'adam-comunidade-news',
+	'adam-comunidade-events',
 	'adam-comunidade-forms',
 	'adam-comunidade-urls',
 	'adam-comunidade-settings',

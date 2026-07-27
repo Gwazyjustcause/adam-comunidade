@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Events\Api as Events_Api;
+
 /**
  * Renders the automatic community homepage and its reusable blocks.
  */
@@ -40,6 +42,8 @@ final class Builder {
 				$output .= do_shortcode( '[adam_community_map]' );
 			} elseif ( 'news' === $type ) {
 				$output .= self::news_cards( absint( $section['number'] ) );
+			} elseif ( 'events' === $type ) {
+				$output .= self::event_cards( absint( $section['number'] ) );
 			} elseif ( 'search' === $type ) {
 				$output .= self::search_form();
 			} elseif ( 'regions' === $type ) {
@@ -68,13 +72,30 @@ final class Builder {
 		return $output . '</div></section>';
 	}
 
+	public static function event_cards( int $number = 6 ): string {
+		$events = function_exists( 'adam_comunidade_events' ) ? Events_Api::instance()->upcoming_events( $number ) : array();
+		$output = '<section class="adam-community-widget"><h2>' . esc_html__( 'Próximos eventos', 'adam-comunidade' ) . '</h2>';
+		if ( ! $events ) {
+			return $output . '<div class="adam-comunidade__empty">' . esc_html__( 'Ainda não existem eventos agendados.', 'adam-comunidade' ) . '</div></section>';
+		}
+		$output .= '<div class="adam-community-grid">';
+		foreach ( $events as $event ) {
+			$output .= '<article class="adam-event-card"><div><time datetime="' . esc_attr( $event->event_date() ) . '">' . esc_html( wp_date( 'j \d\e F', $event->starts_at_timestamp() ) ) . '</time><h3><a href="' . esc_url( Events_Api::instance()->event_url( $event ) ) . '">' . esc_html( $event->title() ) . '</a></h3>';
+			if ( $event->location() ) {
+				$output .= '<p>' . esc_html( $event->location() ) . '</p>';
+			}
+			$output .= '</div></article>';
+		}
+		return $output . '</div></section>';
+	}
+
 	public static function sections(): array {
 		$saved = get_option( self::OPTION, array() );
-		return is_array( $saved ) && $saved ? $saved : array_values( array_map( static fn( string $type ): array => array( 'type' => $type, 'enabled' => in_array( $type, array( 'search', 'statistics', 'teams', 'fields', 'partners', 'news', 'map' ), true ) ? 1 : 0, 'number' => 6, 'order' => 'newest', 'category' => '', 'featured' => 0 ), array_keys( self::definitions() ) ) );
+		return is_array( $saved ) && $saved ? $saved : array_values( array_map( static fn( string $type ): array => array( 'type' => $type, 'enabled' => in_array( $type, array( 'search', 'statistics', 'teams', 'fields', 'partners', 'news', 'events', 'map' ), true ) ? 1 : 0, 'number' => 6, 'order' => 'newest', 'category' => '', 'featured' => 0 ), array_keys( self::definitions() ) ) );
 	}
 
 	public static function definitions(): array {
-		return array( 'search' => __( 'Pesquisa universal', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regiões', 'adam-comunidade' ), 'statistics' => __( 'Estatísticas da Comunidade', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias recentes', 'adam-comunidade' ), 'map' => __( 'Mapa da Comunidade', 'adam-comunidade' ) );
+		return array( 'search' => __( 'Pesquisa universal', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regiões', 'adam-comunidade' ), 'statistics' => __( 'Estatísticas da Comunidade', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias recentes', 'adam-comunidade' ), 'events' => __( 'Próximos eventos', 'adam-comunidade' ), 'map' => __( 'Mapa da Comunidade', 'adam-comunidade' ) );
 	}
 
 }

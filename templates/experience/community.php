@@ -51,6 +51,7 @@ get_header();
 		<?php echo do_shortcode( '[adam_community_section type="partners" number="6" order="priority"]' ); ?>
 		<?php echo do_shortcode( '[adam_community_section type="institutions" number="6" order="newest"]' ); ?>
 		<?php echo Builder::news_cards( 6 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		<?php echo Builder::event_cards( 6 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>
 </main>
 <?php get_footer(); ?>

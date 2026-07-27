@@ -37,6 +37,7 @@ final class Install {
 		Teams\Schema::install();
 		Fields\Schema::install();
 		Directory\Schema::install();
+		Events\Migration::run();
 		Experience\Schema::install();
 		self::schedule_rewrite_flush();
 	}

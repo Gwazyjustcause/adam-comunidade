@@ -611,6 +611,7 @@ final class Managed_Pages {
 		Experience\Router::add_rewrite_rules();
 		Experience\Api_V2::add_rewrite_rules();
 		Experience\Portal::add_rewrite_rules();
+		Events\Router::add_rewrite_rules();
 		flush_rewrite_rules( false );
 	}
 }
