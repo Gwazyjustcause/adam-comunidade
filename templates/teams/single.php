@@ -12,6 +12,7 @@ use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Public_Hero;
+use ADAM\Comunidade\Public_Privacy;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\View as Field_View;
 
@@ -20,6 +21,8 @@ $adam_styles      = Options::decode_list( $adam_team->playing_styles );
 $adam_equipment   = Options::decode_list( $adam_team->equipment_tags );
 $adam_gallery     = Options::decode_list( $adam_team->gallery );
 $adam_recruitment = View::label( $adam_team->recruitment_status, Options::recruitment_statuses() );
+$adam_has_description = '' !== trim( (string) $adam_team->short_description )
+	|| '' !== trim( wp_strip_all_tags( (string) $adam_team->full_description ) );
 $adam_field_repository = new Field_Repository();
 $adam_associated_fields = $adam_field_repository->query(
 	array(
@@ -30,18 +33,15 @@ $adam_associated_fields = $adam_field_repository->query(
 		'per_page' => 12,
 	)
 )['items'];
-$adam_contacts    = array_filter(
-	array(
-		'website'   => array( __( 'Website', 'adam-comunidade' ), $adam_team->website ),
-		'facebook'  => array( 'Facebook', $adam_team->facebook ),
-		'instagram' => array( 'Instagram', $adam_team->instagram ),
-		'discord'   => array( 'Discord', $adam_team->discord ),
-		'youtube'   => array( 'YouTube', $adam_team->youtube ),
-		'tiktok'    => array( 'TikTok', $adam_team->tiktok ),
-		'email'     => array( __( 'Email', 'adam-comunidade' ), $adam_team->email ? 'mailto:' . $adam_team->email : '' ),
-		'phone'     => array( __( 'Telefone', 'adam-comunidade' ), $adam_team->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $adam_team->phone ) : '' ),
-	),
-	static fn( array $contact ): bool => ! empty( $contact[1] )
+$adam_public_links = Public_Privacy::public_links( $adam_team );
+$adam_link_labels  = array(
+	'website'   => __( 'Website', 'adam-comunidade' ),
+	'facebook'  => 'Facebook',
+	'instagram' => 'Instagram',
+	'discord'   => 'Discord',
+	'youtube'   => 'YouTube',
+	'tiktok'    => 'TikTok',
+	'linkedin'  => 'LinkedIn',
 );
 
 get_header();
@@ -78,7 +78,7 @@ get_header();
 	</section>
 
 	<div class="adam-team-container adam-team-content">
-		<?php if ( $adam_team->short_description || $adam_team->full_description ) : ?>
+		<?php if ( $adam_has_description ) : ?>
 			<section class="adam-team-section"><h2><?php esc_html_e( 'Sobre', 'adam-comunidade' ); ?></h2>
 				<?php if ( $adam_team->short_description ) : ?><p class="adam-team-lead"><?php echo esc_html( $adam_team->short_description ); ?></p><?php endif; ?>
 				<?php echo wp_kses_post( wpautop( $adam_team->full_description ) ); ?>
@@ -101,8 +101,8 @@ get_header();
 			<?php endforeach; ?>
 		</div></section><?php endif; ?>
 
-		<?php if ( $adam_contacts ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Contactos', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
-			<?php foreach ( $adam_contacts as $adam_contact ) : ?><a href="<?php echo esc_url( $adam_contact[1] ); ?>" class="adam-team-button" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $adam_contact[0] ); ?></a><?php endforeach; ?>
+		<?php if ( $adam_public_links ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Presença online', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
+			<?php foreach ( $adam_public_links as $adam_link_key => $adam_link_url ) : ?><a href="<?php echo esc_url( $adam_link_url ); ?>" class="adam-team-button" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $adam_link_labels[ $adam_link_key ] ?? ucfirst( $adam_link_key ) ); ?></a><?php endforeach; ?>
 		</div></section><?php endif; ?>
 
 		<?php if ( $adam_team->address || $adam_team->maps_url || ( $adam_team->latitude && $adam_team->longitude ) ) : ?>
@@ -146,7 +146,7 @@ get_header();
 		</section><?php endif; ?>
 		<?php do_action( 'adam_comunidade_team_after_content', $adam_team ); ?>
 	</div>
-	<div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Fechar visualizador de imagens', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div>
+	<?php if ( $adam_gallery ) : ?><div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Fechar visualizador de imagens', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div><?php endif; ?>
 </main>
 <?php
 get_footer();

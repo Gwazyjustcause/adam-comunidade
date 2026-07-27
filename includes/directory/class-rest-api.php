@@ -13,6 +13,7 @@ use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
+use ADAM\Comunidade\Public_Privacy;
 
 /**
  * Exposes published community content for apps, bots, maps, and integrations.
@@ -75,7 +76,7 @@ final class Rest_API {
 	}
 
 	private function core_item( object $item, string $url, string $type, int $logo_id, int $cover_id ): array {
-		return array(
+		return Public_Privacy::without_direct_contacts( array(
 			'id'                => (int) $item->id,
 			'type'              => $type,
 			'name'              => $item->name,
@@ -88,8 +89,6 @@ final class Rest_API {
 			'address'           => $item->address,
 			'coordinates'       => null !== $item->latitude && null !== $item->longitude ? array( 'latitude' => (float) $item->latitude, 'longitude' => (float) $item->longitude ) : null,
 			'website'           => $item->website,
-			'email'             => $item->email,
-			'phone'             => $item->phone,
 			'playing_styles'    => isset( $item->playing_styles ) ? ( json_decode( $item->playing_styles, true ) ?: array() ) : array(),
 			'members'           => isset( $item->members ) ? (int) $item->members : null,
 			'recruitment_status'=> $item->recruitment_status ?? null,
@@ -97,12 +96,12 @@ final class Rest_API {
 			'logo'              => $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : null,
 			'cover'             => $cover_id ? wp_get_attachment_image_url( $cover_id, 'full' ) : null,
 			'updated_at'        => mysql_to_rfc3339( $item->updated_at ),
-		);
+		) );
 	}
 
 	private function directory_item( object $item ): array {
 		$definition = Types::get( $item->entity_type );
-		return array(
+		return Public_Privacy::without_direct_contacts( array(
 			'id'                => (int) $item->id,
 			'type'              => $item->entity_type,
 			'name'              => $item->name,
@@ -122,8 +121,6 @@ final class Rest_API {
 			'website'           => $item->website,
 			'facebook'          => $item->facebook,
 			'instagram'         => $item->instagram,
-			'email'             => $item->email,
-			'phone'             => $item->phone,
 			'address'           => $item->address,
 			'logo'              => $item->logo_id ? wp_get_attachment_image_url( $item->logo_id, 'full' ) : null,
 			'cover'             => $item->cover_id ? wp_get_attachment_image_url( $item->cover_id, 'full' ) : null,
@@ -136,6 +133,6 @@ final class Rest_API {
 				)
 			),
 			'updated_at'        => mysql_to_rfc3339( $item->updated_at ),
-		);
+		) );
 	}
 }

@@ -156,10 +156,10 @@ get_header();
 		<?php do_action( 'adam_comunidade_field_after_content', $field ); ?>
 	</div>
 
-	<div class="adam-field-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Image viewer', 'adam-comunidade' ); ?>" hidden>
+	<?php if ( $gallery ) : ?><div class="adam-field-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden>
 		<button type="button" aria-label="<?php esc_attr_e( 'Close image viewer', 'adam-comunidade' ); ?>">&times;</button>
 		<figure><img src="" alt=""><figcaption></figcaption></figure>
-	</div>
+	</div><?php endif; ?>
 	<div class="adam-field-toast" role="status" aria-live="polite" hidden></div>
 </main>
 <?php get_footer(); ?>

@@ -56,6 +56,12 @@ final class Settings {
 			'render_plugin_version',
 			'adam_comunidade_general'
 		);
+		$this->add_field(
+			'contact_email',
+			__( 'E-mail oficial da ADAM', 'adam-comunidade' ),
+			'render_email',
+			'adam_comunidade_general'
+		);
 		add_settings_section(
 			'adam_comunidade_appearance',
 			__( 'Aspeto', 'adam-comunidade' ),
@@ -130,6 +136,7 @@ final class Settings {
 			'primary_colour'       => sanitize_hex_color( $input['primary_colour'] ?? '' ) ?: $defaults['primary_colour'],
 			'secondary_colour'     => sanitize_hex_color( $input['secondary_colour'] ?? '' ) ?: $defaults['secondary_colour'],
 			'accent_colour'        => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
+			'contact_email'        => sanitize_email( (string) ( $input['contact_email'] ?? '' ) ),
 			'community_page_id'    => absint( $current['community_page_id'] ),
 			'teams_page_id'        => absint( $current['teams_page_id'] ),
 			'fields_page_id'       => absint( $current['fields_page_id'] ),
@@ -182,6 +189,19 @@ final class Settings {
 			esc_attr( self::OPTION_NAME . '[' . $key . ']' ),
 			esc_attr( (string) self::get( $key ) ),
 			esc_attr( (string) self::defaults()[ $key ] )
+		);
+	}
+
+	/**
+	 * Renders the official public contact email setting.
+	 */
+	public function render_email(): void {
+		printf(
+			'<input class="regular-text" type="email" name="%1$s" value="%2$s" placeholder="%3$s"><p class="description">%4$s</p>',
+			esc_attr( self::OPTION_NAME . '[contact_email]' ),
+			esc_attr( (string) self::get( 'contact_email' ) ),
+			esc_attr( (string) get_option( 'admin_email', '' ) ),
+			esc_html__( 'Usado nos emails públicos. Se ficar vazio, será utilizado o email de administração do WordPress.', 'adam-comunidade' )
 		);
 	}
 
@@ -256,6 +276,7 @@ final class Settings {
 			'primary_colour'       => '#1d4ed8',
 			'secondary_colour'     => '#0f172a',
 			'accent_colour'        => '#f59e0b',
+			'contact_email'        => '',
 			'community_page_id'    => 0,
 			'teams_page_id'        => 0,
 			'fields_page_id'       => 0,

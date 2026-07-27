@@ -15,6 +15,7 @@ use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
+use ADAM\Comunidade\Public_Privacy;
 
 /**
  * Filterable read-only endpoints for the ADAM Bot and external applications.
@@ -59,10 +60,11 @@ final class Api_V2 {
 		);
 		if ( 'search' === $endpoint ) {
 			$data = $this->discovery->search( (string) $request['search'], $filters, (int) $request['per_page'] );
-			return new \WP_REST_Response( apply_filters( 'adam_comunidade_api_v2_response', $data, $endpoint, $request ) );
+			$data = apply_filters( 'adam_comunidade_api_v2_response', $data, $endpoint, $request );
+			return new \WP_REST_Response( Public_Privacy::without_direct_contacts( is_array( $data ) ? $data : array() ) );
 		}
 		if ( 'map' === $endpoint ) {
-			return new \WP_REST_Response( $this->discovery->map_records( $filters ) );
+			return new \WP_REST_Response( Public_Privacy::without_direct_contacts( $this->discovery->map_records( $filters ) ) );
 		}
 		if ( 'statistics' === $endpoint ) {
 			$stats = $this->discovery->statistics( (string) $request['district'] );
@@ -103,6 +105,7 @@ final class Api_V2 {
 			$data = array_map( fn( object $item ): array => $this->item( $item, $type, Directory_Router::entry_url( $item ) ), $result['items'] );
 		}
 		$data = apply_filters( 'adam_comunidade_api_v2_response', $data, $endpoint, $request );
+		$data = Public_Privacy::without_direct_contacts( is_array( $data ) ? $data : array() );
 		$response = new \WP_REST_Response( $data );
 		$response->header( 'X-WP-Total', (string) $result['total'] );
 		$response->header( 'X-WP-TotalPages', (string) $result['pages'] );

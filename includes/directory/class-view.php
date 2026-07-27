@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Directory;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Public_Privacy;
+
 /**
  * Renders reusable public fragments.
  */
@@ -56,20 +58,20 @@ final class View {
 		return $output . '</nav>';
 	}
 
-	public static function contacts( object $entry ): string {
-		$contacts = array(
-			array( '🌍', __( 'Website', 'adam-comunidade' ), $entry->website ),
-			array( 'f', 'Facebook', $entry->facebook ),
-			array( '◎', 'Instagram', $entry->instagram ),
-			array( '📧', __( 'E-mail', 'adam-comunidade' ), $entry->email ? 'mailto:' . $entry->email : '' ),
-			array( '📞', __( 'Telefone', 'adam-comunidade' ), $entry->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $entry->phone ) : '' ),
-			array( '📍', __( 'Morada', 'adam-comunidade' ), $entry->address ? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode( $entry->address ) : '' ),
+	public static function public_links( object $entry ): string {
+		$labels = array(
+			'website'   => array( '🌍', __( 'Website', 'adam-comunidade' ) ),
+			'facebook'  => array( 'f', 'Facebook' ),
+			'instagram' => array( '◎', 'Instagram' ),
+			'discord'   => array( 'D', 'Discord' ),
+			'youtube'   => array( '▶', 'YouTube' ),
+			'tiktok'    => array( '♪', 'TikTok' ),
+			'linkedin'  => array( 'in', 'LinkedIn' ),
 		);
 		ob_start();
-		foreach ( $contacts as $contact ) {
-			if ( $contact[2] ) {
-				printf( '<a class="adam-contact-button" href="%1$s" target="_blank" rel="noopener"><span aria-hidden="true">%2$s</span>%3$s</a>', esc_url( $contact[2] ), esc_html( $contact[0] ), esc_html( $contact[1] ) );
-			}
+		foreach ( Public_Privacy::public_links( $entry ) as $key => $url ) {
+			$label = $labels[ $key ] ?? array( '↗', ucfirst( $key ) );
+			printf( '<a class="adam-contact-button" href="%1$s" target="_blank" rel="noopener"><span aria-hidden="true">%2$s</span>%3$s</a>', esc_url( $url ), esc_html( $label[0] ), esc_html( $label[1] ) );
 		}
 		return (string) ob_get_clean();
 	}

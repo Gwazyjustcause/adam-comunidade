@@ -10,6 +10,8 @@ namespace ADAM\Comunidade\Experience;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Logger;
+use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Settings;
 
 /**
  * Sends Community emails through the shared ADAM visual contract.
@@ -25,8 +27,21 @@ final class Email_Service {
 	public function templates(): array {
 		$stored = get_option( self::OPTION_NAME, array() );
 		$stored = is_array( $stored ) ? $stored : array();
+		$defaults = $this->defaults();
+		$merged   = array_replace_recursive( $defaults, $stored );
 
-		return array_replace_recursive( $this->defaults(), $stored );
+		foreach ( $defaults as $key => $default ) {
+			$template = isset( $merged[ $key ] ) && is_array( $merged[ $key ] ) ? $merged[ $key ] : array();
+			$merged[ $key ] = array(
+				'label'   => $this->string_value( $template['label'] ?? null, $default['label'] ),
+				'enabled' => isset( $template['enabled'] ) ? (bool) $template['enabled'] : (bool) $default['enabled'],
+				'subject' => $this->string_value( $template['subject'] ?? null, $default['subject'] ),
+				'heading' => $this->string_value( $template['heading'] ?? null, $default['heading'] ),
+				'body'    => $this->string_value( $template['body'] ?? null, $default['body'] ),
+			);
+		}
+
+		return $merged;
 	}
 
 	/**
@@ -59,14 +74,24 @@ final class Email_Service {
 		$recipient = sanitize_email( $recipient );
 		$template  = $this->templates()[ $template_key ] ?? null;
 
-		if ( ! is_email( $recipient ) || ! is_array( $template ) || empty( $template['enabled'] ) ) {
+		if ( ! $this->is_public_email( $recipient ) || ! is_array( $template ) || empty( $template['enabled'] ) ) {
 			return false;
 		}
 
-		$context['adam_email'] = $this->contact_email();
-		$subject               = wp_strip_all_tags( $this->replace_placeholders( (string) $template['subject'], $context ) );
-		$heading               = wp_strip_all_tags( $this->replace_placeholders( (string) $template['heading'], $context ) );
-		$body                  = $this->replace_placeholders( (string) $template['body'], $context );
+		$context = $this->normalize_context( $template_key, $context );
+		if ( '' === $context['adam_email'] ) {
+			Logger::info( 'Submission email skipped: no production-safe ADAM contact email is configured.', array( 'email_type' => $template_key ) );
+			return false;
+		}
+
+		$subject = wp_strip_all_tags( $this->replace_placeholders( $template['subject'], $context ) );
+		$heading = wp_strip_all_tags( $this->replace_placeholders( $template['heading'], $context ) );
+		$body    = $this->replace_placeholders( $template['body'], $context );
+		$subject = '' !== trim( $subject ) ? $subject : $this->string_value( $template['label'] ?? null, 'ADAM' );
+		$heading = '' !== trim( $heading ) ? $heading : $subject;
+		if ( '' === $context['field_url'] ) {
+			$body = (string) preg_replace( '#<p>\s*<a[^>]*href=(["\'])\s*\1[^>]*>.*?</a>\s*</p>#is', '', $body );
+		}
 		$content               = preg_match( '/<[a-z][^>]*>/i', $body ) ? wp_kses_post( $body ) : wp_kses_post( wpautop( esc_html( $body ) ) );
 
 		/**
@@ -77,9 +102,13 @@ final class Email_Service {
 		 * @param string $heading Email heading.
 		 * @param string $content Sanitized email body.
 		 */
-		$html = (string) apply_filters( 'adam_render_branded_email', '', $heading, $content );
+		$html = $this->render_shared_layout( $heading, $content, $template_key );
 		if ( '' === $html ) {
 			$html = $this->render_adam_layout( $heading, $content );
+		}
+		if ( $this->contains_development_value( $subject . "\n" . $html ) ) {
+			Logger::info( 'Submission email blocked because rendered output contained a development value.', array( 'email_type' => $template_key ) );
+			return false;
 		}
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
@@ -109,15 +138,15 @@ final class Email_Service {
 
 	public function mail_from_name(): string {
 		$name = sanitize_text_field( (string) get_option( 'adam_membership_email_from_name', '' ) );
-		return '' !== $name ? $name : 'ADAM';
+		return '' !== $name && ! $this->contains_development_value( $name ) && 'wordpress' !== strtolower( $name ) ? $name : 'ADAM';
 	}
 
 	public function contact_email(): string {
-		$email = sanitize_email( (string) get_option( 'adam_membership_email_from_address', '' ) );
-		if ( ! is_email( $email ) ) {
+		$email = sanitize_email( (string) Settings::get( 'contact_email' ) );
+		if ( ! $this->is_public_email( $email ) ) {
 			$email = sanitize_email( (string) get_option( 'admin_email', '' ) );
 		}
-		return $email;
+		return $this->is_public_email( $email ) ? $email : '';
 	}
 
 	/**
@@ -126,24 +155,118 @@ final class Email_Service {
 	private function replace_placeholders( string $text, array $context ): string {
 		$replacements = array();
 		foreach ( $context as $key => $value ) {
-			$value = (string) $value;
+			$value = $this->string_value( $value );
 			$replacements[ '{{' . $key . '}}' ] = str_ends_with( $key, '_url' ) || 'adam_email' === $key
 				? esc_url( 'adam_email' === $key ? 'mailto:' . $value : $value )
 				: esc_html( $value );
 		}
 		// The email placeholder is used both as visible text and as a mailto URL.
 		$replacements['{{adam_email}}'] = esc_html( $context['adam_email'] ?? '' );
-		return strtr( $text, $replacements );
+		$rendered = strtr( $text, $replacements );
+		return (string) preg_replace( '/\{\{[a-z0-9_]+\}\}/i', '', $rendered );
+	}
+
+	/**
+	 * Guarantees scalar, non-null values and type-specific fallbacks.
+	 *
+	 * @param array<string,mixed> $context Raw placeholder values.
+	 * @return array<string,string>
+	 */
+	private function normalize_context( string $template_key, array $context ): array {
+		$field_name = $this->string_value( $context['field_name'] ?? null, __( 'Campo submetido', 'adam-comunidade' ) );
+		$admin_note = $this->string_value(
+			$context['admin_note'] ?? null,
+			__( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' )
+		);
+		$field_url = $this->public_url( $context['field_url'] ?? null );
+		if ( 'field_approved' === $template_key && '' === $field_url ) {
+			$field_url = $this->public_url( Managed_Pages::url( 'fields' ) );
+		}
+
+		return array(
+			'field_name' => $field_name,
+			'field_url'  => $field_url,
+			'admin_note' => $admin_note,
+			'adam_email' => $this->contact_email(),
+		);
+	}
+
+	/**
+	 * Runs a third-party branded renderer without allowing its diagnostics into
+	 * the email body. Warnings are converted to logged failures and the local
+	 * validated layout is used.
+	 */
+	private function render_shared_layout( string $heading, string $content, string $template_key ): string {
+		$previous = set_error_handler(
+			static function ( int $severity, string $message, string $file, int $line ): never {
+				throw new \ErrorException( $message, 0, $severity, $file, $line );
+			}
+		);
+		try {
+			$html = apply_filters( 'adam_render_branded_email', '', $heading, $content );
+			return is_string( $html ) ? $html : '';
+		} catch ( \Throwable $error ) {
+			Logger::info(
+				'Shared email renderer failed; the validated Community fallback was used.',
+				array( 'email_type' => $template_key, 'error' => $error->getMessage() )
+			);
+			return '';
+		} finally {
+			restore_error_handler();
+			unset( $previous );
+		}
+	}
+
+	/**
+	 * Returns a trimmed scalar string without ever passing null to WordPress
+	 * escaping functions.
+	 */
+	private function string_value( mixed $value, string $fallback = '' ): string {
+		if ( ! is_scalar( $value ) || null === $value ) {
+			return $fallback;
+		}
+		$value = trim( (string) $value );
+		return '' !== $value ? $value : $fallback;
+	}
+
+	/**
+	 * Allows only public HTTP(S) URLs.
+	 */
+	private function public_url( mixed $value ): string {
+		$url = esc_url_raw( $this->string_value( $value ), array( 'http', 'https' ) );
+		return $url && ! $this->contains_development_value( $url ) ? $url : '';
+	}
+
+	/**
+	 * Rejects addresses that are valid syntactically but belong to local or
+	 * documentation-only domains.
+	 */
+	private function is_public_email( string $email ): bool {
+		if ( ! is_email( $email ) ) {
+			return false;
+		}
+		$domain = strtolower( (string) substr( strrchr( $email, '@' ) ?: '', 1 ) );
+		return ! $this->contains_development_value( $domain );
+	}
+
+	/**
+	 * Detects local, development and documentation placeholders.
+	 */
+	private function contains_development_value( string $value ): bool {
+		return 1 === preg_match(
+			'/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\.local(?:host)?\b|\.test\b|\.invalid\b|example\.(?:com|org|net)\b|wpengine\.local|dev-email)/i',
+			$value
+		);
 	}
 
 	/**
 	 * Fallback matching the ADAM Members email design system.
 	 */
 	private function render_adam_layout( string $heading, string $content ): string {
-		$logo = (string) apply_filters(
+		$logo = $this->public_url( apply_filters(
 			'adam_email_logo_url',
 			'https://airsoftmondego.pt/wp-content/uploads/2026/06/ADAM.png'
-		);
+		) );
 		ob_start();
 		?>
 <!DOCTYPE html>
@@ -152,7 +275,7 @@ final class Email_Service {
 <body style="margin:0;padding:40px 0;background:#f3f5f7;font-family:Arial,Helvetica,sans-serif;color:#1d2327;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <table role="presentation" width="650" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.08);">
-<tr><td style="background:#2e7d32;padding:35px;text-align:center;"><img src="<?php echo esc_url( $logo ); ?>" alt="ADAM" style="max-width:180px;height:auto;display:block;margin:0 auto 25px;"><h1 style="margin:0;color:#ffffff;font-size:30px;font-weight:700;"><?php echo esc_html( $heading ); ?></h1></td></tr>
+<tr><td style="background:#2e7d32;padding:35px;text-align:center;"><?php if ( $logo ) : ?><img src="<?php echo esc_url( $logo ); ?>" alt="ADAM" style="max-width:180px;height:auto;display:block;margin:0 auto 25px;"><?php endif; ?><h1 style="margin:0;color:#ffffff;font-size:30px;font-weight:700;"><?php echo esc_html( $heading ); ?></h1></td></tr>
 <tr><td style="padding:40px;font-size:16px;line-height:1.8;"><?php echo wp_kses_post( $content ); ?></td></tr>
 <tr><td style="padding:30px;background:#fafafa;border-top:1px solid #e4e4e4;font-size:13px;line-height:1.8;color:#666;"><p style="margin-top:0;"><?php esc_html_e( 'Caso necessite de apoio, contacte a Direção da ADAM.', 'adam-comunidade' ); ?></p><p style="margin-bottom:0;"><strong>ADAM - Associação Desportiva de Airsoft do Mondego</strong></p></td></tr>
 </table></td></tr></table>

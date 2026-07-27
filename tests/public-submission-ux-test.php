@@ -38,7 +38,8 @@ $assert( str_contains( $style, '.adam-portal-form > .adam-community-button' ), '
 foreach ( array( 'field_received', 'field_approved', 'field_rejected' ) as $template ) {
 	$assert( str_contains( $email, "'{$template}'" ), 'Missing email template: ' . $template );
 }
-$assert( str_contains( $email, "get_option( 'adam_membership_email_from_address'" ), 'Community emails must reuse the ADAM Members sender.' );
+$assert( str_contains( $email, "Settings::get( 'contact_email' )" ), 'Community emails must use the configured official ADAM contact.' );
+$assert( str_contains( $email, "get_option( 'admin_email'" ), 'Community emails must fall back to the WordPress administration email.' );
 $assert( str_contains( $email, "apply_filters( 'adam_render_branded_email'" ), 'Community emails must offer the shared ADAM renderer integration.' );
 $assert( str_contains( $view, 'email_templates[' ), 'Email subject, heading and body must be editable in wp-admin.' );
 $assert( str_contains( $module, 'new Email_Service()' ), 'The shared submission email service must be injected.' );

@@ -80,7 +80,7 @@ defined( 'ABSPATH' ) || exit;
 
 		<section class="adam-card adam-form-manager__emails">
 			<h2><?php esc_html_e( 'Emails automáticos de campos', 'adam-comunidade' ); ?></h2>
-			<p><?php esc_html_e( 'Estes emails usam o remetente e a identidade visual do ADAM Members. Pode editar o assunto, o cabeçalho e o conteúdo sem alterar código.', 'adam-comunidade' ); ?></p>
+			<p><?php esc_html_e( 'Estes emails usam o contacto oficial configurado no ADAM Comunidade e a identidade visual partilhada da plataforma. Pode editar o assunto, o cabeçalho e o conteúdo sem alterar código.', 'adam-comunidade' ); ?></p>
 			<p><code>{{field_name}}</code> <code>{{field_url}}</code> <code>{{admin_note}}</code> <code>{{adam_email}}</code></p>
 			<?php foreach ( $email_templates as $template_key => $template ) : ?>
 				<article class="adam-form-manager__email">
