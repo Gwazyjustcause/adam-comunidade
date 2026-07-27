@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Experience\Portal;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
@@ -29,6 +30,7 @@ $adam_districts      = $adam_repository->distinct( 'district', 'published' );
 $adam_municipalities = $adam_repository->distinct( 'municipality', 'published' );
 $adam_hero_slides    = Hero_Carousel::slides( $adam_repository );
 $adam_hero_settings  = Hero_Carousel::settings();
+$adam_directory_title = get_the_title( Managed_Pages::id( 'teams' ) ) ?: __( 'Equipas', 'adam-comunidade' );
 if ( ! $adam_hero_slides ) {
 	foreach ( $adam_result['items'] as $adam_hero_team ) {
 		if ( ! empty( $adam_hero_team->cover_id ) ) {
@@ -46,6 +48,11 @@ get_header();
 <main class="adam-comunidade adam-teams-archive" id="main">
 	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-teams-header adam-fields-directory-hero', 'archive' ) ); ?>" data-adam-directory-carousel data-autoplay="<?php echo ! empty( $adam_hero_settings['autoplay'] ) ? 'true' : 'false'; ?>" data-interval="<?php echo esc_attr( (string) absint( $adam_hero_settings['interval'] ) ); ?>" aria-roledescription="<?php esc_attr_e( 'carrossel', 'adam-comunidade' ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-fields-hero-slides' ) ); ?>" aria-live="off">
+			<?php if ( ! $adam_hero_slides ) : ?>
+				<div class="adam-fields-hero-slide is-active" data-adam-directory-slide aria-hidden="false">
+					<?php echo Placeholder_Image::cover( 'team', (string) $adam_directory_title ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</div>
+			<?php endif; ?>
 			<?php foreach ( $adam_hero_slides as $adam_hero_index => $adam_hero_slide ) : ?>
 				<div class="adam-fields-hero-slide<?php echo 0 === $adam_hero_index ? ' is-active' : ''; ?>" data-adam-directory-slide aria-hidden="<?php echo 0 === $adam_hero_index ? 'false' : 'true'; ?>">
 					<img src="<?php echo esc_url( $adam_hero_slide['url'] ); ?>" alt="<?php echo esc_attr( $adam_hero_slide['alt'] ); ?>" <?php echo 0 === $adam_hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
@@ -54,7 +61,7 @@ get_header();
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-teams-container' ) ); ?>">
 			<span class="<?php echo esc_attr( Public_Hero::element( 'kicker', 'adam-teams-kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( get_the_title( Managed_Pages::id( 'teams' ) ) ); ?></h1>
+			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $adam_directory_title ); ?></h1>
 			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Descubra as equipas de airsoft do Centro de Portugal.', 'adam-comunidade' ); ?></p>
 		</div>
 		<?php if ( count( $adam_hero_slides ) > 1 ) : ?>

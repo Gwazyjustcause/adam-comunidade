@@ -12,6 +12,7 @@ use ADAM\Comunidade\Directory\Router;
 use ADAM\Comunidade\Directory\Types;
 use ADAM\Comunidade\Directory\View;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 
 $type       = Router::current_type();
@@ -22,14 +23,18 @@ $district   = sanitize_text_field( (string) filter_input( INPUT_GET, 'district' 
 $category   = sanitize_key( (string) filter_input( INPUT_GET, 'category' ) );
 $featured   = filter_input( INPUT_GET, 'featured', FILTER_VALIDATE_BOOL ) ? 1 : '';
 $result     = $repository->query( $type, array( 'status' => 'published', 'search' => $search, 'district' => $district, 'category' => $category, 'featured' => $featured, 'orderby' => 'name', 'order' => 'ASC', 'per_page' => 12 ) );
+$directory_title = get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ?: (string) $definition['plural'];
 
 get_header();
 ?>
 <main class="adam-community adam-community-archive" id="main" data-directory-type="<?php echo esc_attr( $type ); ?>">
 	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-community-header', 'archive' ) ); ?>">
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-community-header__media' ) ); ?>">
+			<?php echo Placeholder_Image::cover( (string) $type, (string) $directory_title ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container' ) ); ?>">
 			<span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
-			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ); ?></h1>
+			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $directory_title ); ?></h1>
 			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Discover the organisations that collaborate with and support the ADAM community.', 'adam-comunidade' ); ?></p>
 		</div>
 	</header>

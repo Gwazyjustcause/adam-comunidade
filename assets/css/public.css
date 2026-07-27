@@ -142,6 +142,13 @@
 	background: rgba(11, 31, 14, .86);
 }
 
+.adam-generated-placeholder {
+	display: block;
+	height: 100%;
+	max-width: none;
+	width: 100%;
+}
+
 @media (max-width: 700px) {
 	.adam-comunidade .adam-public-hero--archive,
 	.adam-community .adam-public-hero--archive,

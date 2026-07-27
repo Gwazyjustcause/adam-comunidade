@@ -48,7 +48,8 @@
 	opacity: 1;
 }
 
-.adam-fields-hero-slide img {
+.adam-fields-hero-slide img,
+.adam-fields-hero-slide .adam-generated-placeholder {
 	height: 100%;
 	object-fit: cover;
 	width: 100%;
@@ -313,7 +314,8 @@
 }
 
 .adam-field-card__cover img,
-.adam-field-card__cover > span {
+.adam-field-card__cover > span,
+.adam-field-card__cover .adam-generated-placeholder {
 	background: linear-gradient(135deg, #dfe6d4, #bfc8b4);
 	display: block;
 	height: 100%;
@@ -501,7 +503,8 @@
 	overflow: hidden;
 }
 
-.adam-field-hero__cover img {
+.adam-field-hero__cover img,
+.adam-field-hero__cover .adam-generated-placeholder {
 	height: 100%;
 	object-fit: cover;
 	width: 100%;
@@ -706,7 +709,8 @@
 	overflow: hidden;
 }
 
-.adam-associated-team-card img {
+.adam-associated-team-card img,
+.adam-associated-team-card .adam-generated-placeholder {
 	height: 100%;
 	object-fit: cover;
 	width: 100%;

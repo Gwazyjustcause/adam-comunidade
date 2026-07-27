@@ -22,6 +22,15 @@
 	padding-top: clamp(48px, 8vw, 88px);
 }
 
+.adam-community-header__media {
+	inset: 0;
+	position: absolute;
+}
+
+.adam-community-header__media .adam-generated-placeholder {
+	object-fit: cover;
+}
+
 .adam-community-header .adam-community-container {
 	padding-bottom: 0;
 	padding-top: 0;
@@ -101,6 +110,12 @@
 	height: 100%;
 	object-fit: contain;
 	width: 100%;
+}
+
+.adam-community-card__media .adam-generated-placeholder {
+	height: calc(100% + 48px);
+	margin: -24px;
+	width: calc(100% + 48px);
 }
 
 .adam-community-card__placeholder {
@@ -207,7 +222,8 @@
 	height: clamp(240px, 38vw, 500px);
 }
 
-.adam-community-hero__cover img {
+.adam-community-hero__cover img,
+.adam-community-hero__cover .adam-generated-placeholder {
 	height: 100%;
 	object-fit: cover;
 	width: 100%;
@@ -236,6 +252,10 @@
 	object-fit: contain;
 	padding: 12px;
 	width: 140px;
+}
+
+svg.adam-community-hero__logo {
+	padding: 0;
 }
 
 .adam-community-content {

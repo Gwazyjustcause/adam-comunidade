@@ -27,6 +27,8 @@ foreach ( array( 'is_associated', 'associated_status' ) as $contract ) {
 $assert( str_contains( $repository, 'is_associated DESC' ), 'Associated Teams must always be prioritized.' );
 $assert( str_contains( $archive, 'Apenas Equipas Associadas' ), 'The association filter is missing.' );
 $assert( str_contains( $card, 'Equipa Associada ADAM' ), 'The associated Team badge is missing.' );
+$assert( str_contains( $card, 'adam-team-card__association-badge' ), 'The associated Team badge must be anchored to the cover corner.' );
+$assert( strpos( $card, 'adam-team-card__association-badge' ) < strpos( $card, 'adam-team-card__body' ), 'The associated Team badge must not overlap the logo/content layout.' );
 $assert( ! str_contains( $archive, 'No published teams are available yet.' ), 'The public empty state is still in English.' );
 $assert( str_contains( $archive, 'data-adam-directory-carousel' ), 'Teams are not using the shared carousel behavior.' );
 $assert( str_contains( $controller, "'team-hero'" ) && str_contains( $controller, 'save_hero' ), 'The Teams hero admin route is incomplete.' );

@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Router;
 use ADAM\Comunidade\Fields\View;
@@ -19,7 +20,7 @@ $adam_associated = ! empty( $field->is_associated );
 		<?php if ( $field->cover_id ) : ?>
 			<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-card', false, array( 'loading' => 'lazy' ) ); ?>
 		<?php else : ?>
-			<span></span>
+			<?php echo Placeholder_Image::cover( 'field', (string) $field->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
 		<?php if ( $adam_associated ) : ?><strong class="adam-field-associated-badge"><?php esc_html_e( 'Associado ADAM', 'adam-comunidade' ); ?></strong><?php endif; ?>
 	</a>

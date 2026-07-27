@@ -14,6 +14,7 @@ use ADAM\Comunidade\Directory\Types;
 use ADAM\Comunidade\Directory\View;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Public_Privacy;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
@@ -74,10 +75,10 @@ get_header();
 ?>
 <main class="adam-community adam-community-single" id="main" data-entity-type="<?php echo esc_attr( $entry->entity_type ); ?>" data-entity-id="<?php echo esc_attr( $entry->id ); ?>">
 	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-community-hero' ) ); ?>">
-		<?php if ( $entry->cover_id ) : ?><div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-community-hero__cover' ) ); ?>"><?php echo wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-cover', false, array( 'fetchpriority' => 'high' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div><?php endif; ?>
+		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-community-hero__cover' ) ); ?>"><?php echo $entry->cover_id ? wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-cover', false, array( 'fetchpriority' => 'high' ) ) : Placeholder_Image::cover( (string) $entry->entity_type, (string) $entry->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container adam-community-hero__content' ) ); ?>">
 			<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( ucwords( str_replace( '_', ' ', $entry->verification ) ) ); ?></span><?php endif; ?>
-			<?php echo $entry->logo_id ? wp_get_attachment_image( (int) $entry->logo_id, 'adam-directory-logo', false, array( 'class' => 'adam-community-hero__logo' ) ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo $entry->logo_id ? wp_get_attachment_image( (int) $entry->logo_id, 'adam-directory-logo', false, array( 'class' => 'adam-community-hero__logo' ) ) : Placeholder_Image::avatar( (string) $entry->entity_type, (string) $entry->name, 'adam-community-hero__logo' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<div>
 				<?php if ( $entry->featured ) : ?><span class="adam-community-badge adam-public-hero__badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $entry->name ); ?></h1>

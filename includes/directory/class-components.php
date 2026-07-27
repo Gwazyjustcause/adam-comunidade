@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
 
@@ -250,7 +251,10 @@ final class Components {
 	}
 
 	private function core_card( object $item, string $type, string $url, int $image_id ): string {
-		return '<article class="adam-community-card" data-entity-type="' . esc_attr( $type ) . '" data-entity-id="' . esc_attr( (string) $item->id ) . '"><a class="adam-community-card__media" href="' . esc_url( $url ) . '">' . ( $image_id ? wp_get_attachment_image( $image_id, 'medium', false, array( 'loading' => 'lazy' ) ) : '<span class="adam-community-card__placeholder"></span>' ) . '</a><div class="adam-community-card__body"><span class="adam-community-card__meta">' . esc_html( ucfirst( $type ) ) . '</span><h2><a href="' . esc_url( $url ) . '">' . esc_html( $item->name ) . '</a></h2><p>' . esc_html( $item->short_description ?? '' ) . '</p><a class="adam-community-button" href="' . esc_url( $url ) . '">' . esc_html__( 'View details', 'adam-comunidade' ) . '</a></div></article>';
+		$media = $image_id
+			? wp_get_attachment_image( $image_id, 'medium', false, array( 'loading' => 'lazy' ) )
+			: Placeholder_Image::cover( $type, (string) $item->name );
+		return '<article class="adam-community-card" data-entity-type="' . esc_attr( $type ) . '" data-entity-id="' . esc_attr( (string) $item->id ) . '"><a class="adam-community-card__media" href="' . esc_url( $url ) . '">' . $media . '</a><div class="adam-community-card__body"><span class="adam-community-card__meta">' . esc_html( ucfirst( $type ) ) . '</span><h2><a href="' . esc_url( $url ) . '">' . esc_html( $item->name ) . '</a></h2><p>' . esc_html( $item->short_description ?? '' ) . '</p><a class="adam-community-button" href="' . esc_url( $url ) . '">' . esc_html__( 'View details', 'adam-comunidade' ) . '</a></div></article>';
 	}
 
 	private function assets( bool $map = false ): void {

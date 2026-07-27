@@ -7,10 +7,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
-use ADAM\Comunidade\Helpers;
 
 $adam_card_styles = Options::decode_list( $team->playing_styles );
 ?>
@@ -19,12 +19,14 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 		<?php if ( $team->cover_id ) : ?>
 			<?php echo wp_get_attachment_image( (int) $team->cover_id, 'adam-team-card', false, array( 'loading' => 'lazy' ) ); ?>
 		<?php else : ?>
-			<span class="adam-team-card__cover-placeholder"></span>
+			<?php echo Placeholder_Image::cover( 'team', (string) $team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
 	</a>
+	<?php if ( ! empty( $team->is_associated ) ) : ?>
+		<span class="adam-badge adam-badge--associated adam-directory-badge adam-team-card__association-badge"><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span>
+	<?php endif; ?>
 	<div class="adam-team-card__body">
 		<div class="adam-team-card__status">
-			<?php if ( ! empty( $team->is_associated ) ) : ?><span class="adam-badge adam-badge--associated adam-directory-badge"><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 			<?php if ( ! empty( $team->featured ) ) : ?><span class="adam-comunidade__badge adam-directory-badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>
 			<?php if ( 'verified_team' === ( $team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified adam-directory-badge"><?php esc_html_e( 'Equipa verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
 		</div>
@@ -33,7 +35,7 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 				<?php if ( $team->logo_id ) : ?>
 					<?php echo wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo', false, array( 'loading' => 'lazy' ) ); ?>
 				<?php else : ?>
-					<?php echo Helpers::svg_icon( 'community', 30 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo Placeholder_Image::avatar( 'team', (string) $team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<?php endif; ?>
 			</div>
 			<div>

@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Fields\Map;
 use ADAM\Comunidade\Fields\Options;
@@ -62,7 +63,11 @@ get_header();
 <main class="adam-comunidade adam-field-single<?php echo $has_mobile_actions ? ' has-mobile-actions' : ''; ?>" id="main">
 	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-field-hero' ) ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-field-hero__cover' ) ); ?>">
-			<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
+			<?php if ( $field->cover_id ) : ?>
+				<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
+			<?php else : ?>
+				<?php echo Placeholder_Image::cover( 'field', (string) $field->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php endif; ?>
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-field-container adam-field-hero__content' ) ); ?>">
 			<div>
@@ -146,8 +151,8 @@ get_header();
 
 		<?php if ( $team ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Equipa Associada', 'adam-comunidade' ); ?></h2>
-			<div class="adam-associated-team-card<?php echo empty( $team->logo_id ) ? ' adam-associated-team-card--without-logo' : ''; ?>">
-				<?php if ( ! empty( $team->logo_id ) ) : ?><div><?php echo wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo' ); ?></div><?php endif; ?>
+			<div class="adam-associated-team-card">
+				<div><?php echo ! empty( $team->logo_id ) ? wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo' ) : Placeholder_Image::avatar( 'team', (string) $team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 				<div><h3><?php echo esc_html( $team->name ); ?></h3><?php if ( $team->short_description ) : ?><p><?php echo esc_html( $team->short_description ); ?></p><?php endif; ?><a class="adam-field-button" href="<?php echo esc_url( Team_Router::team_url( $team ) ); ?>"><?php esc_html_e( 'Ver Equipa', 'adam-comunidade' ); ?></a></div>
 			</div>
 		</section><?php endif; ?>

@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Directory;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Privacy;
 
 /**
@@ -28,7 +29,9 @@ final class View {
 					<?php echo wp_get_attachment_image( (int) $entry->logo_id, 'adam-directory-logo', false, array( 'loading' => 'lazy' ) ); ?>
 				<?php elseif ( $entry->cover_id ) : ?>
 					<?php echo wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-card', false, array( 'loading' => 'lazy' ) ); ?>
-				<?php else : ?><span class="adam-community-card__placeholder" aria-hidden="true"></span><?php endif; ?>
+				<?php else : ?>
+					<?php echo Placeholder_Image::cover( (string) $entry->entity_type, (string) $entry->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php endif; ?>
 			</a>
 			<div class="adam-community-card__body">
 				<?php if ( $entry->featured ) : ?><span class="adam-community-badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>

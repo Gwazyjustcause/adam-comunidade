@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
-use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Public_Privacy;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
@@ -53,14 +53,18 @@ get_header();
 >
 	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-team-hero' ) ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-team-hero__cover' ) ); ?>">
-			<?php echo wp_get_attachment_image( (int) $adam_team->cover_id, 'adam-team-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
+			<?php if ( $adam_team->cover_id ) : ?>
+				<?php echo wp_get_attachment_image( (int) $adam_team->cover_id, 'adam-team-cover', false, array( 'fetchpriority' => 'high' ) ); ?>
+			<?php else : ?>
+				<?php echo Placeholder_Image::cover( 'team', (string) $adam_team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php endif; ?>
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-team-container adam-team-hero__content' ) ); ?>">
 			<div class="adam-team-hero__logo">
 				<?php if ( $adam_team->logo_id ) : ?>
 					<?php echo wp_get_attachment_image( (int) $adam_team->logo_id, 'adam-team-logo' ); ?>
 				<?php else : ?>
-					<?php echo Helpers::svg_icon( 'community', 54 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo Placeholder_Image::avatar( 'team', (string) $adam_team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<?php endif; ?>
 			</div>
 			<div>
