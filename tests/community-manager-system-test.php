@@ -32,7 +32,7 @@ $assert( str_contains( $auth, "hash( 'sha256', \$raw )" ), 'Session tokens must 
 $assert( str_contains( $auth, "password_verify( \$password" ), 'Manager login does not verify its own password hash.' );
 $assert( str_contains( $service, "password_hash( \$password, PASSWORD_DEFAULT )" ), 'Manager passwords are not independently hashed.' );
 $assert( str_contains( $service, 'random_bytes( 32 )' ) && str_contains( $service, "'token_hash' => hash( 'sha256', \$raw )" ), 'Invitation tokens are not secure and hashed at rest.' );
-$assert( str_contains( $portal, "'^gestor/?$'" ) && str_contains( $portal, 'adam_manager_route=activate' ), 'Dedicated manager routes are incomplete.' );
+$assert( str_contains( $portal, "Managed_Pages::url( 'manager' )" ) && str_contains( $portal, "Managed_Pages::url( 'manager_activation' )" ), 'Managed manager routes are incomplete.' );
 $assert( str_contains( $portal, 'verify_csrf' ), 'Authenticated manager mutations need session-bound CSRF checks.' );
 $assert( str_contains( $portal, "unset( \$input['cover_id'], \$input['logo_id'], \$input['gallery'] )" ), 'Posted attachment IDs can bypass manager upload validation.' );
 $assert( str_contains( $service, "array( 'team', 'field', 'partner', 'institution' )" ), 'Assignments are not ready for future Community entity types.' );
@@ -42,9 +42,10 @@ $assert( str_contains( $service, "'approve' => 'approved'" ) && str_contains( $a
 $assert( str_contains( $admin, 'adam_resend_manager_invitation' ), 'Administrators cannot resend invitations.' );
 $assert( str_contains( $portal, 'Upload_Component::render' ), 'Manager images must reuse the ADAM Upload component.' );
 $assert( str_contains( $approval, "'manager_invite_url' => \$manager_invite_url" ), 'Field approval email does not receive the manager invitation.' );
-foreach ( array( 'manager_invitation', 'manager_revision_approved', 'manager_revision_rejected', 'manager_information_requested' ) as $template ) {
+foreach ( array( 'manager_invitation', 'manager_revision_approved', 'manager_revision_rejected', 'manager_information_requested', 'manager_password_reset' ) as $template ) {
 	$assert( str_contains( $emails, "'{$template}'" ), 'Missing manager email template: ' . $template );
 }
+$assert( str_contains( $admin, "'managers'" ) && str_contains( $admin, 'adam_manager_admin_transfer' ), 'Dedicated manager administration is incomplete.' );
 $assert( str_contains( $field_schema, 'opening_hours longtext' ), 'Fields cannot store manager-maintained opening hours.' );
 $assert( str_contains( $field_page, '$has_opening_hours' ), 'Empty-aware public opening hours rendering is missing.' );
 

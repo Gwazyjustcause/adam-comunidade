@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.3.0';
+	private const VERSION = '1.4.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -88,6 +88,24 @@ final class Managed_Pages {
 				'default_title' => __( 'Instituições', 'adam-comunidade' ),
 				'default_slug'  => 'instituicoes',
 				'option'        => 'institutions_page_id',
+			),
+			'manager' => array(
+				'label'         => __( 'Área do Gestor', 'adam-comunidade' ),
+				'default_title' => __( 'Área do Gestor', 'adam-comunidade' ),
+				'default_slug'  => 'gestor',
+				'option'        => 'manager_page_id',
+			),
+			'manager_activation' => array(
+				'label'         => __( 'Definir Palavra-passe do Gestor', 'adam-comunidade' ),
+				'default_title' => __( 'Definir Palavra-passe', 'adam-comunidade' ),
+				'default_slug'  => 'definir-palavra-passe',
+				'option'        => 'manager_activation_page_id',
+			),
+			'manager_recovery' => array(
+				'label'         => __( 'Recuperar Palavra-passe do Gestor', 'adam-comunidade' ),
+				'default_title' => __( 'Recuperar Palavra-passe', 'adam-comunidade' ),
+				'default_slug'  => 'recuperar-palavra-passe',
+				'option'        => 'manager_recovery_page_id',
 			),
 		);
 	}
@@ -505,6 +523,7 @@ final class Managed_Pages {
 			|| get_query_var( 'adam_field_slug' )
 			|| get_query_var( 'adam_directory_slug' )
 			|| get_query_var( 'adam_compare' )
+			|| get_query_var( 'adam_manager_route' )
 		) {
 			return false;
 		}
@@ -612,6 +631,7 @@ final class Managed_Pages {
 		Experience\Api_V2::add_rewrite_rules();
 		Experience\Portal::add_rewrite_rules();
 		Events\Router::add_rewrite_rules();
+		Managers\Portal::add_rewrite_rules();
 		flush_rewrite_rules( false );
 	}
 }

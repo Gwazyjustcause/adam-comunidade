@@ -504,10 +504,83 @@
 	width: 100%;
 }
 
+.adam-managers-admin {
+	display: grid;
+	gap: 18px;
+}
+
+.adam-managers-admin .adam-admin-filters,
+.adam-managers-admin .adam-form-grid {
+	align-items: end;
+	display: grid;
+	gap: 14px;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.adam-managers-admin label {
+	display: grid;
+	gap: 6px;
+}
+
+.adam-manager-admin-card .adam-card__header {
+	align-items: start;
+	display: flex;
+	gap: 24px;
+	justify-content: space-between;
+}
+
+.adam-manager-admin-card .adam-card__header dl {
+	display: flex;
+	gap: 24px;
+	margin: 0;
+}
+
+.adam-manager-admin-card dt {
+	color: #646970;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.adam-manager-admin-card dd {
+	margin: 3px 0 0;
+}
+
+.adam-manager-assignment {
+	align-items: center;
+	border-top: 1px solid #e2e4e7;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(180px, 1fr) auto minmax(250px, auto) auto;
+	padding: 12px 0;
+}
+
+.adam-manager-assignment > div {
+	display: grid;
+	gap: 4px;
+}
+
+.adam-manager-assignment form {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	margin: 0;
+}
+
 @media (max-width: 900px) {
 	.adam-approval-card__header,
 	.adam-approval-card__layout,
 	.adam-approval-details {
+		grid-template-columns: 1fr;
+	}
+
+	.adam-manager-admin-card .adam-card__header,
+	.adam-manager-admin-card .adam-card__header dl {
+		flex-direction: column;
+	}
+
+	.adam-manager-assignment {
+		align-items: stretch;
 		grid-template-columns: 1fr;
 	}
 }

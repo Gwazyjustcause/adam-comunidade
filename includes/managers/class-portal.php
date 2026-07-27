@@ -11,7 +11,9 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Fields\Options as Field_Options;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Teams\Options as Team_Options;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
@@ -19,7 +21,7 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
  * Provides a dedicated, non-WordPress login and management interface.
  */
 final class Portal {
-	private const ROUTES_VERSION = '1.0.0';
+	private const ROUTES_VERSION = '1.1.0';
 	private static ?self $instance = null;
 
 	public function __construct( private Auth $auth, private Service $service ) {
@@ -33,16 +35,17 @@ final class Portal {
 		add_filter( 'template_include', array( $this, 'template' ) );
 		add_filter( 'document_title_parts', array( $this, 'title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ) );
-		foreach ( array( 'login', 'activate', 'logout', 'revision' ) as $action ) {
+		foreach ( array( 'login', 'activate', 'logout', 'revision', 'request_reset', 'reset' ) as $action ) {
 			add_action( 'admin_post_nopriv_adam_manager_' . $action, array( $this, 'handle_' . $action ) );
 			add_action( 'admin_post_adam_manager_' . $action, array( $this, 'handle_' . $action ) );
 		}
 	}
 
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^gestor/?$', 'index.php?adam_manager_route=dashboard', 'top' );
+		$path = Managed_Pages::path( 'manager' ) ?: 'gestor';
+		add_rewrite_rule( '^' . preg_quote( $path, '#' ) . '/editar/(team|field|partner|institution)/([0-9]+)/?$', 'index.php?adam_manager_route=edit&adam_manager_type=$matches[1]&adam_manager_id=$matches[2]', 'top' );
+		// Keeps invitation links generated before managed pages existed valid.
 		add_rewrite_rule( '^gestor/ativar/([a-f0-9]{64})/?$', 'index.php?adam_manager_route=activate&adam_manager_token=$matches[1]', 'top' );
-		add_rewrite_rule( '^gestor/editar/(team|field)/([0-9]+)/?$', 'index.php?adam_manager_route=edit&adam_manager_type=$matches[1]&adam_manager_id=$matches[2]', 'top' );
 	}
 
 	public static function maybe_flush_rewrite_rules(): void {
@@ -58,18 +61,18 @@ final class Portal {
 	}
 
 	public function template( string $template ): string {
-		return get_query_var( 'adam_manager_route' ) ? Helpers::path( 'templates/managers/portal.php' ) : $template;
+		return $this->route() ? Helpers::path( 'templates/managers/portal.php' ) : $template;
 	}
 
 	public function title( array $parts ): array {
-		if ( get_query_var( 'adam_manager_route' ) ) {
+		if ( $this->route() ) {
 			$parts['title'] = __( 'Gestor da Comunidade', 'adam-comunidade' );
 		}
 		return $parts;
 	}
 
 	public function assets(): void {
-		if ( ! get_query_var( 'adam_manager_route' ) ) {
+		if ( ! $this->route() ) {
 			return;
 		}
 		wp_enqueue_style( 'adam-comunidade' );
@@ -78,15 +81,20 @@ final class Portal {
 	}
 
 	public static function url(): string {
-		return home_url( '/gestor/' );
+		return Managed_Pages::url( 'manager' );
 	}
 
 	public static function activation_url( string $token ): string {
-		return home_url( '/gestor/ativar/' . rawurlencode( $token ) . '/' );
+		return add_query_arg( 'convite', rawurlencode( $token ), Managed_Pages::url( 'manager_activation' ) );
+	}
+
+	public static function recovery_url( string $token = '' ): string {
+		$url = Managed_Pages::url( 'manager_recovery' );
+		return $token ? add_query_arg( 'codigo', rawurlencode( $token ), $url ) : $url;
 	}
 
 	public static function edit_url( string $type, int $id ): string {
-		return home_url( '/gestor/editar/' . sanitize_key( $type ) . '/' . absint( $id ) . '/' );
+		return trailingslashit( self::url() ) . 'editar/' . sanitize_key( $type ) . '/' . absint( $id ) . '/';
 	}
 
 	public static function render(): void {
@@ -96,7 +104,7 @@ final class Portal {
 	}
 
 	private function render_page(): void {
-		$route = sanitize_key( (string) get_query_var( 'adam_manager_route' ) );
+		$route = $this->route();
 		?>
 		<main class="adam-community adam-manager-portal">
 			<section class="adam-manager-shell">
@@ -109,6 +117,8 @@ final class Portal {
 				<?php
 				if ( 'activate' === $route ) {
 					$this->activation_form();
+				} elseif ( 'recovery' === $route ) {
+					$this->recovery_form();
 				} elseif ( 'edit' === $route ) {
 					$this->edit_form();
 				} else {
@@ -144,7 +154,8 @@ final class Portal {
 				<?php foreach ( $assignments as $assignment ) : $record = $this->service->record( (string) $assignment->entity_type, (int) $assignment->entity_id ); ?>
 					<?php if ( ! $record ) { continue; } ?>
 					<article class="adam-card adam-manager-card">
-						<span class="adam-card__eyebrow"><?php echo esc_html( 'field' === $assignment->entity_type ? __( 'Campo', 'adam-comunidade' ) : __( 'Equipa', 'adam-comunidade' ) ); ?></span>
+						<?php $entity_labels = array( 'field' => __( 'Campo', 'adam-comunidade' ), 'team' => __( 'Equipa', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ); ?>
+						<span class="adam-card__eyebrow"><?php echo esc_html( $entity_labels[ $assignment->entity_type ] ?? __( 'Organização', 'adam-comunidade' ) ); ?></span>
 						<h3><?php echo esc_html( (string) $record->name ); ?></h3>
 						<p><?php esc_html_e( 'As alterações enviadas ficam pendentes até serem revistas pela administração.', 'adam-comunidade' ); ?></p>
 						<a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar registo', 'adam-comunidade' ); ?></a>
@@ -162,13 +173,14 @@ final class Portal {
 			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
 			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" autocomplete="current-password" required></label>
 			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Entrar', 'adam-comunidade' ); ?></button>
+			<p><a href="<?php echo esc_url( self::recovery_url() ); ?>"><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></a></p>
 			<p class="adam-manager-help"><?php esc_html_e( 'A conta de Gestor é independente da sua conta WordPress ou de Sócio ADAM.', 'adam-comunidade' ); ?></p>
 		</form>
 		<?php
 	}
 
 	private function activation_form(): void {
-		$token = sanitize_text_field( (string) get_query_var( 'adam_manager_token' ) );
+		$token = sanitize_text_field( (string) ( get_query_var( 'adam_manager_token' ) ?: wp_unslash( $_GET['convite'] ?? '' ) ) );
 		?>
 		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_activate">
@@ -178,6 +190,32 @@ final class Portal {
 			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
 			<label><span><?php esc_html_e( 'Confirmar palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password_confirm" minlength="10" autocomplete="new-password" required></label>
 			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Criar conta de Gestor', 'adam-comunidade' ); ?></button>
+		</form>
+		<?php
+	}
+
+	private function recovery_form(): void {
+		$token = sanitize_text_field( (string) wp_unslash( $_GET['codigo'] ?? '' ) );
+		if ( $token ) {
+			?>
+			<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="adam_manager_reset">
+				<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
+				<h2><?php esc_html_e( 'Definir nova palavra-passe', 'adam-comunidade' ); ?></h2>
+				<label><span><?php esc_html_e( 'Nova palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
+				<label><span><?php esc_html_e( 'Confirmar palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password_confirm" minlength="10" autocomplete="new-password" required></label>
+				<button class="adam-community-button" type="submit"><?php esc_html_e( 'Guardar nova palavra-passe', 'adam-comunidade' ); ?></button>
+			</form>
+			<?php
+			return;
+		}
+		?>
+		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="adam_manager_request_reset">
+			<h2><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></h2>
+			<p><?php esc_html_e( 'Introduza o e-mail da sua conta de Gestor. Se existir uma conta ativa, receberá um endereço de recuperação.', 'adam-comunidade' ); ?></p>
+			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
+			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar recuperação', 'adam-comunidade' ); ?></button>
 		</form>
 		<?php
 	}
@@ -196,8 +234,8 @@ final class Portal {
 			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'Não tem acesso a este registo.', 'adam-comunidade' ) . '</h2></div>';
 			return;
 		}
-		$styles = 'field' === $type ? Field_Options::playing_styles() : Team_Options::playing_styles();
-		$selected_styles = 'field' === $type ? Field_Options::decode_list( $record->playing_styles ) : Team_Options::decode_list( $record->playing_styles );
+		$styles = 'field' === $type ? Field_Options::playing_styles() : ( 'team' === $type ? Team_Options::playing_styles() : array() );
+		$selected_styles = 'field' === $type ? Field_Options::decode_list( $record->playing_styles ?? '' ) : ( 'team' === $type ? Team_Options::decode_list( $record->playing_styles ?? '' ) : array() );
 		$current_gallery_ids = $this->gallery_ids( $type, $record );
 		?>
 		<form class="adam-card adam-manager-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -208,19 +246,19 @@ final class Portal {
 			<div class="adam-manager-form__heading"><div><p class="adam-manager-eyebrow"><?php esc_html_e( 'Proposta de alteração', 'adam-comunidade' ); ?></p><h2><?php echo esc_html( (string) $record->name ); ?></h2></div><a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Voltar aos meus registos', 'adam-comunidade' ); ?></a></div>
 			<div class="adam-form-grid">
 				<label><span><?php esc_html_e( 'Nome', 'adam-comunidade' ); ?></span><input type="text" name="manager[name]" value="<?php echo esc_attr( (string) $record->name ); ?>" required></label>
-				<label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><input type="text" name="manager[municipality]" value="<?php echo esc_attr( (string) $record->municipality ); ?>"></label>
-				<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><input type="text" name="manager[district]" value="<?php echo esc_attr( (string) $record->district ); ?>"></label>
-				<label class="adam-field--wide"><span><?php esc_html_e( 'Morada', 'adam-comunidade' ); ?></span><input type="text" name="manager[address]" value="<?php echo esc_attr( (string) $record->address ); ?>"></label>
-				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição breve', 'adam-comunidade' ); ?></span><textarea name="manager[short_description]" rows="3"><?php echo esc_textarea( (string) $record->short_description ); ?></textarea></label>
-				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição completa', 'adam-comunidade' ); ?></span><textarea name="manager[full_description]" rows="10"><?php echo esc_textarea( wp_strip_all_tags( (string) $record->full_description ) ); ?></textarea></label>
-				<label><span><?php esc_html_e( 'Website', 'adam-comunidade' ); ?></span><input type="url" name="manager[website]" value="<?php echo esc_attr( (string) $record->website ); ?>"></label>
-				<label><span><?php esc_html_e( 'Facebook', 'adam-comunidade' ); ?></span><input type="url" name="manager[facebook]" value="<?php echo esc_attr( (string) $record->facebook ); ?>"></label>
-				<label><span><?php esc_html_e( 'Instagram', 'adam-comunidade' ); ?></span><input type="url" name="manager[instagram]" value="<?php echo esc_attr( (string) $record->instagram ); ?>"></label>
-				<label><span><?php esc_html_e( 'E-mail de contacto interno', 'adam-comunidade' ); ?></span><input type="email" name="manager[email]" value="<?php echo esc_attr( (string) $record->email ); ?>"></label>
-				<label><span><?php esc_html_e( 'Telefone de contacto interno', 'adam-comunidade' ); ?></span><input type="tel" name="manager[phone]" value="<?php echo esc_attr( (string) $record->phone ); ?>"></label>
+				<?php if ( in_array( $type, array( 'team', 'field' ), true ) ) : ?><label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><input type="text" name="manager[municipality]" value="<?php echo esc_attr( (string) ( $record->municipality ?? '' ) ); ?>"></label><?php endif; ?>
+				<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><input type="text" name="manager[district]" value="<?php echo esc_attr( (string) ( $record->district ?? '' ) ); ?>"></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Morada', 'adam-comunidade' ); ?></span><input type="text" name="manager[address]" value="<?php echo esc_attr( (string) ( $record->address ?? '' ) ); ?>"></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição breve', 'adam-comunidade' ); ?></span><textarea name="manager[short_description]" rows="3"><?php echo esc_textarea( (string) ( $record->short_description ?? '' ) ); ?></textarea></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição completa', 'adam-comunidade' ); ?></span><textarea name="manager[full_description]" rows="10"><?php echo esc_textarea( wp_strip_all_tags( (string) ( $record->full_description ?? '' ) ) ); ?></textarea></label>
+				<label><span><?php esc_html_e( 'Website', 'adam-comunidade' ); ?></span><input type="url" name="manager[website]" value="<?php echo esc_attr( (string) ( $record->website ?? '' ) ); ?>"></label>
+				<label><span><?php esc_html_e( 'Facebook', 'adam-comunidade' ); ?></span><input type="url" name="manager[facebook]" value="<?php echo esc_attr( (string) ( $record->facebook ?? '' ) ); ?>"></label>
+				<label><span><?php esc_html_e( 'Instagram', 'adam-comunidade' ); ?></span><input type="url" name="manager[instagram]" value="<?php echo esc_attr( (string) ( $record->instagram ?? '' ) ); ?>"></label>
+				<label><span><?php esc_html_e( 'E-mail de contacto interno', 'adam-comunidade' ); ?></span><input type="email" name="manager[email]" value="<?php echo esc_attr( (string) ( $record->email ?? '' ) ); ?>"></label>
+				<label><span><?php esc_html_e( 'Telefone de contacto interno', 'adam-comunidade' ); ?></span><input type="tel" name="manager[phone]" value="<?php echo esc_attr( (string) ( $record->phone ?? '' ) ); ?>"></label>
 			</div>
-			<fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Estilos de jogo', 'adam-comunidade' ); ?></legend><?php foreach ( $styles as $key => $label ) : ?><label><input type="checkbox" name="manager[playing_styles][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected_styles, true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></fieldset>
-			<?php if ( 'field' === $type ) { $this->field_sections( $record ); } else { $this->team_sections( $record ); } ?>
+			<?php if ( $styles ) : ?><fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Estilos de jogo', 'adam-comunidade' ); ?></legend><?php foreach ( $styles as $key => $label ) : ?><label><input type="checkbox" name="manager[playing_styles][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected_styles, true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></fieldset><?php endif; ?>
+			<?php if ( 'field' === $type ) { $this->field_sections( $record ); } elseif ( 'team' === $type ) { $this->team_sections( $record ); } else { $this->directory_sections( $record ); } ?>
 			<div class="adam-manager-media">
 				<h3><?php esc_html_e( 'Imagens', 'adam-comunidade' ); ?></h3>
 				<?php if ( $current_gallery_ids ) : ?>
@@ -233,7 +271,7 @@ final class Portal {
 				<input type="hidden" name="gallery_reviewed" value="1">
 				<label><?php esc_html_e( 'Nova imagem de capa (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?>
-				<?php if ( 'team' === $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?><?php endif; ?>
+				<?php if ( 'field' !== $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?><?php endif; ?>
 				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => 'image/jpeg,image/png,image/webp', 'multiple' => true, 'max' => 20, 'max_size_mb' => 10 ) ); ?>
 			</div>
@@ -273,6 +311,17 @@ final class Portal {
 		<?php
 	}
 
+	private function directory_sections( object $record ): void {
+		?>
+		<div class="adam-form-grid">
+			<label><span><?php esc_html_e( 'Categoria', 'adam-comunidade' ); ?></span><input type="text" name="manager[category]" value="<?php echo esc_attr( (string) ( $record->category ?? '' ) ); ?>"></label>
+			<label><span><?php esc_html_e( 'País', 'adam-comunidade' ); ?></span><input type="text" name="manager[country]" value="<?php echo esc_attr( (string) ( $record->country ?? '' ) ); ?>"></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Benefícios', 'adam-comunidade' ); ?></span><textarea name="manager[benefits]" rows="6"><?php echo esc_textarea( wp_strip_all_tags( (string) ( $record->benefits ?? '' ) ) ); ?></textarea></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Benefícios para Sócios ADAM', 'adam-comunidade' ); ?></span><textarea name="manager[member_benefits]" rows="6"><?php echo esc_textarea( wp_strip_all_tags( (string) ( $record->member_benefits ?? '' ) ) ); ?></textarea></label>
+		</div>
+		<?php
+	}
+
 	public function handle_login(): never {
 		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$key   = 'adam_manager_login_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
@@ -287,14 +336,43 @@ final class Portal {
 
 	public function handle_activate(): never {
 		$password = (string) wp_unslash( $_POST['password'] ?? '' );
+		$token    = sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) );
 		if ( ! hash_equals( $password, (string) wp_unslash( $_POST['password_confirm'] ?? '' ) ) ) {
-			$this->redirect_status( 'password-mismatch' );
+			wp_safe_redirect( add_query_arg( 'estado', 'password-mismatch', self::activation_url( $token ) ) );
+			exit;
 		}
-		$result = $this->service->activate( sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) ), $password );
+		$result = $this->service->activate( $token, $password );
 		if ( is_wp_error( $result ) ) {
-			$this->redirect_status( 'activation-failed' );
+			wp_safe_redirect( add_query_arg( 'estado', 'activation-failed', self::activation_url( $token ) ) );
+			exit;
 		}
 		$this->redirect_status( 'activated' );
+	}
+
+	public function handle_request_reset(): never {
+		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+		$key = 'adam_manager_reset_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		if ( absint( get_transient( $key ) ) < 3 ) {
+			$this->service->request_password_reset( $email );
+			set_transient( $key, absint( get_transient( $key ) ) + 1, HOUR_IN_SECONDS );
+		}
+		wp_safe_redirect( add_query_arg( 'estado', 'reset-requested', self::recovery_url() ) );
+		exit;
+	}
+
+	public function handle_reset(): never {
+		$password = (string) wp_unslash( $_POST['password'] ?? '' );
+		$token    = sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) );
+		if ( ! hash_equals( $password, (string) wp_unslash( $_POST['password_confirm'] ?? '' ) ) ) {
+			wp_safe_redirect( add_query_arg( 'estado', 'password-mismatch', self::recovery_url( $token ) ) );
+			exit;
+		}
+		$result = $this->service->reset_password( $token, $password );
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( add_query_arg( 'estado', 'reset-failed', self::recovery_url( $token ) ) );
+			exit;
+		}
+		$this->redirect_status( 'password-reset' );
 	}
 
 	public function handle_logout(): never {
@@ -319,7 +397,7 @@ final class Portal {
 		$cover = $this->upload_one( 'manager_cover' );
 		if ( is_wp_error( $cover ) ) { wp_die( esc_html( $cover->get_error_message() ) ); }
 		if ( $cover ) { $input['cover_id'] = $cover; $uploaded[] = $cover; }
-		if ( 'team' === $type ) {
+		if ( 'field' !== $type ) {
 			$logo = $this->upload_one( 'manager_logo' );
 			if ( is_wp_error( $logo ) ) { wp_die( esc_html( $logo->get_error_message() ) ); }
 			if ( $logo ) { $input['logo_id'] = $logo; $uploaded[] = $logo; }
@@ -405,6 +483,17 @@ final class Portal {
 				)
 			);
 		}
+		if ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			return array_values(
+				array_filter(
+					array_map(
+						static fn( object $item ): int => absint( $item->attachment_id ?? 0 ),
+						( new Directory_Repository() )->gallery( (int) $record->id )
+					),
+					'wp_attachment_is_image'
+				)
+			);
+		}
 		return array_values(
 			array_filter(
 				array_map( 'absint', (array) json_decode( (string) ( $record->gallery ?? '[]' ), true ) ),
@@ -423,6 +512,9 @@ final class Portal {
 			'activation-failed' => __( 'O convite é inválido, já foi utilizado ou expirou.', 'adam-comunidade' ),
 			'activated'         => __( 'Conta criada. Já pode iniciar sessão.', 'adam-comunidade' ),
 			'revision-sent'     => __( 'Alterações enviadas para revisão. O registo público mantém-se inalterado até à aprovação.', 'adam-comunidade' ),
+			'reset-requested'   => __( 'Se existir uma conta ativa com esse e-mail, enviámos as instruções de recuperação.', 'adam-comunidade' ),
+			'reset-failed'      => __( 'O pedido de recuperação é inválido, já foi utilizado ou expirou.', 'adam-comunidade' ),
+			'password-reset'    => __( 'Palavra-passe atualizada. Já pode iniciar sessão.', 'adam-comunidade' ),
 		);
 		if ( isset( $messages[ $status ] ) ) {
 			echo '<div class="adam-manager-notice" role="status">' . esc_html( $messages[ $status ] ) . '</div>';
@@ -432,5 +524,19 @@ final class Portal {
 	private function redirect_status( string $status ): never {
 		wp_safe_redirect( add_query_arg( 'estado', $status, self::url() ) );
 		exit;
+	}
+
+	private function route(): string {
+		$route = sanitize_key( (string) get_query_var( 'adam_manager_route' ) );
+		if ( $route ) {
+			return $route;
+		}
+		if ( Managed_Pages::is_current( 'manager_activation' ) ) {
+			return 'activate';
+		}
+		if ( Managed_Pages::is_current( 'manager_recovery' ) ) {
+			return 'recovery';
+		}
+		return Managed_Pages::is_current( 'manager' ) ? 'dashboard' : '';
 	}
 }

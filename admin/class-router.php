@@ -390,15 +390,16 @@ final class Router {
 		$preferred = array(
 			self::PARENT_SLUG              => 10,
 			'adam-comunidade-moderation'   => 20,
-			'adam-comunidade-teams'        => 30,
-			'adam-comunidade-fields'       => 40,
-			'adam-comunidade-partners'     => 50,
-			'adam-comunidade-institutions' => 60,
-			'adam-comunidade-news'         => 70,
-			'adam-comunidade-events'       => 80,
-			'adam-comunidade-forms'        => 90,
-			'adam-comunidade-urls'         => 100,
-			'adam-comunidade-settings'     => 110,
+			'adam-comunidade-managers'     => 30,
+			'adam-comunidade-teams'        => 40,
+			'adam-comunidade-fields'       => 50,
+			'adam-comunidade-partners'     => 60,
+			'adam-comunidade-institutions' => 70,
+			'adam-comunidade-news'         => 80,
+			'adam-comunidade-events'       => 90,
+			'adam-comunidade-forms'        => 100,
+			'adam-comunidade-urls'         => 110,
+			'adam-comunidade-settings'     => 120,
 		);
 
 		if ( isset( $preferred[ $slug ] ) ) {

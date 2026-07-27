@@ -142,7 +142,7 @@ use ADAM\Comunidade\Teams\Router as Team_Router;
 Managed_Pages::activate();
 
 $settings = get_option( Settings::OPTION_NAME, array() );
-assert( 6 === count( $GLOBALS['adam_posts'] ), 'Activation must create six managed pages.' );
+assert( 8 === count( $GLOBALS['adam_posts'] ), 'Activation must create eight managed pages.' );
 foreach ( Managed_Pages::definitions() as $module => $definition ) {
 	$page_id = absint( $settings[ $definition['option'] ] ?? 0 );
 	assert( $page_id > 0, 'Missing stored Page ID for ' . $module );
@@ -151,7 +151,7 @@ foreach ( Managed_Pages::definitions() as $module => $definition ) {
 }
 
 Managed_Pages::activate();
-assert( 6 === count( $GLOBALS['adam_posts'] ), 'Repeated activation created duplicate pages.' );
+assert( 8 === count( $GLOBALS['adam_posts'] ), 'Repeated activation created duplicate pages.' );
 
 $fields_id = Managed_Pages::id( 'fields' );
 assert( 'Campos' === $GLOBALS['adam_posts'][ $fields_id ]->post_title, 'The Fields directory must use the Campos default title.' );
@@ -173,12 +173,12 @@ $ensure = new ReflectionMethod( Managed_Pages::class, 'ensure' );
 $ensure->setAccessible( true );
 $recovered_id = $ensure->invoke( null, 'teams', true );
 assert( $teams_id === $recovered_id, 'Recovery created a different page.' );
-assert( 6 === count( $GLOBALS['adam_posts'] ), 'Recovery created a duplicate page.' );
+assert( 8 === count( $GLOBALS['adam_posts'] ), 'Recovery created a duplicate page.' );
 
 unset( $GLOBALS['adam_posts'][ $teams_id ], $GLOBALS['adam_meta'][ $teams_id ] );
 $recreated_id = $ensure->invoke( null, 'teams', true );
 assert( $recreated_id !== $teams_id, 'Permanent deletion did not recreate the page.' );
-assert( 6 === count( $GLOBALS['adam_posts'] ), 'Permanent-deletion recovery created duplicates.' );
+assert( 8 === count( $GLOBALS['adam_posts'] ), 'Permanent-deletion recovery created duplicates.' );
 $teams_id = $recreated_id;
 $GLOBALS['adam_posts'][ $teams_id ]->post_title = 'Equipas Associadas Renomeadas';
 

@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Owns the isolated Community Manager identity and moderation tables.
  */
 final class Schema {
-	public const VERSION = '1.0.0';
+	public const VERSION = '1.1.0';
 
 	public static function install(): void {
 		global $wpdb;
@@ -42,6 +42,7 @@ final class Schema {
 		dbDelta( "CREATE TABLE {$assignments} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			manager_id bigint(20) unsigned NOT NULL,
+			purpose varchar(30) NOT NULL DEFAULT 'invitation',
 			entity_type varchar(40) NOT NULL,
 			entity_id bigint(20) unsigned NOT NULL,
 			status varchar(20) NOT NULL DEFAULT 'active',
@@ -62,7 +63,7 @@ final class Schema {
 			created_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY token_hash (token_hash),
-			KEY manager_open (manager_id,used_at,expires_at)
+			KEY manager_open (manager_id,purpose,used_at,expires_at)
 		) {$collate};" );
 
 		dbDelta( "CREATE TABLE {$sessions} (

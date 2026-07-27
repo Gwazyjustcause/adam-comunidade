@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
+use ADAM\Comunidade\Directory\Router as Directory_Router;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
 use ADAM\Comunidade\Fields\Amenity_Repository;
 use ADAM\Comunidade\Fields\Options as Field_Options;
@@ -23,6 +24,7 @@ use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Managers\Service as Manager_Service;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
+use ADAM\Comunidade\Teams\Router as Team_Router;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
@@ -521,6 +523,15 @@ final class Portal {
 					'admin_note' => '',
 				)
 			);
+		} else {
+			self::emails()->send(
+				'community_received',
+				$email,
+				array(
+					'entity_name' => (string) $payload['name'],
+					'entity_type' => self::object_type_label( $type ),
+				)
+			);
 		}
 		wp_safe_redirect( self::success_url( $type ) );
 		exit;
@@ -877,21 +888,10 @@ final class Portal {
 		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
 		$manager_invite_url = '';
-		if ( 'approve' === $decision && 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field' ), true ) ) {
+		if ( 'approve' === $decision && 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
 			$manager_invite = ( new Manager_Service( self::emails() ) )->invite( (string) $row->contact_email, (string) $row->object_type, $object_id );
 			if ( ! is_wp_error( $manager_invite ) ) {
 				$manager_invite_url = $manager_invite;
-				if ( 'team' === $row->object_type ) {
-					$email_payload = json_decode( (string) $row->payload, true ) ?: array();
-					self::emails()->send(
-						'manager_invitation',
-						(string) $row->contact_email,
-						array(
-							'entity_name'        => (string) ( $email_payload['name'] ?? '' ),
-							'manager_invite_url' => $manager_invite_url,
-						)
-					);
-				}
 			}
 		}
 		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
@@ -905,6 +905,24 @@ final class Portal {
 					'field_url'  => $field ? Field_Router::field_url( $field ) : '',
 					'manager_invite_url' => $manager_invite_url,
 					'admin_note' => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
+				)
+			);
+		} elseif ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'partner', 'institution' ), true ) && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
+			$email_payload = json_decode( (string) $row->payload, true ) ?: array();
+			$record = 'approve' === $decision ? self::record( (string) $row->object_type, $object_id ) : null;
+			$entity_url = '';
+			if ( $record ) {
+				$entity_url = 'team' === $row->object_type ? Team_Router::team_url( $record ) : Directory_Router::entry_url( $record );
+			}
+			self::emails()->send(
+				'approve' === $decision ? 'community_approved' : 'community_rejected',
+				(string) $row->contact_email,
+				array(
+					'entity_name'        => (string) ( $email_payload['name'] ?? '' ),
+					'entity_type'        => self::object_type_label( (string) $row->object_type ),
+					'entity_url'         => $entity_url,
+					'manager_invite_url' => $manager_invite_url,
+					'admin_note'         => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
 				)
 			);
 		}

@@ -142,6 +142,9 @@ final class Settings {
 			'fields_page_id'       => absint( $current['fields_page_id'] ),
 			'partners_page_id'     => absint( $current['partners_page_id'] ),
 			'institutions_page_id' => absint( $current['institutions_page_id'] ),
+			'manager_page_id'      => absint( $current['manager_page_id'] ),
+			'manager_activation_page_id' => absint( $current['manager_activation_page_id'] ),
+			'manager_recovery_page_id' => absint( $current['manager_recovery_page_id'] ),
 			'brands_page_id'       => absint( $current['brands_page_id'] ),
 		);
 	}
@@ -282,6 +285,9 @@ final class Settings {
 			'fields_page_id'       => 0,
 			'partners_page_id'     => 0,
 			'institutions_page_id' => 0,
+			'manager_page_id'      => 0,
+			'manager_activation_page_id' => 0,
+			'manager_recovery_page_id' => 0,
 			'brands_page_id'       => 0,
 		);
 	}

@@ -18,6 +18,19 @@ use ADAM\Comunidade\Settings;
  */
 final class Email_Service {
 	public const OPTION_NAME = 'adam_comunidade_submission_email_templates';
+	private static bool $mail_hooks_registered = false;
+	private static string $active_template = '';
+
+	public function __construct() {
+		if ( self::$mail_hooks_registered ) {
+			return;
+		}
+		self::$mail_hooks_registered = true;
+		if ( function_exists( 'add_action' ) ) {
+			add_action( 'wp_mail_failed', array( self::class, 'mail_failed' ) );
+			add_action( 'wp_mail_succeeded', array( self::class, 'mail_succeeded' ) );
+		}
+	}
 
 	/**
 	 * Returns editable field-submission templates merged with defaults.
@@ -74,21 +87,17 @@ final class Email_Service {
 		$recipient = sanitize_email( $recipient );
 		$template  = $this->templates()[ $template_key ] ?? null;
 
-		if ( ! $this->is_public_email( $recipient ) || ! is_array( $template ) || empty( $template['enabled'] ) ) {
+		if ( ! $this->is_deliverable_email( $recipient ) || ! is_array( $template ) || empty( $template['enabled'] ) ) {
 			return false;
 		}
 
 		$context = $this->normalize_context( $template_key, $context );
-		if ( '' === $context['adam_email'] ) {
-			Logger::info( 'Submission email skipped: no production-safe ADAM contact email is configured.', array( 'email_type' => $template_key ) );
-			return false;
-		}
 		if ( 'field_approved' === $template_key && '' !== $context['manager_invite_url'] ) {
 			$template['body'] .= __( '<p>Pode manter os dados deste campo atualizados através de uma conta independente de Gestor da Comunidade.</p><p><a href="{{manager_invite_url}}">Criar Conta de Gestor</a></p>', 'adam-comunidade' );
 		}
 
 		foreach ( $context as $key => $value ) {
-			if ( str_ends_with( $key, '_url' ) && '' === $value ) {
+			if ( '' === $value && ( str_ends_with( $key, '_url' ) || 'adam_email' === $key ) ) {
 				$template['body'] = (string) preg_replace( '#<p>.*?\{\{' . preg_quote( $key, '#' ) . '\}\}.*?</p>#is', '', $template['body'] );
 			}
 		}
@@ -114,19 +123,44 @@ final class Email_Service {
 		if ( '' === $html ) {
 			$html = $this->render_adam_layout( $heading, $content );
 		}
-		if ( $this->contains_development_value( $subject . "\n" . $html ) ) {
+		if ( $this->is_production() && $this->contains_development_value( $subject . "\n" . $html ) ) {
 			Logger::info( 'Submission email blocked because rendered output contained a development value.', array( 'email_type' => $template_key ) );
 			return false;
 		}
 
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		add_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+		$from = $this->mail_from();
+		if ( $from ) {
+			add_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+		}
 		add_filter( 'wp_mail_from_name', array( $this, 'mail_from_name' ) );
+		self::$active_template = $template_key;
 		try {
 			$sent = wp_mail( $recipient, $subject, $html, $headers );
+		} catch ( \Throwable $error ) {
+			$sent = false;
+			$status = array(
+				'status'     => 'failed',
+				'email_type' => $template_key,
+				'timestamp'  => time(),
+				'error_code' => 'mailer_exception',
+			);
+			update_option( 'adam_comunidade_email_last_status', $status, false );
+			Logger::info( 'Community mailer raised an exception.', array( 'email_type' => $template_key, 'error' => $error->getMessage() ) );
 		} finally {
-			remove_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+			if ( $from ) {
+				remove_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+			}
 			remove_filter( 'wp_mail_from_name', array( $this, 'mail_from_name' ) );
+			self::$active_template = '';
+		}
+		$last_status = get_option( 'adam_comunidade_email_last_status', array() );
+		if ( function_exists( 'update_option' ) && ( ! is_array( $last_status ) || ( $last_status['email_type'] ?? '' ) !== $template_key || ( $last_status['status'] ?? '' ) !== ( $sent ? 'sent' : 'failed' ) ) ) {
+			update_option(
+				'adam_comunidade_email_last_status',
+				array( 'status' => $sent ? 'sent' : 'failed', 'email_type' => $template_key, 'timestamp' => time() ),
+				false
+			);
 		}
 
 		Logger::info(
@@ -151,10 +185,32 @@ final class Email_Service {
 
 	public function contact_email(): string {
 		$email = sanitize_email( (string) Settings::get( 'contact_email' ) );
-		if ( ! $this->is_public_email( $email ) ) {
+		if ( ! $this->is_deliverable_email( $email ) ) {
 			$email = sanitize_email( (string) get_option( 'admin_email', '' ) );
 		}
-		return $this->is_public_email( $email ) ? $email : '';
+		return $this->is_deliverable_email( $email ) ? $email : '';
+	}
+
+	public static function mail_failed( \WP_Error $error ): void {
+		$status = array(
+			'status'     => 'failed',
+			'email_type' => self::$active_template,
+			'timestamp'  => time(),
+			'error_code' => sanitize_key( $error->get_error_code() ),
+		);
+		update_option( 'adam_comunidade_email_last_status', $status, false );
+		Logger::info( 'Community email delivery failed.', $status );
+	}
+
+	public static function mail_succeeded( array $mail_data ): void {
+		unset( $mail_data );
+		$status = array(
+			'status'     => 'sent',
+			'email_type' => self::$active_template,
+			'timestamp'  => time(),
+		);
+		update_option( 'adam_comunidade_email_last_status', $status, false );
+		Logger::info( 'Community email accepted by the WordPress mailer.', $status );
 	}
 
 	/**
@@ -195,8 +251,11 @@ final class Email_Service {
 			'field_name'         => $field_name,
 			'field_url'          => $field_url,
 			'entity_name'        => $this->string_value( $context['entity_name'] ?? null, __( 'Registo da Comunidade', 'adam-comunidade' ) ),
+			'entity_type'        => $this->string_value( $context['entity_type'] ?? null, __( 'organização', 'adam-comunidade' ) ),
+			'entity_url'         => $this->public_url( $context['entity_url'] ?? null ),
 			'manager_invite_url' => $this->public_url( $context['manager_invite_url'] ?? null ),
 			'manager_url'        => $this->public_url( $context['manager_url'] ?? null ),
+			'manager_reset_url'  => $this->public_url( $context['manager_reset_url'] ?? null ),
 			'admin_note'         => $admin_note,
 			'adam_email'         => $this->contact_email(),
 		);
@@ -245,7 +304,7 @@ final class Email_Service {
 	 */
 	private function public_url( mixed $value ): string {
 		$url = esc_url_raw( $this->string_value( $value ), array( 'http', 'https' ) );
-		return $url && ! $this->contains_development_value( $url ) ? $url : '';
+		return $url && ( ! $this->is_production() || ! $this->contains_development_value( $url ) ) ? $url : '';
 	}
 
 	/**
@@ -258,6 +317,14 @@ final class Email_Service {
 		}
 		$domain = strtolower( (string) substr( strrchr( $email, '@' ) ?: '', 1 ) );
 		return ! $this->contains_development_value( $domain );
+	}
+
+	private function is_deliverable_email( string $email ): bool {
+		return is_email( $email ) && ( ! $this->is_production() || $this->is_public_email( $email ) );
+	}
+
+	private function is_production(): bool {
+		return ! function_exists( 'wp_get_environment_type' ) || 'production' === wp_get_environment_type();
 	}
 
 	/**
@@ -302,6 +369,27 @@ final class Email_Service {
 	 */
 	private function manager_defaults(): array {
 		return array(
+			'community_received' => array(
+				'label'   => __( 'Submissão da Comunidade recebida', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Recebemos a sua submissão', 'adam-comunidade' ),
+				'heading' => __( 'Submissão recebida', 'adam-comunidade' ),
+				'body'    => __( '<p>Recebemos a submissão de {{entity_type}} <strong>{{entity_name}}</strong>.</p><p>O pedido está agora a aguardar revisão administrativa. Entraremos em contacto quando a análise estiver concluída.</p><p>Para qualquer questão, contacte-nos através de {{adam_email}}.</p>', 'adam-comunidade' ),
+			),
+			'community_approved' => array(
+				'label'   => __( 'Submissão da Comunidade aprovada', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'A sua submissão foi aprovada', 'adam-comunidade' ),
+				'heading' => __( 'Registo aprovado', 'adam-comunidade' ),
+				'body'    => __( '<p>A submissão de {{entity_type}} <strong>{{entity_name}}</strong> foi aprovada e já se encontra publicada.</p><p><a href="{{entity_url}}">Ver registo publicado</a></p><p>Pode manter a informação atualizada através de uma conta independente de Gestor da Comunidade. Todas as alterações continuam sujeitas a aprovação da ADAM.</p><p><a href="{{manager_invite_url}}">Criar Conta de Gestor</a></p>', 'adam-comunidade' ),
+			),
+			'community_rejected' => array(
+				'label'   => __( 'Submissão da Comunidade rejeitada', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Atualização sobre a sua submissão', 'adam-comunidade' ),
+				'heading' => __( 'Submissão não aprovada', 'adam-comunidade' ),
+				'body'    => __( '<p>A submissão de {{entity_type}} <strong>{{entity_name}}</strong> não foi aprovada.</p><p>{{admin_note}}</p><p>Se tiver dúvidas, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+			),
 			'manager_invitation' => array(
 				'label'   => __( 'Convite de Gestor da Comunidade', 'adam-comunidade' ),
 				'enabled' => true,
@@ -329,6 +417,13 @@ final class Email_Service {
 				'subject' => __( 'Precisamos de informação adicional', 'adam-comunidade' ),
 				'heading' => __( 'Informação adicional necessária', 'adam-comunidade' ),
 				'body'    => __( '<p>Antes de concluir a revisão das alterações de <strong>{{entity_name}}</strong>, precisamos de informação adicional:</p><p>{{admin_note}}</p><p><a href="{{manager_url}}">Abrir o portal de Gestor</a></p>', 'adam-comunidade' ),
+			),
+			'manager_password_reset' => array(
+				'label'   => __( 'Recuperação de palavra-passe do Gestor', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Recupere a sua palavra-passe de Gestor', 'adam-comunidade' ),
+				'heading' => __( 'Recuperar palavra-passe', 'adam-comunidade' ),
+				'body'    => __( '<p>Recebemos um pedido para definir uma nova palavra-passe da sua conta de Gestor da Comunidade.</p><p><a href="{{manager_reset_url}}">Definir nova palavra-passe</a></p><p>Este endereço é de utilização única e expira ao fim de uma hora. Se não fez este pedido, pode ignorar esta mensagem.</p>', 'adam-comunidade' ),
 			),
 		);
 	}

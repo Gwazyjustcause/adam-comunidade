@@ -25,6 +25,7 @@ $experience_schema = (string) file_get_contents( $root . '/includes/experience/c
 $order = array(
 	'adam-comunidade-dashboard',
 	'adam-comunidade-moderation',
+	'adam-comunidade-managers',
 	'adam-comunidade-teams',
 	'adam-comunidade-fields',
 	'adam-comunidade-partners',

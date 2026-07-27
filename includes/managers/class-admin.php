@@ -10,6 +10,10 @@ namespace ADAM\Comunidade\Managers;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
+use ADAM\Comunidade\Directory\Repository as Directory_Repository;
+use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Teams\Repository as Team_Repository;
 
 /**
  * Adds manager work to the existing approval workflow.
@@ -19,8 +23,65 @@ final class Admin {
 
 	public function register(): void {
 		add_action( 'adam_comunidade_moderation_after_submissions', array( $this, 'render' ) );
+		Admin_Router::register_page(
+			'managers',
+			array(
+				'title'      => __( 'Gestores', 'adam-comunidade' ),
+				'menu_title' => __( 'Gestores', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'index',
+			)
+		);
 		add_action( 'admin_post_adam_moderate_manager_revision', array( $this, 'moderate' ) );
 		add_action( 'admin_post_adam_resend_manager_invitation', array( $this, 'resend' ) );
+		add_action( 'admin_post_adam_manager_admin_status', array( $this, 'status' ) );
+		add_action( 'admin_post_adam_manager_admin_remove_assignment', array( $this, 'remove_assignment' ) );
+		add_action( 'admin_post_adam_manager_admin_assign', array( $this, 'assign' ) );
+		add_action( 'admin_post_adam_manager_admin_transfer', array( $this, 'transfer' ) );
+	}
+
+	public function index(): void {
+		global $wpdb;
+		$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
+		$status = sanitize_key( wp_unslash( $_GET['status'] ?? '' ) );
+		$where  = array( '1=1' );
+		$args   = array();
+		if ( $search ) {
+			$where[] = 'm.email LIKE %s';
+			$args[]  = '%' . $wpdb->esc_like( $search ) . '%';
+		}
+		if ( in_array( $status, array( 'invited', 'active', 'disabled' ), true ) ) {
+			$where[] = 'm.status = %s';
+			$args[]  = $status;
+		}
+		$sql = 'SELECT m.* FROM ' . Schema::managers_table() . ' m WHERE ' . implode( ' AND ', $where ) . ' ORDER BY m.created_at DESC';
+		$managers = $args ? $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) ) : $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$assignments = array();
+		foreach ( $managers as $manager ) {
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT a.*,i.used_at AS invitation_used_at,i.expires_at AS invitation_expires_at FROM ' . Schema::assignments_table() . ' a'
+					. ' LEFT JOIN ' . Schema::invitations_table() . " i ON i.id=(SELECT i2.id FROM " . Schema::invitations_table() . " i2 WHERE i2.manager_id=a.manager_id AND i2.purpose='invitation' AND i2.entity_type=a.entity_type AND i2.entity_id=a.entity_id ORDER BY i2.created_at DESC LIMIT 1)"
+					. ' WHERE a.manager_id=%d AND a.status=%s ORDER BY a.created_at ASC',
+					(int) $manager->id,
+					'active'
+				)
+			) ?: array();
+			foreach ( $rows as $row ) {
+				$row->record = $this->service->record( (string) $row->entity_type, (int) $row->entity_id );
+			}
+			$assignments[ (int) $manager->id ] = $rows;
+		}
+		$team_choices  = ( new Team_Repository() )->choices( '' );
+		$field_choices = ( new Field_Repository() )->choices( '' );
+		$directory     = new Directory_Repository();
+		$partner_choices = $directory->choices( 'partner' );
+		$institution_choices = $directory->choices( 'institution' );
+		$email_status = get_option( 'adam_comunidade_email_last_status', array() );
+		$email_status = is_array( $email_status ) ? $email_status : array();
+		$email_templates = ( new \ADAM\Comunidade\Experience\Email_Service() )->templates();
+		$email_type_label = (string) ( $email_templates[ $email_status['email_type'] ?? '' ]['label'] ?? '' );
+		require Helpers::path( 'admin/views/managers.php' );
 	}
 
 	public function render(): void {
@@ -69,7 +130,7 @@ final class Admin {
 
 	public function resend(): never {
 		Admin_Router::authorize();
-		$id = absint( $_GET['assignment_id'] ?? 0 );
+		$id = absint( $_REQUEST['assignment_id'] ?? 0 );
 		check_admin_referer( 'adam_resend_manager_invitation_' . $id );
 		global $wpdb;
 		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT a.*,m.email FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . ' m ON m.id=a.manager_id WHERE a.id=%d', $id ) );
@@ -80,7 +141,87 @@ final class Admin {
 				( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', (string) $row->email, array( 'entity_name' => (string) ( $record->name ?? '' ), 'manager_invite_url' => $url ) );
 			}
 		}
-		wp_safe_redirect( Admin_Router::page_url( 'moderation' ) );
+		wp_safe_redirect( wp_get_referer() ?: Admin_Router::page_url( 'managers' ) );
+		exit;
+	}
+
+	public function status(): never {
+		Admin_Router::authorize();
+		$id = absint( $_POST['manager_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_admin_status_' . $id );
+		$status = sanitize_key( wp_unslash( $_POST['manager_status'] ?? '' ) );
+		if ( in_array( $status, array( 'active', 'disabled' ), true ) ) {
+			global $wpdb;
+			$wpdb->update( Schema::managers_table(), array( 'status' => $status, 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
+			if ( 'disabled' === $status ) {
+				$wpdb->delete( Schema::sessions_table(), array( 'manager_id' => $id ) );
+			}
+		}
+		$this->redirect_managers();
+	}
+
+	public function remove_assignment(): never {
+		Admin_Router::authorize();
+		$id = absint( $_POST['assignment_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_remove_assignment_' . $id );
+		global $wpdb;
+		$wpdb->update( Schema::assignments_table(), array( 'status' => 'removed' ), array( 'id' => $id ) );
+		$this->redirect_managers();
+	}
+
+	public function assign(): never {
+		Admin_Router::authorize();
+		check_admin_referer( 'adam_manager_admin_assign' );
+		global $wpdb;
+		$manager_id = absint( $_POST['manager_id'] ?? 0 );
+		$entity     = explode( ':', sanitize_text_field( wp_unslash( $_POST['entity'] ?? '' ) ), 2 );
+		$type       = sanitize_key( $entity[0] ?? '' );
+		$entity_id  = absint( $entity[1] ?? 0 );
+		$manager    = $manager_id ? $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) ) : null;
+		$email      = $manager ? (string) $manager->email : sanitize_email( wp_unslash( $_POST['manager_email'] ?? '' ) );
+		if ( $manager && $entity_id && in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
+			$transferred = $wpdb->replace(
+				Schema::assignments_table(),
+				array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $entity_id, 'status' => 'active', 'created_at' => current_time( 'mysql', true ) )
+			);
+		} else {
+			$url = $this->service->invite( $email, $type, $entity_id );
+		}
+		if ( isset( $url ) && ! is_wp_error( $url ) ) {
+			$record = $this->service->record( $type, $entity_id );
+			( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', $email, array( 'entity_name' => (string) ( $record->name ?? '' ), 'manager_invite_url' => $url ) );
+		}
+		$this->redirect_managers();
+	}
+
+	public function transfer(): never {
+		Admin_Router::authorize();
+		$assignment_id = absint( $_POST['assignment_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_transfer_' . $assignment_id );
+		$target_id = absint( $_POST['target_manager_id'] ?? 0 );
+		global $wpdb;
+		$assignment = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::assignments_table() . ' WHERE id=%d', $assignment_id ) );
+		$target_exists = $target_id && (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE id=%d', $target_id ) );
+		if ( $assignment && $target_exists && $target_id !== (int) $assignment->manager_id ) {
+			$wpdb->replace(
+				Schema::assignments_table(),
+				array(
+					'manager_id' => $target_id,
+					'entity_type'=> (string) $assignment->entity_type,
+					'entity_id'  => (int) $assignment->entity_id,
+					'status'     => 'active',
+					'created_at' => current_time( 'mysql', true ),
+				)
+			);
+			if ( false !== $transferred ) {
+				$wpdb->update( Schema::assignments_table(), array( 'status' => 'transferred' ), array( 'id' => $assignment_id ) );
+			}
+		}
+		$this->redirect_managers();
+	}
+
+	private function redirect_managers(): never {
+		wp_safe_redirect( Admin_Router::page_url( 'managers' ) );
 		exit;
 	}
 
