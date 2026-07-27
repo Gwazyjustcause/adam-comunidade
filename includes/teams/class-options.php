@@ -53,7 +53,7 @@ final class Options {
 	 */
 	public static function playing_styles(): array {
 		$options = array(
-			'woodland'   => __( 'Woodland', 'adam-comunidade' ),
+			'woodland'   => __( 'Floresta', 'adam-comunidade' ),
 			'cqb'        => __( 'CQB', 'adam-comunidade' ),
 			'milsim'     => __( 'MilSim', 'adam-comunidade' ),
 			'speedsoft'  => __( 'Speedsoft', 'adam-comunidade' ),

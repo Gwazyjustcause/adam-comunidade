@@ -132,6 +132,7 @@ final class Schema {
 		dbDelta( $relationships_sql );
 
 		self::seed_amenities();
+		self::localize_default_amenities();
 		update_option( 'adam_comunidade_fields_db_version', self::VERSION, false );
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
 	}
@@ -208,22 +209,22 @@ final class Schema {
 		}
 
 		$defaults = array(
-			'parking'          => array( __( 'Parking', 'adam-comunidade' ), 'parking' ),
-			'safe_zone'        => array( __( 'Safe Zone', 'adam-comunidade' ), 'shield' ),
-			'chronograph'      => array( __( 'Chronograph', 'adam-comunidade' ), 'gauge' ),
-			'electricity'      => array( __( 'Electricity', 'adam-comunidade' ), 'bolt' ),
-			'water'            => array( __( 'Water', 'adam-comunidade' ), 'water' ),
-			'camping'          => array( __( 'Camping', 'adam-comunidade' ), 'camping' ),
+			'parking'          => array( __( 'Estacionamento', 'adam-comunidade' ), 'parking' ),
+			'safe_zone'        => array( __( 'Zona segura', 'adam-comunidade' ), 'shield' ),
+			'chronograph'      => array( __( 'Cronógrafo', 'adam-comunidade' ), 'gauge' ),
+			'electricity'      => array( __( 'Eletricidade', 'adam-comunidade' ), 'bolt' ),
+			'water'            => array( __( 'Água', 'adam-comunidade' ), 'water' ),
+			'camping'          => array( __( 'Campismo', 'adam-comunidade' ), 'camping' ),
 			'bbq'              => array( __( 'BBQ', 'adam-comunidade' ), 'fire' ),
-			'toilets'          => array( __( 'Toilets', 'adam-comunidade' ), 'toilets' ),
-			'shop'             => array( __( 'Shop', 'adam-comunidade' ), 'shop' ),
-			'rental_equipment' => array( __( 'Rental Equipment', 'adam-comunidade' ), 'equipment' ),
-			'battery_charging' => array( __( 'Battery Charging', 'adam-comunidade' ), 'battery' ),
-			'food_available'   => array( __( 'Food Available', 'adam-comunidade' ), 'food' ),
-			'indoor_area'      => array( __( 'Indoor Area', 'adam-comunidade' ), 'indoor' ),
-			'night_games'      => array( __( 'Night Games', 'adam-comunidade' ), 'moon' ),
-			'changing_rooms'   => array( __( 'Changing Rooms', 'adam-comunidade' ), 'changing' ),
-			'first_aid'        => array( __( 'First Aid', 'adam-comunidade' ), 'first-aid' ),
+			'toilets'          => array( __( 'Casas de banho', 'adam-comunidade' ), 'toilets' ),
+			'shop'             => array( __( 'Loja', 'adam-comunidade' ), 'shop' ),
+			'rental_equipment' => array( __( 'Aluguer de equipamento', 'adam-comunidade' ), 'equipment' ),
+			'battery_charging' => array( __( 'Carregamento de baterias', 'adam-comunidade' ), 'battery' ),
+			'food_available'   => array( __( 'Alimentação', 'adam-comunidade' ), 'food' ),
+			'indoor_area'      => array( __( 'Área interior', 'adam-comunidade' ), 'indoor' ),
+			'night_games'      => array( __( 'Jogos noturnos', 'adam-comunidade' ), 'moon' ),
+			'changing_rooms'   => array( __( 'Balneário', 'adam-comunidade' ), 'changing' ),
+			'first_aid'        => array( __( 'Primeiros socorros', 'adam-comunidade' ), 'first-aid' ),
 		);
 		$now = current_time( 'mysql', true );
 		$order = 0;
@@ -243,6 +244,39 @@ final class Schema {
 				)
 			);
 			++$order;
+		}
+	}
+
+	/**
+	 * Translates only untouched legacy defaults, preserving administrator edits.
+	 */
+	private static function localize_default_amenities(): void {
+		global $wpdb;
+
+		$labels = array(
+			'parking'          => array( 'Parking', __( 'Estacionamento', 'adam-comunidade' ) ),
+			'safe_zone'        => array( 'Safe Zone', __( 'Zona segura', 'adam-comunidade' ) ),
+			'chronograph'      => array( 'Chronograph', __( 'Cronógrafo', 'adam-comunidade' ) ),
+			'electricity'      => array( 'Electricity', __( 'Eletricidade', 'adam-comunidade' ) ),
+			'water'            => array( 'Water', __( 'Água', 'adam-comunidade' ) ),
+			'camping'          => array( 'Camping', __( 'Campismo', 'adam-comunidade' ) ),
+			'toilets'          => array( 'Toilets', __( 'Casas de banho', 'adam-comunidade' ) ),
+			'shop'             => array( 'Shop', __( 'Loja', 'adam-comunidade' ) ),
+			'rental_equipment' => array( 'Rental Equipment', __( 'Aluguer de equipamento', 'adam-comunidade' ) ),
+			'battery_charging' => array( 'Battery Charging', __( 'Carregamento de baterias', 'adam-comunidade' ) ),
+			'food_available'   => array( 'Food Available', __( 'Alimentação', 'adam-comunidade' ) ),
+			'indoor_area'      => array( 'Indoor Area', __( 'Área interior', 'adam-comunidade' ) ),
+			'night_games'      => array( 'Night Games', __( 'Jogos noturnos', 'adam-comunidade' ) ),
+			'changing_rooms'   => array( 'Changing Rooms', __( 'Balneário', 'adam-comunidade' ) ),
+			'first_aid'        => array( 'First Aid', __( 'Primeiros socorros', 'adam-comunidade' ) ),
+		);
+
+		foreach ( $labels as $key => $label ) {
+			$wpdb->update(
+				self::amenities_table(),
+				array( 'label' => $label[1] ),
+				array( 'context' => 'field', 'amenity_key' => $key, 'label' => $label[0] )
+			);
 		}
 	}
 }

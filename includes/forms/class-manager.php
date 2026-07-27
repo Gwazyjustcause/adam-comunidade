@@ -156,7 +156,7 @@ final class Manager {
 			'contact_email' => $this->field( 'contact_email', __( 'E-mail de contacto', 'adam-comunidade' ), 'email', true, __( 'nome@exemplo.pt', 'adam-comunidade' ) ),
 			'district' => $this->field( 'district', __( 'Distrito', 'adam-comunidade' ), 'text', false, __( 'Ex.: Coimbra', 'adam-comunidade' ) ),
 			'municipality' => $this->field( 'municipality', __( 'Concelho', 'adam-comunidade' ), 'text', false, __( 'Ex.: Montemor-o-Velho', 'adam-comunidade' ) ),
-			'website' => $this->field( 'website', __( 'Website', 'adam-comunidade' ), 'url', false, 'https://' ),
+			'website' => $this->field( 'website', __( 'Página Web', 'adam-comunidade' ), 'url', false, 'https://' ),
 			'phone' => $this->field( 'phone', __( 'Telefone', 'adam-comunidade' ), 'tel', false, __( 'Contacto telefónico', 'adam-comunidade' ) ),
 			'short_description' => $this->field( 'short_description', __( 'Descrição', 'adam-comunidade' ), 'textarea', true, __( 'Apresente a entidade de forma breve.', 'adam-comunidade' ) ),
 			'verification_details' => $this->field( 'verification_details', __( 'Informação para verificação', 'adam-comunidade' ), 'textarea', true, __( 'Indique os dados que ajudam a ADAM a validar esta submissão.', 'adam-comunidade' ) ),

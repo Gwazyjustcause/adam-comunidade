@@ -51,6 +51,8 @@ final class Component {
 				'mediaTitle'     => __( 'Selecionar ficheiros', 'adam-comunidade' ),
 				'useMedia'       => __( 'Usar ficheiros selecionados', 'adam-comunidade' ),
 				'unknownSize'    => __( 'Tamanho não disponível', 'adam-comunidade' ),
+				'file'           => __( 'Ficheiro', 'adam-comunidade' ),
+				'caption'        => __( 'Legenda', 'adam-comunidade' ),
 			)
 		);
 	}

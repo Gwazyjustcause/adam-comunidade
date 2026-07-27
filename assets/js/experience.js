@@ -25,7 +25,7 @@
 						if (!groups[group].length) { return; }
 						var section = document.createElement('section');
 						var heading = document.createElement('h3');
-						heading.textContent = group.charAt(0).toUpperCase() + group.slice(1);
+						heading.textContent = config.groupLabels?.[ group ] || group;
 						section.appendChild(heading);
 						groups[group].forEach(function (item) {
 							var link = document.createElement('a');

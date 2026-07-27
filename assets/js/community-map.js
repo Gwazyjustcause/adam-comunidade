@@ -1,5 +1,6 @@
 (function () {
 	'use strict';
+	var labels = window.adamCommunityMap || {};
 	document.querySelectorAll('[data-adam-map]').forEach(function (widget) {
 		var canvas = widget.querySelector('.adam-map-canvas');
 		var preview = widget.querySelector('.adam-map-preview');
@@ -18,8 +19,8 @@
 			button.addEventListener('click', function () {
 				preview.innerHTML = '<strong></strong><span></span><a></a>';
 				preview.querySelector('strong').textContent = marker.name;
-				preview.querySelector('span').textContent = marker.type;
-				preview.querySelector('a').textContent = 'View details';
+				preview.querySelector('span').textContent = labels.types?.[ marker.type ] || '';
+				preview.querySelector('a').textContent = labels.details || '';
 				preview.querySelector('a').href = marker.url;
 				preview.style.left = Math.min(75, x) + '%';
 				preview.style.top = Math.min(75, y + 5) + '%';
@@ -28,7 +29,7 @@
 			canvas.appendChild(button);
 		});
 		if (!markers.length) {
-			preview.textContent = 'No geolocated community content is available yet.';
+			preview.textContent = labels.empty || '';
 			preview.style.left = '20px';
 			preview.style.top = '20px';
 			preview.hidden = false;

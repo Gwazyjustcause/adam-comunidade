@@ -35,22 +35,22 @@ get_header();
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container' ) ); ?>">
 			<span class="<?php echo esc_attr( Public_Hero::element( 'kicker' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></span>
 			<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $directory_title ); ?></h1>
-			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Discover the organisations that collaborate with and support the ADAM community.', 'adam-comunidade' ); ?></p>
+			<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php esc_html_e( 'Descubra as organizações que colaboram com a comunidade ADAM e a apoiam.', 'adam-comunidade' ); ?></p>
 		</div>
 	</header>
 	<div class="adam-community-container">
 		<form class="adam-community-filters" data-directory-filters>
-			<label><span><?php esc_html_e( 'Search', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $search ); ?>"></label>
-			<?php if ( $definition['categories'] ) : ?><label><span><?php echo esc_html( 'institution' === $type ? __( 'Type', 'adam-comunidade' ) : __( 'Category', 'adam-comunidade' ) ); ?></span><select name="category"><option value=""><?php esc_html_e( 'All', 'adam-comunidade' ); ?></option><?php foreach ( $definition['categories'] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $category, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endif; ?>
-			<?php if ( 'brand' !== $type ) : ?><label><span><?php esc_html_e( 'District', 'adam-comunidade' ); ?></span><select name="district"><option value=""><?php esc_html_e( 'All', 'adam-comunidade' ); ?></option><?php foreach ( $repository->distinct( $type, 'district' ) as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $district, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label><?php endif; ?>
-			<label><span><?php esc_html_e( 'Sort', 'adam-comunidade' ); ?></span><select name="sort"><option value="alphabetical"><?php esc_html_e( 'Alphabetical', 'adam-comunidade' ); ?></option><option value="newest"><?php esc_html_e( 'Newest', 'adam-comunidade' ); ?></option><option value="priority"><?php esc_html_e( 'Priority', 'adam-comunidade' ); ?></option></select></label>
-			<label class="adam-community-check"><input type="checkbox" name="featured" value="1" <?php checked( $featured ); ?>> <span><?php esc_html_e( 'Featured only', 'adam-comunidade' ); ?></span></label>
-			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Apply filters', 'adam-comunidade' ); ?></button>
+			<label><span><?php esc_html_e( 'Pesquisar', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $search ); ?>"></label>
+			<?php if ( $definition['categories'] ) : ?><label><span><?php echo esc_html( 'institution' === $type ? __( 'Tipo', 'adam-comunidade' ) : __( 'Categoria', 'adam-comunidade' ) ); ?></span><select name="category"><option value=""><?php esc_html_e( 'Todas', 'adam-comunidade' ); ?></option><?php foreach ( $definition['categories'] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $category, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endif; ?>
+			<?php if ( 'brand' !== $type ) : ?><label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><select name="district"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $repository->distinct( $type, 'district' ) as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $district, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label><?php endif; ?>
+			<label><span><?php esc_html_e( 'Ordenar', 'adam-comunidade' ); ?></span><select name="sort"><option value="alphabetical"><?php esc_html_e( 'Ordem alfabética', 'adam-comunidade' ); ?></option><option value="newest"><?php esc_html_e( 'Mais recentes', 'adam-comunidade' ); ?></option><option value="priority"><?php esc_html_e( 'Prioridade', 'adam-comunidade' ); ?></option></select></label>
+			<label class="adam-community-check"><input type="checkbox" name="featured" value="1" <?php checked( $featured ); ?>> <span><?php esc_html_e( 'Apenas em destaque', 'adam-comunidade' ); ?></span></label>
+			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Aplicar filtros', 'adam-comunidade' ); ?></button>
 		</form>
-		<p><strong data-directory-total><?php echo esc_html( (string) $result['total'] ); ?></strong> <?php esc_html_e( 'results', 'adam-comunidade' ); ?></p>
+		<p><strong data-directory-total><?php echo esc_html( (string) $result['total'] ); ?></strong> <?php esc_html_e( 'resultados', 'adam-comunidade' ); ?></p>
 		<div class="adam-community-grid" data-directory-results aria-live="polite">
 			<?php if ( $result['items'] ) : foreach ( $result['items'] as $entry ) : echo View::card( $entry ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<?php else : ?><div class="adam-comunidade__empty"><?php esc_html_e( 'No published content is available yet.', 'adam-comunidade' ); ?></div><?php endif; ?>
+			<?php else : ?><div class="adam-comunidade__empty"><?php esc_html_e( 'Ainda não existe conteúdo publicado.', 'adam-comunidade' ); ?></div><?php endif; ?>
 		</div>
 		<div data-directory-pagination><?php echo View::pagination( 1, $result['pages'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 	</div>

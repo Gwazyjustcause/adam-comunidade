@@ -174,7 +174,7 @@ final class Components {
 			}
 		}
 		if ( ! $items ) {
-			return '<div class="adam-comunidade__empty">' . esc_html__( 'No published content is available.', 'adam-comunidade' ) . '</div>';
+			return '<div class="adam-comunidade__empty">' . esc_html__( 'Ainda não existe conteúdo publicado.', 'adam-comunidade' ) . '</div>';
 		}
 		return '<section class="adam-community-widget" data-adam-widget="' . esc_attr( $type ) . '"><h2>' . esc_html( $labels[ $type ] ) . '</h2><div class="adam-community-grid">' . implode( '', $items ) . '</div></section>';
 	}
@@ -247,14 +247,14 @@ final class Components {
 				}
 			}
 		}
-		return $cards ? '<section class="adam-community-section"><h2>' . esc_html__( 'Community Partners', 'adam-comunidade' ) . '</h2><div class="adam-community-grid">' . implode( '', $cards ) . '</div></section>' : '';
+		return $cards ? '<section class="adam-community-section"><h2>' . esc_html__( 'Parceiros da Comunidade', 'adam-comunidade' ) . '</h2><div class="adam-community-grid">' . implode( '', $cards ) . '</div></section>' : '';
 	}
 
 	private function core_card( object $item, string $type, string $url, int $image_id ): string {
 		$media = $image_id
 			? wp_get_attachment_image( $image_id, 'medium', false, array( 'loading' => 'lazy' ) )
 			: Placeholder_Image::cover( $type, (string) $item->name );
-		return '<article class="adam-community-card" data-entity-type="' . esc_attr( $type ) . '" data-entity-id="' . esc_attr( (string) $item->id ) . '"><a class="adam-community-card__media" href="' . esc_url( $url ) . '">' . $media . '</a><div class="adam-community-card__body"><span class="adam-community-card__meta">' . esc_html( ucfirst( $type ) ) . '</span><h2><a href="' . esc_url( $url ) . '">' . esc_html( $item->name ) . '</a></h2><p>' . esc_html( $item->short_description ?? '' ) . '</p><a class="adam-community-button" href="' . esc_url( $url ) . '">' . esc_html__( 'View details', 'adam-comunidade' ) . '</a></div></article>';
+		return '<article class="adam-community-card" data-entity-type="' . esc_attr( $type ) . '" data-entity-id="' . esc_attr( (string) $item->id ) . '"><a class="adam-community-card__media" href="' . esc_url( $url ) . '">' . $media . '</a><div class="adam-community-card__body"><span class="adam-community-card__meta">' . esc_html( View::type_label( $type ) ) . '</span><h2><a href="' . esc_url( $url ) . '">' . esc_html( $item->name ) . '</a></h2><p>' . esc_html( $item->short_description ?? '' ) . '</p><a class="adam-community-button" href="' . esc_url( $url ) . '">' . esc_html__( 'Ver detalhes', 'adam-comunidade' ) . '</a></div></article>';
 	}
 
 	private function assets( bool $map = false ): void {
@@ -263,6 +263,15 @@ final class Components {
 		if ( $map ) {
 			wp_enqueue_style( 'adam-comunidade-map', Helpers::url( 'assets/css/community-map.css' ), array( 'adam-comunidade-directory' ), ADAM_COMUNIDADE_VERSION );
 			wp_enqueue_script( 'adam-comunidade-map', Helpers::url( 'assets/js/community-map.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
+			wp_localize_script(
+				'adam-comunidade-map',
+				'adamCommunityMap',
+				array(
+					'details' => __( 'Ver detalhes', 'adam-comunidade' ),
+					'empty'   => __( 'Ainda não existe conteúdo da comunidade com localização disponível.', 'adam-comunidade' ),
+					'types'   => array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ), 'brand' => __( 'Marca', 'adam-comunidade' ) ),
+				)
+			);
 		}
 	}
 }

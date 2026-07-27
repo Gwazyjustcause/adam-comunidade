@@ -47,9 +47,9 @@ if ( $coordinates ) {
 }
 $capacity = array_filter(
 	array(
-		'max_players'         => array( absint( $field->max_players ), __( 'Maximum', 'adam-comunidade' ) ),
-		'min_players'         => array( absint( $field->min_players ), __( 'Minimum', 'adam-comunidade' ) ),
-		'recommended_players' => array( absint( $field->recommended_players ), __( 'Recommended', 'adam-comunidade' ) ),
+		'max_players'         => array( absint( $field->max_players ), __( 'Máximo', 'adam-comunidade' ) ),
+		'min_players'         => array( absint( $field->min_players ), __( 'Mínimo', 'adam-comunidade' ) ),
+		'recommended_players' => array( absint( $field->recommended_players ), __( 'Recomendado', 'adam-comunidade' ) ),
 	),
 	static fn( array $item ): bool => $item[0] > 0
 );
@@ -74,7 +74,7 @@ get_header();
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $field->name ); ?></h1>
 				<?php if ( ! empty( $field->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Associado ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Autorização verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
-				<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Open', 'adam-comunidade' ) ); ?></span>
+				<span class="adam-badge adam-availability adam-availability--<?php echo esc_attr( $field->availability ?? 'open' ); ?>"><?php echo esc_html( Options::availability_statuses()[ $field->availability ?? 'open' ] ?? __( 'Aberto', 'adam-comunidade' ) ); ?></span>
 				<?php if ( $field->municipality || $field->district ) : ?><p><?php echo esc_html( implode( ', ', array_filter( array( $field->municipality, $field->district ) ) ) ); ?></p><?php endif; ?>
 				<?php if ( $styles ) : ?><div class="adam-field-badges adam-field-badges--hero">
 					<?php foreach ( $styles as $style ) : ?><span><?php echo esc_html( View::style_label( $style ) ); ?></span><?php endforeach; ?>
@@ -85,15 +85,15 @@ get_header();
 	</section>
 
 	<?php if ( $has_mobile_actions ) : ?><div class="adam-field-mobile-actions">
-		<?php if ( $directions_url ) : ?><a href="<?php echo esc_url( $directions_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Directions', 'adam-comunidade' ); ?></a><?php endif; ?>
+		<?php if ( $directions_url ) : ?><a href="<?php echo esc_url( $directions_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Obter direções', 'adam-comunidade' ); ?></a><?php endif; ?>
 		<?php if ( $google_maps_url && $google_maps_url !== $directions_url ) : ?><a href="<?php echo esc_url( $google_maps_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
-		<?php if ( $coordinates ) : ?><button type="button" data-copy-gps="<?php echo esc_attr( $coordinates ); ?>"><?php esc_html_e( 'Copy GPS', 'adam-comunidade' ); ?></button><?php endif; ?>
+		<?php if ( $coordinates ) : ?><button type="button" data-copy-gps="<?php echo esc_attr( $coordinates ); ?>"><?php esc_html_e( 'Copiar coordenadas GPS', 'adam-comunidade' ); ?></button><?php endif; ?>
 	</div><?php endif; ?>
 
 	<div class="adam-field-container adam-field-content">
 		<?php if ( $has_description ) : ?>
 			<details class="adam-field-section adam-field-collapsible" open>
-				<summary><h2><?php esc_html_e( 'About', 'adam-comunidade' ); ?></h2></summary>
+				<summary><h2><?php esc_html_e( 'Sobre', 'adam-comunidade' ); ?></h2></summary>
 				<?php if ( $field->short_description ) : ?><p class="adam-field-lead"><?php echo esc_html( $field->short_description ); ?></p><?php endif; ?>
 				<?php echo wp_kses_post( wpautop( $field->full_description ) ); ?>
 			</details>
@@ -102,7 +102,7 @@ get_header();
 		<?php do_action( 'adam_comunidade_field_after_about', $field ); ?>
 
 		<?php if ( $amenities ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Facilities', 'adam-comunidade' ); ?></h2>
+			<h2><?php esc_html_e( 'Comodidades', 'adam-comunidade' ); ?></h2>
 			<div class="adam-facilities-grid">
 				<?php foreach ( $amenities as $amenity ) : ?><div>
 					<span><?php echo View::amenity_icon( $amenity->icon, 26 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
@@ -112,19 +112,19 @@ get_header();
 		</section><?php endif; ?>
 
 		<?php if ( $capacity ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Capacity', 'adam-comunidade' ); ?></h2>
+			<h2><?php esc_html_e( 'Capacidade', 'adam-comunidade' ); ?></h2>
 			<div class="adam-field-capacity">
 				<?php foreach ( $capacity as $capacity_item ) : ?><div><strong><?php echo esc_html( (string) $capacity_item[0] ); ?></strong><span><?php echo esc_html( $capacity_item[1] ); ?></span></div><?php endforeach; ?>
 			</div>
 		</section><?php endif; ?>
 
 		<?php if ( $has_rules ) : ?><details class="adam-field-section adam-field-collapsible" open>
-			<summary><h2><?php esc_html_e( 'Rules', 'adam-comunidade' ); ?></h2></summary>
+			<summary><h2><?php esc_html_e( 'Regras', 'adam-comunidade' ); ?></h2></summary>
 			<?php echo wp_kses_post( wpautop( $field->rules ) ); ?>
 		</details><?php endif; ?>
 
 		<?php if ( $gallery ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Gallery', 'adam-comunidade' ); ?></h2>
+			<h2><?php esc_html_e( 'Fotografias', 'adam-comunidade' ); ?></h2>
 			<div class="adam-field-gallery">
 				<?php foreach ( $gallery as $item ) : ?>
 					<?php $full = wp_get_attachment_image_url( (int) $item->attachment_id, 'full' ); ?>
@@ -137,15 +137,15 @@ get_header();
 		</section><?php endif; ?>
 
 		<?php if ( $field->address || $coordinates || $field->maps_url ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Map & Directions', 'adam-comunidade' ); ?></h2>
+			<h2><?php esc_html_e( 'Mapa e direções', 'adam-comunidade' ); ?></h2>
 			<?php if ( $field->address ) : ?><p class="adam-field-address"><?php echo esc_html( $field->address ); ?></p><?php endif; ?>
 			<?php if ( $coordinates ) : ?><div class="adam-field-map">
-				<iframe title="<?php esc_attr_e( 'Field location map', 'adam-comunidade' ); ?>" loading="lazy" src="<?php echo esc_url( Map::embed_url( (float) $field->latitude, (float) $field->longitude ) ); ?>"></iframe>
+				<iframe title="<?php esc_attr_e( 'Mapa da localização do campo', 'adam-comunidade' ); ?>" loading="lazy" src="<?php echo esc_url( Map::embed_url( (float) $field->latitude, (float) $field->longitude ) ); ?>"></iframe>
 			</div><?php endif; ?>
 			<div class="adam-field-actions">
-				<?php if ( $directions_url ) : ?><a class="adam-field-button" href="<?php echo esc_url( $directions_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Directions / Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
-				<?php if ( $google_maps_url && $google_maps_url !== $directions_url ) : ?><a class="adam-field-button adam-field-button--secondary" href="<?php echo esc_url( $google_maps_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
-				<?php if ( $coordinates ) : ?><button class="adam-field-button adam-field-button--secondary" type="button" data-copy-gps="<?php echo esc_attr( $coordinates ); ?>"><?php esc_html_e( 'Copy GPS', 'adam-comunidade' ); ?></button><?php endif; ?>
+				<?php if ( $directions_url ) : ?><a class="adam-field-button" href="<?php echo esc_url( $directions_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Obter direções no Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
+				<?php if ( $google_maps_url && $google_maps_url !== $directions_url ) : ?><a class="adam-field-button adam-field-button--secondary" href="<?php echo esc_url( $google_maps_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Abrir no Google Maps', 'adam-comunidade' ); ?></a><?php endif; ?>
+				<?php if ( $coordinates ) : ?><button class="adam-field-button adam-field-button--secondary" type="button" data-copy-gps="<?php echo esc_attr( $coordinates ); ?>"><?php esc_html_e( 'Copiar coordenadas GPS', 'adam-comunidade' ); ?></button><?php endif; ?>
 			</div>
 		</section><?php endif; ?>
 
@@ -162,7 +162,7 @@ get_header();
 	</div>
 
 	<?php if ( $gallery ) : ?><div class="adam-field-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden>
-		<button type="button" aria-label="<?php esc_attr_e( 'Close image viewer', 'adam-comunidade' ); ?>">&times;</button>
+		<button type="button" aria-label="<?php esc_attr_e( 'Fechar visualizador de imagens', 'adam-comunidade' ); ?>">&times;</button>
 		<figure><img src="" alt=""><figcaption></figcaption></figure>
 	</div><?php endif; ?>
 	<div class="adam-field-toast" role="status" aria-live="polite" hidden></div>

@@ -38,7 +38,16 @@ final class Smart_Blocks {
 		if ( ! wp_script_is( 'adam-experience', 'enqueued' ) ) {
 			return;
 		}
-		wp_localize_script( 'adam-experience', 'adamExperience', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'adam_experience' ), 'labels' => array( 'view' => __( 'View', 'adam-comunidade' ), 'empty' => __( 'No matching community content.', 'adam-comunidade' ), 'error' => __( 'Could not load community results.', 'adam-comunidade' ) ) ) );
+		wp_localize_script(
+			'adam-experience',
+			'adamExperience',
+			array(
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'nonce'       => wp_create_nonce( 'adam_experience' ),
+				'labels'      => array( 'view' => __( 'Ver', 'adam-comunidade' ), 'empty' => __( 'Nenhum conteúdo da comunidade corresponde à pesquisa.', 'adam-comunidade' ), 'error' => __( 'Não foi possível carregar os resultados da comunidade.', 'adam-comunidade' ) ),
+				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ) ),
+			)
+		);
 	}
 
 	public function shortcodes(): void {
@@ -100,19 +109,19 @@ final class Smart_Blocks {
 			__( 'Equipas', 'adam-comunidade' ) => $stats['teams'], __( 'Campos', 'adam-comunidade' ) => $stats['fields'], __( 'Parceiros', 'adam-comunidade' ) => $stats['partners'], __( 'Instituições', 'adam-comunidade' ) => $stats['institutions'], __( 'Marcas', 'adam-comunidade' ) => $stats['brands'],
 		);
 		if ( $stats['members'] ) {
-			$values[ __( 'Registered Players', 'adam-comunidade' ) ] = $stats['members'];
+			$values[ __( 'Jogadores registados', 'adam-comunidade' ) ] = $stats['members'];
 		}
-		$output = '<section class="adam-live-stats" aria-label="' . esc_attr__( 'Community statistics', 'adam-comunidade' ) . '">';
+		$output = '<section class="adam-live-stats" aria-label="' . esc_attr__( 'Estatísticas da comunidade', 'adam-comunidade' ) . '">';
 		foreach ( $values as $label => $value ) {
 			$output .= '<div><strong>' . esc_html( (string) $value ) . '</strong><span>' . esc_html( $label ) . '</span></div>';
 		}
 		$output .= '</section><section class="adam-stat-highlights">';
 		$highlights = array(
-			__( 'Newest Team', 'adam-comunidade' ) => $stats['newest_team']->name ?? '',
-			__( 'Newest Field', 'adam-comunidade' ) => $stats['newest_field']->name ?? '',
-			__( 'Most Active District', 'adam-comunidade' ) => $stats['active_district'],
-			__( 'Largest Team', 'adam-comunidade' ) => $stats['largest_team']->name ?? '',
-			__( 'Newest Partner', 'adam-comunidade' ) => $stats['newest_partner']->name ?? '',
+			__( 'Equipa mais recente', 'adam-comunidade' ) => $stats['newest_team']->name ?? '',
+			__( 'Campo mais recente', 'adam-comunidade' ) => $stats['newest_field']->name ?? '',
+			__( 'Distrito mais ativo', 'adam-comunidade' ) => $stats['active_district'],
+			__( 'Maior equipa', 'adam-comunidade' ) => $stats['largest_team']->name ?? '',
+			__( 'Parceiro mais recente', 'adam-comunidade' ) => $stats['newest_partner']->name ?? '',
 		);
 		foreach ( $highlights as $label => $value ) {
 			if ( $value ) {
@@ -142,6 +151,6 @@ final class Smart_Blocks {
 		if ( ! $items ) {
 			return '';
 		}
-		return '<section class="adam-community-widget" data-adam-widget="nearby-fields"><h2>' . esc_html__( 'Nearby Fields', 'adam-comunidade' ) . '</h2><div class="adam-community-grid">' . implode( '', array_map( static fn( object $item ): string => Field_View::card( $item, $repository ), $items ) ) . '</div></section>';
+		return '<section class="adam-community-widget" data-adam-widget="nearby-fields"><h2>' . esc_html__( 'Campos próximos', 'adam-comunidade' ) . '</h2><div class="adam-community-grid">' . implode( '', array_map( static fn( object $item ): string => Field_View::card( $item, $repository ), $items ) ) . '</div></section>';
 	}
 }

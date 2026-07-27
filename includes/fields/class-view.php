@@ -43,18 +43,18 @@ final class View {
 		}
 
 		$html  = '<nav class="adam-fields-pagination" aria-label="'
-			. esc_attr__( 'Fields pagination', 'adam-comunidade' ) . '">';
+			. esc_attr__( 'Paginação dos campos', 'adam-comunidade' ) . '">';
 		$start = max( 1, $current - 2 );
 		$end   = min( $pages, $current + 2 );
 
 		if ( $current > 1 ) {
-			$html .= self::page_button( $current - 1, __( 'Previous', 'adam-comunidade' ) );
+			$html .= self::page_button( $current - 1, __( 'Anterior', 'adam-comunidade' ) );
 		}
 		for ( $page = $start; $page <= $end; ++$page ) {
 			$html .= self::page_button( $page, (string) $page, $page === $current );
 		}
 		if ( $current < $pages ) {
-			$html .= self::page_button( $current + 1, __( 'Next', 'adam-comunidade' ) );
+			$html .= self::page_button( $current + 1, __( 'Seguinte', 'adam-comunidade' ) );
 		}
 
 		return $html . '</nav>';

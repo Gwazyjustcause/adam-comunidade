@@ -9,6 +9,9 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Fields\Options as Field_Options;
+use ADAM\Comunidade\Teams\Options as Team_Options;
+
 /**
  * Creates in-product notices for listing and time-sensitive changes.
  */
@@ -23,11 +26,13 @@ final class Notifications {
 	}
 
 	public function team_changed( int $id, array $data ): void {
-		$this->owners( 'team', $id, __( 'Team profile updated', 'adam-comunidade' ), sprintf( __( 'Recruitment is now: %s.', 'adam-comunidade' ), sanitize_text_field( $data['recruitment_status'] ?? '' ) ) );
+		$status = sanitize_key( $data['recruitment_status'] ?? '' );
+		$this->owners( 'team', $id, __( 'Perfil da equipa atualizado', 'adam-comunidade' ), sprintf( __( 'O estado do recrutamento é agora: %s.', 'adam-comunidade' ), Team_Options::recruitment_statuses()[ $status ] ?? __( 'Não indicado', 'adam-comunidade' ) ) );
 	}
 
 	public function field_changed( int $id, array $data ): void {
-		$this->owners( 'field', $id, __( 'Field profile updated', 'adam-comunidade' ), sprintf( __( 'Availability is now: %s.', 'adam-comunidade' ), sanitize_text_field( $data['availability'] ?? 'open' ) ) );
+		$status = sanitize_key( $data['availability'] ?? 'open' );
+		$this->owners( 'field', $id, __( 'Perfil do campo atualizado', 'adam-comunidade' ), sprintf( __( 'A disponibilidade é agora: %s.', 'adam-comunidade' ), Field_Options::availability_statuses()[ $status ] ?? __( 'Não indicada', 'adam-comunidade' ) ) );
 	}
 
 	public function scan_calendar(): void {
@@ -37,8 +42,8 @@ final class Notifications {
 		$users   = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT user_id FROM " . Schema::owners_table() . " WHERE status = 'verified'" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		foreach ( $entries as $entry ) {
 			foreach ( $users as $user_id ) {
-				$message = sprintf( __( '%1$s begins on %2$s.', 'adam-comunidade' ), $entry->title, wp_date( get_option( 'date_format' ), strtotime( $entry->start_at . ' UTC' ) ) );
-				$this->add_once( $user_id, __( 'Upcoming community date', 'adam-comunidade' ), $message, home_url( '/calendario/' ) );
+				$message = sprintf( __( '%1$s começa em %2$s.', 'adam-comunidade' ), $entry->title, wp_date( get_option( 'date_format' ), strtotime( $entry->start_at . ' UTC' ) ) );
+				$this->add_once( $user_id, __( 'Próxima data da comunidade', 'adam-comunidade' ), $message, home_url( '/calendario/' ) );
 			}
 		}
 	}

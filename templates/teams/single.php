@@ -35,7 +35,7 @@ $adam_associated_fields = $adam_field_repository->query(
 )['items'];
 $adam_public_links = Public_Privacy::public_links( $adam_team );
 $adam_link_labels  = array(
-	'website'   => __( 'Website', 'adam-comunidade' ),
+	'website'   => __( 'Página Web', 'adam-comunidade' ),
 	'facebook'  => 'Facebook',
 	'instagram' => 'Instagram',
 	'discord'   => 'Discord',

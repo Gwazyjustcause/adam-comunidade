@@ -74,7 +74,7 @@ final class Router {
 
 	public function title( string $title ): string {
 		if ( get_query_var( 'adam_compare' ) ) {
-			return __( 'Compare Community Content', 'adam-comunidade' );
+			return __( 'Comparar conteúdo da Comunidade', 'adam-comunidade' );
 		}
 		$slug = sanitize_title( (string) get_query_var( 'adam_region' ) );
 		return $slug ? ( self::regions()[ $slug ] ?? $title ) : $title;
@@ -96,7 +96,8 @@ final class Router {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'adam_experience' ),
-				'labels'  => array( 'view' => __( 'View', 'adam-comunidade' ), 'empty' => __( 'No matching community content.', 'adam-comunidade' ), 'error' => __( 'Could not load community results.', 'adam-comunidade' ) ),
+				'labels'  => array( 'view' => __( 'Ver', 'adam-comunidade' ), 'empty' => __( 'Nenhum conteúdo da comunidade corresponde à pesquisa.', 'adam-comunidade' ), 'error' => __( 'Não foi possível carregar os resultados da comunidade.', 'adam-comunidade' ) ),
+				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ) ),
 			)
 		);
 	}

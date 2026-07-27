@@ -92,12 +92,12 @@
 					return rule.startsWith( '.' ) ? suffix === rule : mime === rule;
 				} );
 				if ( ! valid ) {
-					showClientError( labels.invalidType || 'Tipo de ficheiro não permitido.' );
+					showClientError( labels.invalidType || '' );
 					return false;
 				}
 			}
 			if ( file.size > parseInt( upload.dataset.maxSize || '10', 10 ) * 1024 * 1024 ) {
-				showClientError( format( labels.tooLarge || 'O ficheiro excede %d MB.', upload.dataset.maxSize ) );
+				showClientError( format( labels.tooLarge, upload.dataset.maxSize ) );
 				return false;
 			}
 			return true;
@@ -156,7 +156,7 @@
 			filename.textContent = item.filename;
 			filename.title = item.filename;
 			const detail = document.createElement( 'small' );
-			detail.textContent = `✓ ${ item.type || extension( item.filename ) || 'Ficheiro' }${ item.size ? ` · ${ item.size }` : '' }`;
+			detail.textContent = `✓ ${ item.type || extension( item.filename ) || labels.file || '' }${ item.size ? ` · ${ item.size }` : '' }`;
 			meta.append( filename, detail );
 
 			const captionPattern = upload.dataset.captionPattern;
@@ -165,7 +165,7 @@
 				caption.type = 'text';
 				caption.name = captionPattern.replace( '__ID__', item.id );
 				caption.value = item.caption || '';
-				caption.placeholder = 'Legenda';
+				caption.placeholder = labels.caption || '';
 				meta.appendChild( caption );
 			}
 			const togglePattern = upload.dataset.togglePattern;

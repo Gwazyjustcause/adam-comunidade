@@ -47,19 +47,19 @@ final class Builder {
 			} elseif ( 'statistics' === $type ) {
 				$output .= do_shortcode( '[adam_community_statistics]' );
 			} elseif ( 'events' === $type ) {
-				$output .= '<section class="adam-community-widget"><h2>' . esc_html__( 'Upcoming Events', 'adam-comunidade' ) . '</h2><div class="adam-comunidade__empty">' . esc_html__( 'Event integration is ready for a future module.', 'adam-comunidade' ) . '</div></section>';
+				$output .= '<section class="adam-community-widget"><h2>' . esc_html__( 'Próximos eventos', 'adam-comunidade' ) . '</h2><div class="adam-comunidade__empty">' . esc_html__( 'A integração de eventos está preparada para um futuro módulo.', 'adam-comunidade' ) . '</div></section>';
 			}
 		}
 		return $output . '</div>';
 	}
 
 	public static function search_form(): string {
-		return '<section class="adam-universal-search"><label for="adam-universal-query">' . esc_html__( 'Search the community', 'adam-comunidade' ) . '</label><div><input id="adam-universal-query" type="search" data-adam-universal-query placeholder="' . esc_attr__( 'Teams, fields, partners, news…', 'adam-comunidade' ) . '"><button class="adam-community-button" type="button" data-adam-universal-submit>' . esc_html__( 'Pesquisar', 'adam-comunidade' ) . '</button></div><div data-adam-universal-results aria-live="polite"></div></section>';
+		return '<section class="adam-universal-search"><label for="adam-universal-query">' . esc_html__( 'Pesquisar na comunidade', 'adam-comunidade' ) . '</label><div><input id="adam-universal-query" type="search" data-adam-universal-query placeholder="' . esc_attr__( 'Equipas, campos, parceiros, notícias…', 'adam-comunidade' ) . '"><button class="adam-community-button" type="button" data-adam-universal-submit>' . esc_html__( 'Pesquisar', 'adam-comunidade' ) . '</button></div><div data-adam-universal-results aria-live="polite"></div></section>';
 	}
 
 	public static function news_cards( int $number = 6 ): string {
 		$posts = News::latest( $number );
-		$output = '<section class="adam-community-widget"><h2>' . esc_html__( 'Latest News', 'adam-comunidade' ) . '</h2><div class="adam-news-grid">';
+		$output = '<section class="adam-community-widget"><h2>' . esc_html__( 'Notícias recentes', 'adam-comunidade' ) . '</h2><div class="adam-news-grid">';
 		foreach ( $posts as $post ) {
 			$output .= '<article class="adam-news-card">' . get_the_post_thumbnail( $post, 'medium_large', array( 'loading' => 'lazy' ) ) . '<div><time datetime="' . esc_attr( get_post_time( DATE_ATOM, true, $post ) ) . '">' . esc_html( get_the_date( '', $post ) ) . '</time><h3><a href="' . esc_url( get_permalink( $post ) ) . '">' . esc_html( get_the_title( $post ) ) . '</a></h3><p>' . esc_html( get_the_excerpt( $post ) ) . '</p></div></article>';
 		}
@@ -72,7 +72,7 @@ final class Builder {
 	}
 
 	public static function definitions(): array {
-		return array( 'search' => __( 'Universal Search', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regions', 'adam-comunidade' ), 'statistics' => __( 'Community Statistics', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Partner Spotlight', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Featured Brand', 'adam-comunidade' ), 'news' => __( 'Latest News', 'adam-comunidade' ), 'events' => __( 'Upcoming Events', 'adam-comunidade' ), 'map' => __( 'Community Map', 'adam-comunidade' ) );
+		return array( 'search' => __( 'Pesquisa universal', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regiões', 'adam-comunidade' ), 'statistics' => __( 'Estatísticas da Comunidade', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiro em destaque', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marca em destaque', 'adam-comunidade' ), 'news' => __( 'Notícias recentes', 'adam-comunidade' ), 'events' => __( 'Próximos eventos', 'adam-comunidade' ), 'map' => __( 'Mapa da Comunidade', 'adam-comunidade' ) );
 	}
 
 }

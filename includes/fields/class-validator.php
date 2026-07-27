@@ -42,15 +42,15 @@ final class Validator {
 		$slug   = sanitize_title( (string) ( $input['slug'] ?? $name ) );
 
 		if ( ! $name ) {
-			$errors->add( 'name_required', __( 'Field name is required.', 'adam-comunidade' ) );
+			$errors->add( 'name_required', __( 'O nome do campo é obrigatório.', 'adam-comunidade' ) );
 		} elseif ( $this->repository->exists( 'name', $name, $field_id ) ) {
-			$errors->add( 'name_exists', __( 'A field with this name already exists.', 'adam-comunidade' ) );
+			$errors->add( 'name_exists', __( 'Já existe um campo com este nome.', 'adam-comunidade' ) );
 		}
 
 		if ( ! $slug ) {
-			$errors->add( 'slug_required', __( 'A valid field slug is required.', 'adam-comunidade' ) );
+			$errors->add( 'slug_required', __( 'É obrigatório indicar um slug válido para o campo.', 'adam-comunidade' ) );
 		} elseif ( $this->repository->exists( 'slug', $slug, $field_id ) ) {
-			$errors->add( 'slug_exists', __( 'A field with this slug already exists.', 'adam-comunidade' ) );
+			$errors->add( 'slug_exists', __( 'Já existe um campo com este slug.', 'adam-comunidade' ) );
 		}
 
 		$status = sanitize_key( (string) ( $input['status'] ?? 'draft' ) );
@@ -60,10 +60,16 @@ final class Validator {
 
 		$email = sanitize_email( (string) ( $input['email'] ?? '' ) );
 		if ( ! empty( $input['email'] ) && ! is_email( $email ) ) {
-			$errors->add( 'invalid_email', __( 'Enter a valid email address.', 'adam-comunidade' ) );
+			$errors->add( 'invalid_email', __( 'Introduza um endereço de e-mail válido.', 'adam-comunidade' ) );
 		}
 
 		$urls = array();
+		$url_labels = array(
+			'maps_url' => __( 'Google Maps', 'adam-comunidade' ),
+			'website'  => __( 'página Web', 'adam-comunidade' ),
+			'facebook' => 'Facebook',
+			'instagram'=> 'Instagram',
+		);
 		foreach ( array( 'maps_url', 'website', 'facebook', 'instagram' ) as $key ) {
 			$raw          = trim( (string) ( $input[ $key ] ?? '' ) );
 			$urls[ $key ] = esc_url_raw( $raw, array( 'http', 'https' ) );
@@ -73,8 +79,8 @@ final class Validator {
 					'invalid_' . $key,
 					sprintf(
 						/* translators: %s: URL field label. */
-						__( 'Enter a valid URL for %s.', 'adam-comunidade' ),
-						ucwords( str_replace( '_', ' ', $key ) )
+						__( 'Introduza um URL válido para %s.', 'adam-comunidade' ),
+						$url_labels[ $key ]
 					)
 				);
 			}
@@ -89,14 +95,14 @@ final class Validator {
 		if ( $maximum && $minimum > $maximum ) {
 			$errors->add(
 				'invalid_capacity',
-				__( 'Minimum players cannot exceed maximum players.', 'adam-comunidade' )
+				__( 'O número mínimo de jogadores não pode exceder o máximo.', 'adam-comunidade' )
 			);
 		}
 
 		if ( $maximum && $recommended > $maximum ) {
 			$errors->add(
 				'invalid_recommended',
-				__( 'Recommended players cannot exceed maximum players.', 'adam-comunidade' )
+				__( 'O número recomendado de jogadores não pode exceder o máximo.', 'adam-comunidade' )
 			);
 		}
 
@@ -130,7 +136,7 @@ final class Validator {
 		if ( 'published' === $status && 'verified_field' !== $verification ) {
 			$errors->add(
 				'legal_authorization_required',
-				__( 'A field can only be published after its legal authorisation has been verified.', 'adam-comunidade' )
+				__( 'O campo só pode ser publicado depois de a autorização legal ser verificada.', 'adam-comunidade' )
 			);
 		}
 
@@ -190,7 +196,7 @@ final class Validator {
 				'invalid_' . $label,
 				sprintf(
 					/* translators: %s: coordinate name. */
-					__( 'Enter a valid %s.', 'adam-comunidade' ),
+					__( 'Introduza uma %s válida.', 'adam-comunidade' ),
 					$label
 				)
 			);

@@ -133,14 +133,14 @@ final class Router {
 		wp_enqueue_style( 'adam-comunidade' );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_script( 'adam-comunidade-directory', Helpers::url( 'assets/js/directory-public.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
-		wp_localize_script( 'adam-comunidade-directory', 'adamDirectory', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'adam_directory_filter' ), 'error' => __( 'Content could not be loaded.', 'adam-comunidade' ) ) );
+		wp_localize_script( 'adam-comunidade-directory', 'adamDirectory', array( 'ajaxUrl' => admin_url( 'admin-ajax.php' ), 'nonce' => wp_create_nonce( 'adam_directory_filter' ), 'error' => __( 'Não foi possível carregar o conteúdo.', 'adam-comunidade' ) ) );
 	}
 
 	public function ajax_filter(): void {
 		check_ajax_referer( 'adam_directory_filter', 'nonce' );
 		$type = sanitize_key( $_POST['entity_type'] ?? '' );
 		if ( ! Types::get( $type ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid directory.', 'adam-comunidade' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Diretório inválido.', 'adam-comunidade' ) ), 400 );
 		}
 		$sorts = array(
 			'alphabetical' => array( 'name', 'ASC' ),
@@ -165,7 +165,7 @@ final class Router {
 		);
 		$cards = implode( '', array_map( array( View::class, 'card' ), $result['items'] ) );
 		if ( ! $cards ) {
-			$cards = '<div class="adam-comunidade__empty">' . esc_html__( 'No results match these filters.', 'adam-comunidade' ) . '</div>';
+			$cards = '<div class="adam-comunidade__empty">' . esc_html__( 'Nenhum resultado corresponde aos filtros selecionados.', 'adam-comunidade' ) . '</div>';
 		}
 		wp_send_json_success( array( 'cards' => $cards, 'pagination' => View::pagination( $page, $result['pages'] ), 'total' => $result['total'] ) );
 	}

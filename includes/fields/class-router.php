@@ -175,7 +175,7 @@ final class Router {
 		if ( self::$archive_location ) {
 			return sprintf(
 				/* translators: %s: district. */
-				__( 'Fields in %s', 'adam-comunidade' ),
+				__( 'Campos em %s', 'adam-comunidade' ),
 				self::$archive_location
 			);
 		}
@@ -231,9 +231,9 @@ final class Router {
 			array(
 				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'adam_fields_filter' ),
-				'error'    => __( 'Fields could not be loaded. Please try again.', 'adam-comunidade' ),
-				'copied'   => __( 'GPS coordinates copied.', 'adam-comunidade' ),
-				'copyFail' => __( 'Could not copy coordinates.', 'adam-comunidade' ),
+				'error'    => __( 'Não foi possível carregar os campos. Tente novamente.', 'adam-comunidade' ),
+				'copied'   => __( 'Coordenadas GPS copiadas.', 'adam-comunidade' ),
+				'copyFail' => __( 'Não foi possível copiar as coordenadas.', 'adam-comunidade' ),
 			)
 		);
 	}

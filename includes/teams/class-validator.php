@@ -73,6 +73,15 @@ final class Validator {
 		}
 
 		$url_fields = array( 'maps_url', 'website', 'facebook', 'instagram', 'discord', 'youtube', 'tiktok' );
+		$url_labels = array(
+			'maps_url' => __( 'Google Maps', 'adam-comunidade' ),
+			'website'  => __( 'página Web', 'adam-comunidade' ),
+			'facebook' => 'Facebook',
+			'instagram'=> 'Instagram',
+			'discord'  => 'Discord',
+			'youtube'  => 'YouTube',
+			'tiktok'   => 'TikTok',
+		);
 		$urls       = array();
 
 		foreach ( $url_fields as $field ) {
@@ -85,7 +94,7 @@ final class Validator {
 					sprintf(
 						/* translators: %s: field label. */
 						__( 'Introduza um URL válido para %s.', 'adam-comunidade' ),
-						ucwords( str_replace( '_', ' ', $field ) )
+						$url_labels[ $field ]
 					)
 				);
 			}

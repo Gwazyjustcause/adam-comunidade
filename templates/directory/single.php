@@ -77,7 +77,7 @@ get_header();
 	<header class="<?php echo esc_attr( Public_Hero::root( 'adam-community-hero' ) ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-community-hero__cover' ) ); ?>"><?php echo $entry->cover_id ? wp_get_attachment_image( (int) $entry->cover_id, 'adam-directory-cover', false, array( 'fetchpriority' => 'high' ) ) : Placeholder_Image::cover( (string) $entry->entity_type, (string) $entry->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-community-container adam-community-hero__content' ) ); ?>">
-			<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( ucwords( str_replace( '_', ' ', $entry->verification ) ) ); ?></span><?php endif; ?>
+			<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( View::verification_label( (string) $entry->verification ) ); ?></span><?php endif; ?>
 			<?php echo $entry->logo_id ? wp_get_attachment_image( (int) $entry->logo_id, 'adam-directory-logo', false, array( 'class' => 'adam-community-hero__logo' ) ) : Placeholder_Image::avatar( (string) $entry->entity_type, (string) $entry->name, 'adam-community-hero__logo' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<div>
 				<?php if ( $entry->featured ) : ?><span class="adam-community-badge adam-public-hero__badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>
@@ -113,7 +113,7 @@ get_header();
 
 		<?php if ( $downloads ) : ?><section class="adam-community-section"><h2><?php esc_html_e( 'Documentos', 'adam-comunidade' ); ?></h2><div class="adam-contact-grid"><?php foreach ( $downloads as $download ) : ?><a class="adam-contact-button" href="<?php echo esc_url( $download[1] ); ?>" download>↓ <?php echo esc_html( $download[0] ); ?></a><?php endforeach; ?></div></section><?php endif; ?>
 
-		<?php if ( $connected ) : ?><section class="adam-community-section"><h2><?php esc_html_e( 'Ligações à comunidade', 'adam-comunidade' ); ?></h2><div class="adam-community-connections"><?php foreach ( $connected as $connection ) : ?><a href="<?php echo esc_url( $connection['url'] ); ?>"><strong><?php echo esc_html( $connection['item']->name ); ?></strong><span><?php echo esc_html( ucfirst( $connection['type'] ) ); ?></span></a><?php endforeach; ?></div></section><?php endif; ?>
+		<?php if ( $connected ) : ?><section class="adam-community-section"><h2><?php esc_html_e( 'Ligações à comunidade', 'adam-comunidade' ); ?></h2><div class="adam-community-connections"><?php foreach ( $connected as $connection ) : ?><a href="<?php echo esc_url( $connection['url'] ); ?>"><strong><?php echo esc_html( $connection['item']->name ); ?></strong><span><?php echo esc_html( View::type_label( (string) $connection['type'] ) ); ?></span></a><?php endforeach; ?></div></section><?php endif; ?>
 
 		<?php do_action( 'adam_comunidade_directory_entry_content', $entry ); ?>
 	</div>

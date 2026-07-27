@@ -35,13 +35,13 @@ final class View {
 			</a>
 			<div class="adam-community-card__body">
 				<?php if ( $entry->featured ) : ?><span class="adam-community-badge"><?php esc_html_e( 'Em destaque', 'adam-comunidade' ); ?></span><?php endif; ?>
-				<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( ucwords( str_replace( '_', ' ', $entry->verification ) ) ); ?></span><?php endif; ?>
+				<?php if ( $entry->verification ) : ?><span class="adam-community-badge adam-badge--verified"><?php echo esc_html( self::verification_label( (string) $entry->verification ) ); ?></span><?php endif; ?>
 				<h2><a href="<?php echo esc_url( Router::entry_url( $entry ) ); ?>"><?php echo esc_html( $entry->name ); ?></a></h2>
 				<?php if ( $entry->category && isset( $definition['categories'][ $entry->category ] ) ) : ?><p class="adam-community-card__meta"><?php echo esc_html( $definition['categories'][ $entry->category ] ); ?></p><?php endif; ?>
 				<?php if ( $entry->short_description ) : ?><p><?php echo esc_html( $entry->short_description ); ?></p><?php endif; ?>
 				<div class="adam-community-card__actions">
-					<a class="adam-community-button" href="<?php echo esc_url( Router::entry_url( $entry ) ); ?>"><?php esc_html_e( 'View details', 'adam-comunidade' ); ?></a>
-					<?php if ( $entry->website ) : ?><a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( $entry->website ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Visit Website', 'adam-comunidade' ); ?></a><?php endif; ?>
+					<a class="adam-community-button" href="<?php echo esc_url( Router::entry_url( $entry ) ); ?>"><?php esc_html_e( 'Ver detalhes', 'adam-comunidade' ); ?></a>
+					<?php if ( $entry->website ) : ?><a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( $entry->website ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Visitar página Web', 'adam-comunidade' ); ?></a><?php endif; ?>
 				</div>
 			</div>
 		</article>
@@ -53,7 +53,7 @@ final class View {
 		if ( $pages <= 1 ) {
 			return '';
 		}
-		$output = '<nav class="adam-community-pagination" aria-label="' . esc_attr__( 'Directory pages', 'adam-comunidade' ) . '">';
+		$output = '<nav class="adam-community-pagination" aria-label="' . esc_attr__( 'Páginas do diretório', 'adam-comunidade' ) . '">';
 		for ( $number = 1; $number <= $pages; $number++ ) {
 			$output .= '<button type="button" data-page="' . esc_attr( (string) $number ) . '"'
 				. ( $number === $page ? ' aria-current="page"' : '' ) . '>' . esc_html( (string) $number ) . '</button>';
@@ -61,9 +61,32 @@ final class View {
 		return $output . '</nav>';
 	}
 
+	public static function verification_label( string $status ): string {
+		return array(
+			'verified'             => __( 'Verificado', 'adam-comunidade' ),
+			'verified_partner'     => __( 'Parceiro verificado', 'adam-comunidade' ),
+			'verified_institution' => __( 'Instituição verificada', 'adam-comunidade' ),
+			'verified_brand'       => __( 'Marca verificada', 'adam-comunidade' ),
+			'official_partner'     => __( 'Parceiro oficial', 'adam-comunidade' ),
+			'adam_partner'         => __( 'Parceiro ADAM', 'adam-comunidade' ),
+			'institutional_partner'=> __( 'Parceiro institucional', 'adam-comunidade' ),
+		)[ $status ] ?? __( 'Verificado', 'adam-comunidade' );
+	}
+
+	public static function type_label( string $type ): string {
+		if ( 'field' === $type ) {
+			return __( 'Campo', 'adam-comunidade' );
+		}
+		if ( 'team' === $type ) {
+			return __( 'Equipa', 'adam-comunidade' );
+		}
+		$definition = Types::get( $type );
+		return $definition ? (string) $definition['singular'] : __( 'Entidade', 'adam-comunidade' );
+	}
+
 	public static function public_links( object $entry ): string {
 		$labels = array(
-			'website'   => array( '🌍', __( 'Website', 'adam-comunidade' ) ),
+			'website'   => array( '🌍', __( 'Página Web', 'adam-comunidade' ) ),
 			'facebook'  => array( 'f', 'Facebook' ),
 			'instagram' => array( '◎', 'Instagram' ),
 			'discord'   => array( 'D', 'Discord' ),

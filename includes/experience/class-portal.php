@@ -360,11 +360,11 @@ final class Portal {
 			<?php foreach ( $owners as $owner ) : $record = self::record( $owner->object_type, (int) $owner->object_id ); if ( ! $record ) { continue; } ?>
 				<article class="adam-card adam-owner-card">
 					<h3><?php echo esc_html( $record->name ); ?></h3>
-					<p><?php echo esc_html( ucfirst( $owner->object_type ) ); ?> · <?php echo esc_html( Quality::score( $record ) ); ?>% <?php esc_html_e( 'completo', 'adam-comunidade' ); ?></p>
+					<p><?php echo esc_html( self::object_type_label( (string) $owner->object_type ) ); ?> · <?php echo esc_html( Quality::score( $record ) ); ?>% <?php esc_html_e( 'completo', 'adam-comunidade' ); ?></p>
 					<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" class="adam-portal-form">
 						<input type="hidden" name="action" value="adam_owner_edit"><input type="hidden" name="object_type" value="<?php echo esc_attr( $owner->object_type ); ?>"><input type="hidden" name="object_id" value="<?php echo esc_attr( $owner->object_id ); ?>">
 						<?php wp_nonce_field( 'adam_owner_edit_' . $owner->object_type . '_' . $owner->object_id, 'adam_nonce' ); ?>
-						<label><?php esc_html_e( 'Website', 'adam-comunidade' ); ?><input name="website" type="url" value="<?php echo esc_attr( $record->website ?? '' ); ?>"></label>
+						<label><?php esc_html_e( 'Página Web', 'adam-comunidade' ); ?><input name="website" type="url" value="<?php echo esc_attr( $record->website ?? '' ); ?>"></label>
 						<label><?php esc_html_e( 'Telefone', 'adam-comunidade' ); ?><input name="phone" value="<?php echo esc_attr( $record->phone ?? '' ); ?>"></label>
 						<label class="adam-portal-form__wide"><?php esc_html_e( 'Descrição breve', 'adam-comunidade' ); ?><textarea name="short_description"><?php echo esc_textarea( $record->short_description ?? '' ); ?></textarea></label>
 						<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar alterações para revisão', 'adam-comunidade' ); ?></button>
