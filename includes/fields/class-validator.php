@@ -164,6 +164,7 @@ final class Validator {
 				'longitude'           => $longitude,
 				'playing_styles'      => wp_json_encode( array_values( $styles ) ),
 				'rules'               => wp_kses_post( (string) ( $input['rules'] ?? '' ) ),
+				'opening_hours'       => sanitize_textarea_field( (string) ( $input['opening_hours'] ?? '' ) ),
 				'max_players'         => $maximum,
 				'min_players'         => $minimum,
 				'recommended_players' => $recommended,

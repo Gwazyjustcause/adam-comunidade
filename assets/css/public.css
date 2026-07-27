@@ -157,3 +157,204 @@
 		padding-top: 44px;
 	}
 }
+
+/* Dedicated Community Manager portal. */
+.adam-manager-portal {
+	background:
+		radial-gradient(circle at 10% 0, rgba(151, 196, 75, .16), transparent 32rem),
+		#f4f7f3;
+	min-height: 70vh;
+	padding: clamp(32px, 6vw, 80px) 20px;
+}
+
+.adam-manager-shell {
+	margin: 0 auto;
+	max-width: 1100px;
+}
+
+.adam-manager-header {
+	background: linear-gradient(135deg, #132a18, #244c2a);
+	border-radius: 22px;
+	color: #fff;
+	margin-bottom: 24px;
+	padding: clamp(28px, 5vw, 52px);
+}
+
+.adam-manager-header h1 {
+	color: #b7dc59;
+	font-size: clamp(2rem, 5vw, 3.8rem);
+	margin: 4px 0 12px;
+}
+
+.adam-manager-header p {
+	color: rgba(255, 255, 255, .88);
+	margin: 0;
+	max-width: 760px;
+}
+
+.adam-manager-eyebrow {
+	color: #6f9f24;
+	font-size: .78rem;
+	font-weight: 800;
+	letter-spacing: .12em;
+	margin: 0;
+	text-transform: uppercase;
+}
+
+.adam-manager-notice {
+	background: #eef8df;
+	border: 1px solid #b7dc59;
+	border-radius: 12px;
+	margin: 0 0 20px;
+	padding: 14px 18px;
+}
+
+.adam-manager-toolbar,
+.adam-manager-form__heading {
+	align-items: center;
+	display: flex;
+	gap: 20px;
+	justify-content: space-between;
+	margin-bottom: 24px;
+}
+
+.adam-manager-toolbar form,
+.adam-manager-toolbar p {
+	margin: 0;
+}
+
+.adam-manager-list {
+	display: grid;
+	gap: 18px;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.adam-manager-card,
+.adam-manager-form {
+	background: #fff;
+	border: 1px solid #dce5db;
+	border-radius: 18px;
+	box-shadow: 0 12px 35px rgba(20, 45, 24, .07);
+	padding: clamp(22px, 4vw, 36px);
+}
+
+.adam-manager-login {
+	margin: 0 auto;
+	max-width: 520px;
+}
+
+.adam-manager-form label {
+	display: grid;
+	font-weight: 700;
+	gap: 7px;
+}
+
+.adam-manager-form input,
+.adam-manager-form select,
+.adam-manager-form textarea {
+	border: 1px solid #bdcbbd;
+	border-radius: 9px;
+	font: inherit;
+	padding: 11px 12px;
+	width: 100%;
+}
+
+.adam-manager-form .adam-form-grid {
+	display: grid;
+	gap: 18px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.adam-manager-form .adam-field--wide {
+	grid-column: 1 / -1;
+}
+
+.adam-manager-choices {
+	border: 1px solid #dce5db;
+	border-radius: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px 20px;
+	margin: 24px 0;
+	padding: 18px;
+}
+
+.adam-manager-choices legend {
+	font-weight: 800;
+	padding: 0 8px;
+}
+
+.adam-manager-choices label {
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	font-weight: 600;
+}
+
+.adam-manager-choices input {
+	width: auto;
+}
+
+.adam-manager-media {
+	border-top: 1px solid #dce5db;
+	margin-top: 26px;
+	padding-top: 24px;
+}
+
+.adam-manager-current-media {
+	border: 1px solid #dce5db;
+	border-radius: 12px;
+	margin: 18px 0 24px;
+	padding: 16px;
+}
+
+.adam-manager-current-media > div {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+}
+
+.adam-manager-current-media label {
+	cursor: pointer;
+	position: relative;
+}
+
+.adam-manager-current-media img {
+	aspect-ratio: 1;
+	border-radius: 9px;
+	height: auto;
+	object-fit: cover;
+	width: 100%;
+}
+
+.adam-manager-current-media input {
+	accent-color: #5f8f20;
+	left: 7px;
+	position: absolute;
+	top: 7px;
+	width: auto;
+	z-index: 1;
+}
+
+.adam-manager-current-media input:not(:checked) + img {
+	filter: grayscale(1);
+	opacity: .35;
+}
+
+.adam-manager-review-note,
+.adam-manager-help {
+	color: #536153;
+	font-size: .92rem;
+}
+
+@media (max-width: 700px) {
+	.adam-manager-toolbar,
+	.adam-manager-form__heading {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.adam-manager-form .adam-form-grid {
+		grid-template-columns: 1fr;
+	}
+}

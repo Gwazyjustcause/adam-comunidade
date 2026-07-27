@@ -1,0 +1,436 @@
+<?php
+/**
+ * Front-end Community Manager portal.
+ *
+ * @package ADAM_Comunidade
+ */
+
+namespace ADAM\Comunidade\Managers;
+
+defined( 'ABSPATH' ) || exit;
+
+use ADAM\Comunidade\Fields\Options as Field_Options;
+use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Teams\Options as Team_Options;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
+
+/**
+ * Provides a dedicated, non-WordPress login and management interface.
+ */
+final class Portal {
+	private const ROUTES_VERSION = '1.0.0';
+	private static ?self $instance = null;
+
+	public function __construct( private Auth $auth, private Service $service ) {
+		self::$instance = $this;
+	}
+
+	public function register(): void {
+		add_action( 'init', array( self::class, 'add_rewrite_rules' ) );
+		add_action( 'init', array( self::class, 'maybe_flush_rewrite_rules' ), 999 );
+		add_filter( 'query_vars', array( $this, 'query_vars' ) );
+		add_filter( 'template_include', array( $this, 'template' ) );
+		add_filter( 'document_title_parts', array( $this, 'title' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ) );
+		foreach ( array( 'login', 'activate', 'logout', 'revision' ) as $action ) {
+			add_action( 'admin_post_nopriv_adam_manager_' . $action, array( $this, 'handle_' . $action ) );
+			add_action( 'admin_post_adam_manager_' . $action, array( $this, 'handle_' . $action ) );
+		}
+	}
+
+	public static function add_rewrite_rules(): void {
+		add_rewrite_rule( '^gestor/?$', 'index.php?adam_manager_route=dashboard', 'top' );
+		add_rewrite_rule( '^gestor/ativar/([a-f0-9]{64})/?$', 'index.php?adam_manager_route=activate&adam_manager_token=$matches[1]', 'top' );
+		add_rewrite_rule( '^gestor/editar/(team|field)/([0-9]+)/?$', 'index.php?adam_manager_route=edit&adam_manager_type=$matches[1]&adam_manager_id=$matches[2]', 'top' );
+	}
+
+	public static function maybe_flush_rewrite_rules(): void {
+		if ( self::ROUTES_VERSION === get_option( 'adam_comunidade_manager_routes_version' ) ) {
+			return;
+		}
+		flush_rewrite_rules( false );
+		update_option( 'adam_comunidade_manager_routes_version', self::ROUTES_VERSION, false );
+	}
+
+	public function query_vars( array $vars ): array {
+		return array_merge( $vars, array( 'adam_manager_route', 'adam_manager_token', 'adam_manager_type', 'adam_manager_id' ) );
+	}
+
+	public function template( string $template ): string {
+		return get_query_var( 'adam_manager_route' ) ? Helpers::path( 'templates/managers/portal.php' ) : $template;
+	}
+
+	public function title( array $parts ): array {
+		if ( get_query_var( 'adam_manager_route' ) ) {
+			$parts['title'] = __( 'Gestor da Comunidade', 'adam-comunidade' );
+		}
+		return $parts;
+	}
+
+	public function assets(): void {
+		if ( ! get_query_var( 'adam_manager_route' ) ) {
+			return;
+		}
+		wp_enqueue_style( 'adam-comunidade' );
+		wp_enqueue_script( 'adam-comunidade' );
+		Upload_Component::enqueue_assets();
+	}
+
+	public static function url(): string {
+		return home_url( '/gestor/' );
+	}
+
+	public static function activation_url( string $token ): string {
+		return home_url( '/gestor/ativar/' . rawurlencode( $token ) . '/' );
+	}
+
+	public static function edit_url( string $type, int $id ): string {
+		return home_url( '/gestor/editar/' . sanitize_key( $type ) . '/' . absint( $id ) . '/' );
+	}
+
+	public static function render(): void {
+		if ( self::$instance ) {
+			self::$instance->render_page();
+		}
+	}
+
+	private function render_page(): void {
+		$route = sanitize_key( (string) get_query_var( 'adam_manager_route' ) );
+		?>
+		<main class="adam-community adam-manager-portal">
+			<section class="adam-manager-shell">
+				<header class="adam-manager-header">
+					<p class="adam-manager-eyebrow"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
+					<h1><?php esc_html_e( 'Gestor da Comunidade', 'adam-comunidade' ); ?></h1>
+					<p><?php esc_html_e( 'Atualize os registos que lhe foram atribuídos. Todas as alterações são revistas pela ADAM antes da publicação.', 'adam-comunidade' ); ?></p>
+				</header>
+				<?php $this->notice(); ?>
+				<?php
+				if ( 'activate' === $route ) {
+					$this->activation_form();
+				} elseif ( 'edit' === $route ) {
+					$this->edit_form();
+				} else {
+					$this->dashboard();
+				}
+				?>
+			</section>
+		</main>
+		<?php
+	}
+
+	private function dashboard(): void {
+		$manager = $this->auth->current();
+		if ( ! $manager ) {
+			$this->login_form();
+			return;
+		}
+		$assignments = $this->service->assignments( (int) $manager->id );
+		?>
+		<div class="adam-manager-toolbar">
+			<p><?php echo esc_html( sprintf( __( 'Sessão iniciada como %s', 'adam-comunidade' ), (string) $manager->email ) ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="adam_manager_logout">
+				<input type="hidden" name="adam_manager_csrf" value="<?php echo esc_attr( $this->auth->csrf_token() ); ?>">
+				<button class="adam-community-button adam-community-button--secondary" type="submit"><?php esc_html_e( 'Terminar sessão', 'adam-comunidade' ); ?></button>
+			</form>
+		</div>
+		<h2><?php esc_html_e( 'Os meus registos', 'adam-comunidade' ); ?></h2>
+		<?php if ( ! $assignments ) : ?>
+			<div class="adam-community-empty"><h3><?php esc_html_e( 'Ainda não existem registos atribuídos.', 'adam-comunidade' ); ?></h3></div>
+		<?php else : ?>
+			<div class="adam-manager-list">
+				<?php foreach ( $assignments as $assignment ) : $record = $this->service->record( (string) $assignment->entity_type, (int) $assignment->entity_id ); ?>
+					<?php if ( ! $record ) { continue; } ?>
+					<article class="adam-card adam-manager-card">
+						<span class="adam-card__eyebrow"><?php echo esc_html( 'field' === $assignment->entity_type ? __( 'Campo', 'adam-comunidade' ) : __( 'Equipa', 'adam-comunidade' ) ); ?></span>
+						<h3><?php echo esc_html( (string) $record->name ); ?></h3>
+						<p><?php esc_html_e( 'As alterações enviadas ficam pendentes até serem revistas pela administração.', 'adam-comunidade' ); ?></p>
+						<a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar registo', 'adam-comunidade' ); ?></a>
+					</article>
+				<?php endforeach; ?>
+			</div>
+		<?php endif;
+	}
+
+	private function login_form(): void {
+		?>
+		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="adam_manager_login">
+			<h2><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></h2>
+			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
+			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" autocomplete="current-password" required></label>
+			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Entrar', 'adam-comunidade' ); ?></button>
+			<p class="adam-manager-help"><?php esc_html_e( 'A conta de Gestor é independente da sua conta WordPress ou de Sócio ADAM.', 'adam-comunidade' ); ?></p>
+		</form>
+		<?php
+	}
+
+	private function activation_form(): void {
+		$token = sanitize_text_field( (string) get_query_var( 'adam_manager_token' ) );
+		?>
+		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="adam_manager_activate">
+			<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
+			<h2><?php esc_html_e( 'Criar conta de Gestor', 'adam-comunidade' ); ?></h2>
+			<p><?php esc_html_e( 'Defina a palavra-passe desta conta. O endereço de e-mail já está associado ao convite.', 'adam-comunidade' ); ?></p>
+			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
+			<label><span><?php esc_html_e( 'Confirmar palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password_confirm" minlength="10" autocomplete="new-password" required></label>
+			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Criar conta de Gestor', 'adam-comunidade' ); ?></button>
+		</form>
+		<?php
+	}
+
+	private function edit_form(): void {
+		$manager = $this->auth->current();
+		if ( ! $manager ) {
+			$this->login_form();
+			return;
+		}
+		$type   = sanitize_key( (string) get_query_var( 'adam_manager_type' ) );
+		$id     = absint( get_query_var( 'adam_manager_id' ) );
+		$record = $this->service->can_manage( (int) $manager->id, $type, $id ) ? $this->service->record( $type, $id ) : null;
+		if ( ! $record ) {
+			status_header( 403 );
+			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'Não tem acesso a este registo.', 'adam-comunidade' ) . '</h2></div>';
+			return;
+		}
+		$styles = 'field' === $type ? Field_Options::playing_styles() : Team_Options::playing_styles();
+		$selected_styles = 'field' === $type ? Field_Options::decode_list( $record->playing_styles ) : Team_Options::decode_list( $record->playing_styles );
+		$current_gallery_ids = $this->gallery_ids( $type, $record );
+		?>
+		<form class="adam-card adam-manager-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="adam_manager_revision">
+			<input type="hidden" name="adam_manager_csrf" value="<?php echo esc_attr( $this->auth->csrf_token() ); ?>">
+			<input type="hidden" name="entity_type" value="<?php echo esc_attr( $type ); ?>">
+			<input type="hidden" name="entity_id" value="<?php echo esc_attr( (string) $id ); ?>">
+			<div class="adam-manager-form__heading"><div><p class="adam-manager-eyebrow"><?php esc_html_e( 'Proposta de alteração', 'adam-comunidade' ); ?></p><h2><?php echo esc_html( (string) $record->name ); ?></h2></div><a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Voltar aos meus registos', 'adam-comunidade' ); ?></a></div>
+			<div class="adam-form-grid">
+				<label><span><?php esc_html_e( 'Nome', 'adam-comunidade' ); ?></span><input type="text" name="manager[name]" value="<?php echo esc_attr( (string) $record->name ); ?>" required></label>
+				<label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><input type="text" name="manager[municipality]" value="<?php echo esc_attr( (string) $record->municipality ); ?>"></label>
+				<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><input type="text" name="manager[district]" value="<?php echo esc_attr( (string) $record->district ); ?>"></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Morada', 'adam-comunidade' ); ?></span><input type="text" name="manager[address]" value="<?php echo esc_attr( (string) $record->address ); ?>"></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição breve', 'adam-comunidade' ); ?></span><textarea name="manager[short_description]" rows="3"><?php echo esc_textarea( (string) $record->short_description ); ?></textarea></label>
+				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição completa', 'adam-comunidade' ); ?></span><textarea name="manager[full_description]" rows="10"><?php echo esc_textarea( wp_strip_all_tags( (string) $record->full_description ) ); ?></textarea></label>
+				<label><span><?php esc_html_e( 'Website', 'adam-comunidade' ); ?></span><input type="url" name="manager[website]" value="<?php echo esc_attr( (string) $record->website ); ?>"></label>
+				<label><span><?php esc_html_e( 'Facebook', 'adam-comunidade' ); ?></span><input type="url" name="manager[facebook]" value="<?php echo esc_attr( (string) $record->facebook ); ?>"></label>
+				<label><span><?php esc_html_e( 'Instagram', 'adam-comunidade' ); ?></span><input type="url" name="manager[instagram]" value="<?php echo esc_attr( (string) $record->instagram ); ?>"></label>
+				<label><span><?php esc_html_e( 'E-mail de contacto interno', 'adam-comunidade' ); ?></span><input type="email" name="manager[email]" value="<?php echo esc_attr( (string) $record->email ); ?>"></label>
+				<label><span><?php esc_html_e( 'Telefone de contacto interno', 'adam-comunidade' ); ?></span><input type="tel" name="manager[phone]" value="<?php echo esc_attr( (string) $record->phone ); ?>"></label>
+			</div>
+			<fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Estilos de jogo', 'adam-comunidade' ); ?></legend><?php foreach ( $styles as $key => $label ) : ?><label><input type="checkbox" name="manager[playing_styles][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected_styles, true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></fieldset>
+			<?php if ( 'field' === $type ) { $this->field_sections( $record ); } else { $this->team_sections( $record ); } ?>
+			<div class="adam-manager-media">
+				<h3><?php esc_html_e( 'Imagens', 'adam-comunidade' ); ?></h3>
+				<?php if ( $current_gallery_ids ) : ?>
+					<fieldset class="adam-manager-current-media">
+						<legend><?php esc_html_e( 'Fotografias atuais', 'adam-comunidade' ); ?></legend>
+						<p><?php esc_html_e( 'Desmarque uma fotografia para propor a sua remoção.', 'adam-comunidade' ); ?></p>
+						<div><?php foreach ( $current_gallery_ids as $attachment_id ) : ?><label><input type="checkbox" name="keep_gallery_ids[]" value="<?php echo esc_attr( (string) $attachment_id ); ?>" checked><?php echo wp_get_attachment_image( $attachment_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label><?php endforeach; ?></div>
+					</fieldset>
+				<?php endif; ?>
+				<input type="hidden" name="gallery_reviewed" value="1">
+				<label><?php esc_html_e( 'Nova imagem de capa (opcional)', 'adam-comunidade' ); ?></label>
+				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?>
+				<?php if ( 'team' === $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?><?php endif; ?>
+				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
+				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => 'image/jpeg,image/png,image/webp', 'multiple' => true, 'max' => 20, 'max_size_mb' => 10 ) ); ?>
+			</div>
+			<p class="adam-manager-review-note"><?php esc_html_e( 'Ao enviar, o registo público não é alterado de imediato. A ADAM irá rever esta proposta.', 'adam-comunidade' ); ?></p>
+			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar alterações para revisão', 'adam-comunidade' ); ?></button>
+		</form>
+		<?php
+	}
+
+	private function field_sections( object $record ): void {
+		$repo = new Field_Repository();
+		$selected = $repo->amenity_ids( (int) $record->id );
+		?>
+		<div class="adam-form-grid">
+			<label><span><?php esc_html_e( 'Jogadores recomendados', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[recommended_players]" value="<?php echo esc_attr( (string) $record->recommended_players ); ?>"></label>
+			<label><span><?php esc_html_e( 'Máximo de jogadores', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[max_players]" value="<?php echo esc_attr( (string) $record->max_players ); ?>"></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Regras', 'adam-comunidade' ); ?></span><textarea name="manager[rules]" rows="8"><?php echo esc_textarea( wp_strip_all_tags( (string) $record->rules ) ); ?></textarea></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Horários', 'adam-comunidade' ); ?></span><textarea name="manager[opening_hours]" rows="6" placeholder="<?php esc_attr_e( 'Ex.: Sábado e domingo, 09:00–18:00', 'adam-comunidade' ); ?>"><?php echo esc_textarea( (string) ( $record->opening_hours ?? '' ) ); ?></textarea></label>
+		</div>
+		<fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Comodidades', 'adam-comunidade' ); ?></legend><?php
+		global $wpdb;
+		$amenities = $wpdb->get_results( 'SELECT id,label FROM ' . \ADAM\Comunidade\Fields\Schema::amenities_table() . " WHERE status = 'active' ORDER BY sort_order,label" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( $amenities as $amenity ) : ?><label><input type="checkbox" name="amenity_ids[]" value="<?php echo esc_attr( (string) $amenity->id ); ?>" <?php checked( in_array( (int) $amenity->id, $selected, true ) ); ?>> <?php echo esc_html( (string) $amenity->label ); ?></label><?php endforeach; ?></fieldset>
+		<?php
+	}
+
+	private function team_sections( object $record ): void {
+		?>
+		<div class="adam-form-grid">
+			<label><span><?php esc_html_e( 'Nome abreviado', 'adam-comunidade' ); ?></span><input type="text" name="manager[short_name]" value="<?php echo esc_attr( (string) $record->short_name ); ?>"></label>
+			<label><span><?php esc_html_e( 'Ano de fundação', 'adam-comunidade' ); ?></span><input type="number" min="1800" max="<?php echo esc_attr( gmdate( 'Y' ) ); ?>" name="manager[founded]" value="<?php echo esc_attr( (string) $record->founded ); ?>"></label>
+			<label><span><?php esc_html_e( 'Número de elementos', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[members]" value="<?php echo esc_attr( (string) $record->members ); ?>"></label>
+			<label><span><?php esc_html_e( 'Estado do recrutamento', 'adam-comunidade' ); ?></span><select name="manager[recruitment_status]"><?php foreach ( Team_Options::recruitment_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $record->recruitment_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Requisitos de experiência', 'adam-comunidade' ); ?></span><textarea name="manager[recruitment_experience]"><?php echo esc_textarea( (string) $record->recruitment_experience ); ?></textarea></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Equipamento obrigatório', 'adam-comunidade' ); ?></span><textarea name="manager[recruitment_equipment]"><?php echo esc_textarea( (string) $record->recruitment_equipment ); ?></textarea></label>
+		</div>
+		<?php
+	}
+
+	public function handle_login(): never {
+		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
+		$key   = 'adam_manager_login_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
+		$attempts = absint( get_transient( $key ) );
+		if ( $attempts >= 8 || ! $this->auth->login( $email, (string) wp_unslash( $_POST['password'] ?? '' ) ) ) {
+			set_transient( $key, $attempts + 1, 15 * MINUTE_IN_SECONDS );
+			$this->redirect_status( 'login-failed' );
+		}
+		delete_transient( $key );
+		$this->redirect_status( 'logged-in' );
+	}
+
+	public function handle_activate(): never {
+		$password = (string) wp_unslash( $_POST['password'] ?? '' );
+		if ( ! hash_equals( $password, (string) wp_unslash( $_POST['password_confirm'] ?? '' ) ) ) {
+			$this->redirect_status( 'password-mismatch' );
+		}
+		$result = $this->service->activate( sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) ), $password );
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_status( 'activation-failed' );
+		}
+		$this->redirect_status( 'activated' );
+	}
+
+	public function handle_logout(): never {
+		if ( ! $this->auth->verify_csrf( $_POST['adam_manager_csrf'] ?? '' ) ) {
+			wp_die( esc_html__( 'O pedido de segurança expirou.', 'adam-comunidade' ), 403 );
+		}
+		$this->auth->logout();
+		$this->redirect_status( 'logged-out' );
+	}
+
+	public function handle_revision(): never {
+		$manager = $this->auth->current();
+		if ( ! $manager || ! $this->auth->verify_csrf( $_POST['adam_manager_csrf'] ?? '' ) ) {
+			wp_die( esc_html__( 'A sessão expirou. Inicie sessão novamente.', 'adam-comunidade' ), 403 );
+		}
+		$type  = sanitize_key( wp_unslash( $_POST['entity_type'] ?? '' ) );
+		$id    = absint( $_POST['entity_id'] ?? 0 );
+		$input = isset( $_POST['manager'] ) && is_array( $_POST['manager'] ) ? wp_unslash( $_POST['manager'] ) : array();
+		// Media IDs are accepted only from uploads processed in this request.
+		unset( $input['cover_id'], $input['logo_id'], $input['gallery'] );
+		$uploaded = array();
+		$cover = $this->upload_one( 'manager_cover' );
+		if ( is_wp_error( $cover ) ) { wp_die( esc_html( $cover->get_error_message() ) ); }
+		if ( $cover ) { $input['cover_id'] = $cover; $uploaded[] = $cover; }
+		if ( 'team' === $type ) {
+			$logo = $this->upload_one( 'manager_logo' );
+			if ( is_wp_error( $logo ) ) { wp_die( esc_html( $logo->get_error_message() ) ); }
+			if ( $logo ) { $input['logo_id'] = $logo; $uploaded[] = $logo; }
+		}
+		$gallery = $this->upload_many( 'manager_gallery', 20 );
+		if ( is_wp_error( $gallery ) ) { wp_die( esc_html( $gallery->get_error_message() ) ); }
+		$uploaded = array_merge( $uploaded, $gallery );
+		$current_record = $this->service->record( $type, $id );
+		$current_gallery_ids = $current_record ? $this->gallery_ids( $type, $current_record ) : array();
+		$kept_gallery_ids = array_values(
+			array_intersect(
+				$current_gallery_ids,
+				array_filter( array_map( 'absint', (array) wp_unslash( $_POST['keep_gallery_ids'] ?? array() ) ) )
+			)
+		);
+		$next_gallery_ids = array_slice( array_values( array_unique( array_merge( $kept_gallery_ids, $gallery ) ) ), 0, 20 );
+		$relations = array();
+		if ( isset( $_POST['gallery_reviewed'] ) ) {
+			if ( 'team' === $type ) { $input['gallery'] = $next_gallery_ids; } else { $relations['gallery_ids'] = $next_gallery_ids; }
+		}
+		if ( 'field' === $type ) {
+			$relations['amenity_ids'] = isset( $_POST['amenity_ids'] ) ? wp_unslash( $_POST['amenity_ids'] ) : array();
+		}
+		$result = $this->service->submit_revision( (int) $manager->id, $type, $id, $input, $relations );
+		if ( is_wp_error( $result ) ) {
+			foreach ( $uploaded as $attachment_id ) { wp_delete_attachment( $attachment_id, true ); }
+			wp_die( esc_html( $result->get_error_message() ) );
+		}
+		$this->redirect_status( 'revision-sent' );
+	}
+
+	private function upload_one( string $name ): int|\WP_Error {
+		if ( empty( $_FILES[ $name ]['name'] ) ) {
+			return 0;
+		}
+		if ( absint( $_FILES[ $name ]['size'] ?? 0 ) > 10 * MB_IN_BYTES ) {
+			return new \WP_Error( 'large_upload', __( 'A imagem excede o limite de 10 MB.', 'adam-comunidade' ) );
+		}
+		$extension = strtolower( pathinfo( sanitize_file_name( (string) $_FILES[ $name ]['name'] ), PATHINFO_EXTENSION ) );
+		if ( ! in_array( $extension, array( 'jpg', 'jpeg', 'png', 'webp' ), true ) ) {
+			return new \WP_Error( 'invalid_upload', __( 'O tipo de imagem não é permitido.', 'adam-comunidade' ) );
+		}
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$id = media_handle_upload( $name, 0 );
+		return is_wp_error( $id ) ? $id : absint( $id );
+	}
+
+	private function upload_many( string $name, int $limit ): array|\WP_Error {
+		if ( empty( $_FILES[ $name ]['name'] ) || ! is_array( $_FILES[ $name ]['name'] ) ) {
+			return array();
+		}
+		$original = $_FILES[ $name ];
+		if ( count( array_filter( $original['name'] ) ) > $limit ) {
+			return new \WP_Error( 'too_many', sprintf( __( 'Pode enviar no máximo %d fotografias.', 'adam-comunidade' ), $limit ) );
+		}
+		$ids = array();
+		foreach ( array_keys( $original['name'] ) as $index ) {
+			if ( empty( $original['name'][ $index ] ) ) { continue; }
+			$_FILES[ $name ] = array( 'name' => $original['name'][ $index ], 'type' => $original['type'][ $index ], 'tmp_name' => $original['tmp_name'][ $index ], 'error' => $original['error'][ $index ], 'size' => $original['size'][ $index ] );
+			$id = $this->upload_one( $name );
+			if ( is_wp_error( $id ) ) {
+				$_FILES[ $name ] = $original;
+				foreach ( $ids as $uploaded_id ) { wp_delete_attachment( $uploaded_id, true ); }
+				return $id;
+			}
+			if ( $id ) { $ids[] = $id; }
+		}
+		$_FILES[ $name ] = $original;
+		return $ids;
+	}
+
+	private function gallery_ids( string $type, object $record ): array {
+		if ( 'field' === $type ) {
+			return array_values(
+				array_filter(
+					array_map(
+						static fn( object $item ): int => absint( $item->attachment_id ?? 0 ),
+						( new Field_Repository() )->gallery( (int) $record->id )
+					),
+					'wp_attachment_is_image'
+				)
+			);
+		}
+		return array_values(
+			array_filter(
+				array_map( 'absint', (array) json_decode( (string) ( $record->gallery ?? '[]' ), true ) ),
+				'wp_attachment_is_image'
+			)
+		);
+	}
+
+	private function notice(): void {
+		$status = sanitize_key( wp_unslash( $_GET['estado'] ?? '' ) );
+		$messages = array(
+			'login-failed'      => __( 'Não foi possível iniciar sessão. Verifique os dados e tente novamente.', 'adam-comunidade' ),
+			'logged-in'         => __( 'Sessão iniciada com sucesso.', 'adam-comunidade' ),
+			'logged-out'        => __( 'Sessão terminada.', 'adam-comunidade' ),
+			'password-mismatch' => __( 'As palavras-passe não coincidem.', 'adam-comunidade' ),
+			'activation-failed' => __( 'O convite é inválido, já foi utilizado ou expirou.', 'adam-comunidade' ),
+			'activated'         => __( 'Conta criada. Já pode iniciar sessão.', 'adam-comunidade' ),
+			'revision-sent'     => __( 'Alterações enviadas para revisão. O registo público mantém-se inalterado até à aprovação.', 'adam-comunidade' ),
+		);
+		if ( isset( $messages[ $status ] ) ) {
+			echo '<div class="adam-manager-notice" role="status">' . esc_html( $messages[ $status ] ) . '</div>';
+		}
+	}
+
+	private function redirect_status( string $status ): never {
+		wp_safe_redirect( add_query_arg( 'estado', $status, self::url() ) );
+		exit;
+	}
+}

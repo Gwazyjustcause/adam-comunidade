@@ -57,6 +57,7 @@ $has_mobile_actions = (bool) ( $directions_url || $google_maps_url || $coordinat
 $has_description    = '' !== trim( (string) $field->short_description )
 	|| '' !== trim( wp_strip_all_tags( (string) $field->full_description ) );
 $has_rules          = '' !== trim( wp_strip_all_tags( (string) $field->rules ) );
+$has_opening_hours  = '' !== trim( (string) ( $field->opening_hours ?? '' ) );
 
 get_header();
 ?>
@@ -122,6 +123,11 @@ get_header();
 			<summary><h2><?php esc_html_e( 'Regras', 'adam-comunidade' ); ?></h2></summary>
 			<?php echo wp_kses_post( wpautop( $field->rules ) ); ?>
 		</details><?php endif; ?>
+
+		<?php if ( $has_opening_hours ) : ?><section class="adam-field-section">
+			<h2><?php esc_html_e( 'Horários', 'adam-comunidade' ); ?></h2>
+			<p><?php echo nl2br( esc_html( (string) $field->opening_hours ) ); ?></p>
+		</section><?php endif; ?>
 
 		<?php if ( $gallery ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Fotografias', 'adam-comunidade' ); ?></h2>

@@ -27,7 +27,7 @@ final class Email_Service {
 	public function templates(): array {
 		$stored = get_option( self::OPTION_NAME, array() );
 		$stored = is_array( $stored ) ? $stored : array();
-		$defaults = $this->defaults();
+		$defaults = array_merge( $this->defaults(), $this->manager_defaults() );
 		$merged   = array_replace_recursive( $defaults, $stored );
 
 		foreach ( $defaults as $key => $default ) {
@@ -50,7 +50,7 @@ final class Email_Service {
 	 * @param array<string,mixed> $input Posted template settings.
 	 */
 	public function save( array $input ): void {
-		$clean = $this->defaults();
+		$clean = array_merge( $this->defaults(), $this->manager_defaults() );
 
 		foreach ( $clean as $key => $default ) {
 			$template                 = isset( $input[ $key ] ) && is_array( $input[ $key ] ) ? $input[ $key ] : array();
@@ -83,7 +83,15 @@ final class Email_Service {
 			Logger::info( 'Submission email skipped: no production-safe ADAM contact email is configured.', array( 'email_type' => $template_key ) );
 			return false;
 		}
+		if ( 'field_approved' === $template_key && '' !== $context['manager_invite_url'] ) {
+			$template['body'] .= __( '<p>Pode manter os dados deste campo atualizados através de uma conta independente de Gestor da Comunidade.</p><p><a href="{{manager_invite_url}}">Criar Conta de Gestor</a></p>', 'adam-comunidade' );
+		}
 
+		foreach ( $context as $key => $value ) {
+			if ( str_ends_with( $key, '_url' ) && '' === $value ) {
+				$template['body'] = (string) preg_replace( '#<p>.*?\{\{' . preg_quote( $key, '#' ) . '\}\}.*?</p>#is', '', $template['body'] );
+			}
+		}
 		$subject = wp_strip_all_tags( $this->replace_placeholders( $template['subject'], $context ) );
 		$heading = wp_strip_all_tags( $this->replace_placeholders( $template['heading'], $context ) );
 		$body    = $this->replace_placeholders( $template['body'], $context );
@@ -184,10 +192,13 @@ final class Email_Service {
 		}
 
 		return array(
-			'field_name' => $field_name,
-			'field_url'  => $field_url,
-			'admin_note' => $admin_note,
-			'adam_email' => $this->contact_email(),
+			'field_name'         => $field_name,
+			'field_url'          => $field_url,
+			'entity_name'        => $this->string_value( $context['entity_name'] ?? null, __( 'Registo da Comunidade', 'adam-comunidade' ) ),
+			'manager_invite_url' => $this->public_url( $context['manager_invite_url'] ?? null ),
+			'manager_url'        => $this->public_url( $context['manager_url'] ?? null ),
+			'admin_note'         => $admin_note,
+			'adam_email'         => $this->contact_email(),
 		);
 	}
 
@@ -282,6 +293,44 @@ final class Email_Service {
 </body></html>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Manager notification defaults are kept in the same editable email system.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	private function manager_defaults(): array {
+		return array(
+			'manager_invitation' => array(
+				'label'   => __( 'Convite de Gestor da Comunidade', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Crie a sua conta de Gestor da Comunidade', 'adam-comunidade' ),
+				'heading' => __( 'O seu registo foi aprovado', 'adam-comunidade' ),
+				'body'    => __( '<p>O registo <strong>{{entity_name}}</strong> foi aprovado.</p><p>Pode criar uma conta de Gestor da Comunidade para manter esta informação atualizada. Esta conta é independente de qualquer conta WordPress ou de Sócio ADAM.</p><p><a href="{{manager_invite_url}}">Criar Conta de Gestor</a></p><p>O convite é pessoal, de utilização única e expira ao fim de 14 dias. A publicação do registo não depende da ativação da conta.</p>', 'adam-comunidade' ),
+			),
+			'manager_revision_approved' => array(
+				'label'   => __( 'Alteração de Gestor aprovada', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'As suas alterações foram aprovadas', 'adam-comunidade' ),
+				'heading' => __( 'Alterações publicadas', 'adam-comunidade' ),
+				'body'    => __( '<p>As alterações propostas para <strong>{{entity_name}}</strong> foram aprovadas e já estão publicadas.</p><p><a href="{{manager_url}}">Abrir o portal de Gestor</a></p>', 'adam-comunidade' ),
+			),
+			'manager_revision_rejected' => array(
+				'label'   => __( 'Alteração de Gestor rejeitada', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Atualização sobre as alterações propostas', 'adam-comunidade' ),
+				'heading' => __( 'Alterações não aprovadas', 'adam-comunidade' ),
+				'body'    => __( '<p>As alterações propostas para <strong>{{entity_name}}</strong> não foram aprovadas. O registo público mantém-se inalterado.</p><p>{{admin_note}}</p><p><a href="{{manager_url}}">Abrir o portal de Gestor</a></p>', 'adam-comunidade' ),
+			),
+			'manager_information_requested' => array(
+				'label'   => __( 'Pedido de informação ao Gestor', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Precisamos de informação adicional', 'adam-comunidade' ),
+				'heading' => __( 'Informação adicional necessária', 'adam-comunidade' ),
+				'body'    => __( '<p>Antes de concluir a revisão das alterações de <strong>{{entity_name}}</strong>, precisamos de informação adicional:</p><p>{{admin_note}}</p><p><a href="{{manager_url}}">Abrir o portal de Gestor</a></p>', 'adam-comunidade' ),
+			),
+		);
 	}
 
 	/**

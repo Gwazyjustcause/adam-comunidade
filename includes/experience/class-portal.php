@@ -21,6 +21,7 @@ use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Forms\Manager as Forms_Manager;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Managers\Service as Manager_Service;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
@@ -842,6 +843,7 @@ final class Portal {
 					</form>
 				</article>
 			<?php endforeach; ?>
+			<?php do_action( 'adam_comunidade_moderation_after_submissions' ); ?>
 		</div>
 		<?php
 	}
@@ -874,6 +876,24 @@ final class Portal {
 			wp_die( esc_html__( 'Não foi possível guardar a decisão. Tente novamente.', 'adam-comunidade' ) );
 		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
+		$manager_invite_url = '';
+		if ( 'approve' === $decision && 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field' ), true ) ) {
+			$manager_invite = ( new Manager_Service( self::emails() ) )->invite( (string) $row->contact_email, (string) $row->object_type, $object_id );
+			if ( ! is_wp_error( $manager_invite ) ) {
+				$manager_invite_url = $manager_invite;
+				if ( 'team' === $row->object_type ) {
+					$email_payload = json_decode( (string) $row->payload, true ) ?: array();
+					self::emails()->send(
+						'manager_invitation',
+						(string) $row->contact_email,
+						array(
+							'entity_name'        => (string) ( $email_payload['name'] ?? '' ),
+							'manager_invite_url' => $manager_invite_url,
+						)
+					);
+				}
+			}
+		}
 		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
 			$email_payload = json_decode( (string) $row->payload, true ) ?: array();
 			$field         = 'approve' === $decision ? ( new Field_Repository() )->find( $object_id ) : null;
@@ -883,6 +903,7 @@ final class Portal {
 				array(
 					'field_name' => (string) ( $email_payload['name'] ?? '' ),
 					'field_url'  => $field ? Field_Router::field_url( $field ) : '',
+					'manager_invite_url' => $manager_invite_url,
 					'admin_note' => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
 				)
 			);

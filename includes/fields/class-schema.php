@@ -16,7 +16,7 @@ final class Schema {
 	/**
 	 * Module schema version.
 	 */
-	public const VERSION = '6.1.0';
+	public const VERSION = '6.2.0';
 
 	/**
 	 * Creates or upgrades all Fields module tables.
@@ -56,6 +56,7 @@ final class Schema {
 			maps_url varchar(500) NOT NULL DEFAULT '',
 			playing_styles text NULL,
 			rules longtext NULL,
+			opening_hours longtext NULL,
 			max_players int(10) unsigned NOT NULL DEFAULT 0,
 			min_players int(10) unsigned NOT NULL DEFAULT 0,
 			recommended_players int(10) unsigned NOT NULL DEFAULT 0,
