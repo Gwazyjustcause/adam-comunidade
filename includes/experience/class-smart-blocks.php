@@ -45,7 +45,7 @@ final class Smart_Blocks {
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'adam_experience' ),
 				'labels'      => array( 'view' => __( 'Ver', 'adam-comunidade' ), 'empty' => __( 'Nenhum conteúdo da comunidade corresponde à pesquisa.', 'adam-comunidade' ), 'error' => __( 'Não foi possível carregar os resultados da comunidade.', 'adam-comunidade' ) ),
-				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ) ),
+				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ) ),
 			)
 		);
 	}
@@ -55,11 +55,11 @@ final class Smart_Blocks {
 			'adam_newest_teams' => array( 'teams', 'newest', false ),
 			'adam_random_team' => array( 'teams', 'random', false ),
 			'adam_featured_field' => array( 'fields', 'newest', true ),
-			'adam_random_brand' => array( 'brands', 'random', false ),
 		);
 		foreach ( $sections as $shortcode => $settings ) {
 			add_shortcode( $shortcode, static fn( array $attributes = array() ): string => do_shortcode( sprintf( '[adam_community_section type="%s" number="%d" order="%s" featured="%d"]', $settings[0], absint( $attributes['number'] ?? 1 ), $settings[1], $settings[2] ? 1 : 0 ) ) );
 		}
+		add_shortcode( 'adam_random_brand', static fn( array $attributes = array() ): string => do_shortcode( sprintf( '[adam_community_section type="partners" category="brand" number="%d" order="random"]', absint( $attributes['number'] ?? 1 ) ) ) );
 		add_shortcode( 'adam_latest_news', static fn( array $attributes = array() ): string => Builder::news_cards( absint( $attributes['number'] ?? 6 ) ) );
 		add_shortcode( 'adam_community_statistics', fn(): string => $this->statistics() );
 		add_shortcode( 'adam_popular_team', array( $this, 'popular_team' ) );
@@ -106,7 +106,7 @@ final class Smart_Blocks {
 	public function statistics( string $district = '' ): string {
 		$stats = $this->discovery->statistics( $district );
 		$values = array(
-			__( 'Equipas', 'adam-comunidade' ) => $stats['teams'], __( 'Campos', 'adam-comunidade' ) => $stats['fields'], __( 'Parceiros', 'adam-comunidade' ) => $stats['partners'], __( 'Instituições', 'adam-comunidade' ) => $stats['institutions'], __( 'Marcas', 'adam-comunidade' ) => $stats['brands'],
+			__( 'Equipas', 'adam-comunidade' ) => $stats['teams'], __( 'Campos', 'adam-comunidade' ) => $stats['fields'], __( 'Parceiros', 'adam-comunidade' ) => $stats['partners'], __( 'Instituições', 'adam-comunidade' ) => $stats['institutions'],
 		);
 		if ( $stats['members'] ) {
 			$values[ __( 'Jogadores registados', 'adam-comunidade' ) ] = $stats['members'];

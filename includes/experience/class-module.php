@@ -47,7 +47,6 @@ final class Module implements Module_Interface {
 		( new Related_Content( $teams, $fields, $directory ) )->register();
 		( new Media() )->register();
 		( new Portal( $forms, $emails ) )->register();
-		( new Calendar() )->register();
 		( new Registry() )->register();
 		( new Integrations() )->register();
 		( new Notifications() )->register();

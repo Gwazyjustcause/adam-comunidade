@@ -130,6 +130,9 @@ $controller = new class() {
 };
 
 Router::register_page( 'dashboard', array( 'title' => 'Dashboard', 'controller' => $controller, 'method' => 'dashboard' ) );
+Router::register_page( 'moderation', array( 'title' => 'Approvals', 'controller' => $controller, 'method' => 'settings' ) );
+Router::register_page( 'forms', array( 'title' => 'Forms', 'controller' => $controller, 'method' => 'settings' ) );
+Router::register_page( 'urls', array( 'title' => 'Addresses', 'controller' => $controller, 'method' => 'settings' ) );
 Router::register_page( 'settings', array( 'title' => 'Settings', 'controller' => $controller, 'method' => 'settings' ) );
 Router::register_page(
 	'fallback-title',
@@ -146,8 +149,6 @@ $modules = array(
 	'fields'       => array( 'field', '' ),
 	'partners'     => array( 'partner', 'partner' ),
 	'institutions' => array( 'institution', 'institution' ),
-	'brands'       => array( 'brand', 'brand' ),
-	'regions'      => array( 'region', '' ),
 	'news'         => array( 'news', '' ),
 );
 
@@ -181,6 +182,7 @@ assert(
 
 $expected = array(
 	'adam-comunidade-dashboard',
+	'adam-comunidade-moderation',
 	'adam-comunidade-teams',
 	'adam-comunidade-team-add',
 	'adam-comunidade-team-edit',
@@ -193,9 +195,8 @@ $expected = array(
 	'adam-comunidade-institutions',
 	'adam-comunidade-institution-add',
 	'adam-comunidade-institution-edit',
-	'adam-comunidade-brands',
-	'adam-comunidade-brand-add',
-	'adam-comunidade-brand-edit',
+	'adam-comunidade-forms',
+	'adam-comunidade-urls',
 	'adam-comunidade-settings',
 );
 
@@ -236,6 +237,29 @@ unset( $_GET['id'] );
 
 $registered_slugs = array_keys( $GLOBALS['adam_test_submenus'] );
 assert( 'adam-comunidade-settings' === end( $registered_slugs ), 'Settings must be the final submenu.' );
+$visible_slugs = array_keys(
+	array_filter(
+		$GLOBALS['adam_test_submenus'],
+		static fn( array $page ): bool => Router::PARENT_SLUG === $page['parent_slug']
+	)
+);
+assert(
+	array(
+		'adam-comunidade-dashboard',
+		'adam-comunidade-moderation',
+		'adam-comunidade-teams',
+		'adam-comunidade-fields',
+		'adam-comunidade-partners',
+		'adam-comunidade-institutions',
+		'adam-comunidade-news',
+		'adam-comunidade-forms',
+		'adam-comunidade-urls',
+		'adam-comunidade-settings',
+	) === $visible_slugs,
+	'Visible administration pages are not in the expected task-focused order.'
+);
+assert( ! isset( Router::routes()['adam-comunidade-brands'] ), 'Brands must not be a standalone administration module.' );
+assert( ! isset( Router::routes()['adam-comunidade-calendar'] ), 'Calendar must not be a standalone administration page.' );
 
 foreach ( $modules as $module => $definition ) {
 	$add_slug  = 'adam-comunidade-' . $definition[0] . '-add';

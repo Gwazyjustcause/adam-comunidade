@@ -44,7 +44,6 @@ final class Discovery {
 					'fields'       => array_map( fn( object $item ): array => $this->record( $item, 'field', Field_Router::field_url( $item ), 'location-alt' ), $this->fields->query( $common + array( 'municipality' => $filters['municipality'] ?? '', 'playing_style' => $filters['playing_style'] ?? '', 'amenity_id' => $this->facility_id( $filters['facility'] ?? '' ) ) )['items'] ),
 					'partners'     => $this->directory_group( 'partner', $term, $filters, $limit ),
 					'institutions' => $this->directory_group( 'institution', $term, $filters, $limit ),
-					'brands'       => $this->directory_group( 'brand', $term, $filters, $limit ),
 					'news'         => array_map(
 						static fn( \WP_Post $post ): array => array(
 							'id' => $post->ID, 'type' => 'news', 'name' => get_the_title( $post ), 'description' => get_the_excerpt( $post ), 'url' => get_permalink( $post ), 'icon' => 'megaphone', 'district' => '',
@@ -73,13 +72,12 @@ final class Discovery {
 				$fields = $this->fields->query( $args );
 				$partners = $this->directory->query( 'partner', $args );
 				$institutions = $this->directory->query( 'institution', $args );
-				$brands = $this->directory->query( 'brand', $args );
 				$newest_team = $this->teams->query( $args + array( 'orderby' => 'created_at', 'order' => 'DESC' ) )['items'][0] ?? null;
 				$newest_field = $this->fields->query( $args + array( 'orderby' => 'created_at', 'order' => 'DESC' ) )['items'][0] ?? null;
 				$largest_team = $this->teams->query( $args + array( 'orderby' => 'members', 'order' => 'DESC' ) )['items'][0] ?? null;
 				$newest_partner = $this->directory->query( 'partner', $args + array( 'orderby' => 'created_at', 'order' => 'DESC' ) )['items'][0] ?? null;
 				return array(
-					'teams' => $teams['total'], 'fields' => $fields['total'], 'partners' => $partners['total'], 'institutions' => $institutions['total'], 'brands' => $brands['total'],
+					'teams' => $teams['total'], 'fields' => $fields['total'], 'partners' => $partners['total'], 'institutions' => $institutions['total'],
 					'members' => (int) apply_filters( 'adam_comunidade_members_count', 0 ),
 					'newest_team' => $newest_team, 'newest_field' => $newest_field, 'largest_team' => $largest_team, 'newest_partner' => $newest_partner,
 					'active_district' => $district ?: $this->most_active_district(),

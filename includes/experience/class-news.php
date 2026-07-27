@@ -110,7 +110,7 @@ final class News {
 		?>
 		<p><label for="adam-related-type"><?php esc_html_e( 'Módulo relacionado', 'adam-comunidade' ); ?></label>
 		<select id="adam-related-type" name="adam_related_type"><option value=""><?php esc_html_e( 'Nenhum', 'adam-comunidade' ); ?></option>
-		<?php foreach ( array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'brand' => __( 'Marca', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ) as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $type, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></p>
+		<?php foreach ( array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ) as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $type, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></p>
 		<p><label for="adam-related-id"><?php esc_html_e( 'ID do registo relacionado', 'adam-comunidade' ); ?></label><input id="adam-related-id" name="adam_related_id" type="number" min="0" value="<?php echo esc_attr( $id ); ?>"></p>
 		<p><label><input type="checkbox" name="adam_news_featured" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_featured', true ) ); ?>> <?php esc_html_e( 'Notícia em destaque', 'adam-comunidade' ); ?></label></p>
 		<p><label><input type="checkbox" name="adam_news_members_only" value="1" <?php checked( (bool) get_post_meta( $post->ID, '_adam_members_only', true ) ); ?>> <?php esc_html_e( 'Apenas membros ADAM', 'adam-comunidade' ); ?></label></p>
@@ -122,7 +122,7 @@ final class News {
 			return;
 		}
 		$type = sanitize_key( $_POST['adam_related_type'] ?? '' );
-		if ( ! in_array( $type, array( '', 'team', 'field', 'partner', 'brand', 'institution' ), true ) ) {
+		if ( ! in_array( $type, array( '', 'team', 'field', 'partner', 'institution' ), true ) ) {
 			$type = '';
 		}
 		update_post_meta( $post_id, '_adam_related_type', $type );

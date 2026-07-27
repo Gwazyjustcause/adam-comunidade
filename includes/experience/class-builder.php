@@ -30,7 +30,11 @@ final class Builder {
 				continue;
 			}
 			$type = $section['type'];
-			if ( in_array( $type, array( 'teams', 'fields', 'partners', 'institutions', 'brands' ), true ) ) {
+			if ( 'brands' === $type ) {
+				$type                = 'partners';
+				$section['category'] = 'brand';
+			}
+			if ( in_array( $type, array( 'teams', 'fields', 'partners', 'institutions' ), true ) ) {
 				$output .= do_shortcode( sprintf( '[adam_community_section type="%s" number="%d" order="%s" category="%s" featured="%d"]', esc_attr( $type ), absint( $section['number'] ), esc_attr( $section['order'] ), esc_attr( $section['category'] ), absint( $section['featured'] ) ) );
 			} elseif ( 'map' === $type ) {
 				$output .= do_shortcode( '[adam_community_map]' );
@@ -46,8 +50,6 @@ final class Builder {
 				$output .= '</div></section>';
 			} elseif ( 'statistics' === $type ) {
 				$output .= do_shortcode( '[adam_community_statistics]' );
-			} elseif ( 'events' === $type ) {
-				$output .= '<section class="adam-community-widget"><h2>' . esc_html__( 'Próximos eventos', 'adam-comunidade' ) . '</h2><div class="adam-comunidade__empty">' . esc_html__( 'A integração de eventos está preparada para um futuro módulo.', 'adam-comunidade' ) . '</div></section>';
 			}
 		}
 		return $output . '</div>';
@@ -72,7 +74,7 @@ final class Builder {
 	}
 
 	public static function definitions(): array {
-		return array( 'search' => __( 'Pesquisa universal', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regiões', 'adam-comunidade' ), 'statistics' => __( 'Estatísticas da Comunidade', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiro em destaque', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marca em destaque', 'adam-comunidade' ), 'news' => __( 'Notícias recentes', 'adam-comunidade' ), 'events' => __( 'Próximos eventos', 'adam-comunidade' ), 'map' => __( 'Mapa da Comunidade', 'adam-comunidade' ) );
+		return array( 'search' => __( 'Pesquisa universal', 'adam-comunidade' ), 'regions' => __( 'Centro de Portugal / Regiões', 'adam-comunidade' ), 'statistics' => __( 'Estatísticas da Comunidade', 'adam-comunidade' ), 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias recentes', 'adam-comunidade' ), 'map' => __( 'Mapa da Comunidade', 'adam-comunidade' ) );
 	}
 
 }

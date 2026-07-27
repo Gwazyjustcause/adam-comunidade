@@ -65,7 +65,10 @@ final class Rest_API {
 			$result = ( new Field_Repository() )->query( $args );
 			$data   = array_map( fn( object $item ): array => $this->core_item( $item, Field_Router::field_url( $item ), 'field', 0, (int) $item->cover_id ), $result['items'] );
 		} else {
-			$type   = array( 'parceiros' => 'partner', 'marcas' => 'brand', 'instituicoes' => 'institution' )[ $endpoint ];
+			$type   = 'instituicoes' === $endpoint ? 'institution' : 'partner';
+			if ( 'marcas' === $endpoint ) {
+				$args['category'] = 'brand';
+			}
 			$result = $this->repository->query( $type, $args );
 			$data   = array_map( fn( object $item ): array => $this->directory_item( $item ), $result['items'] );
 		}

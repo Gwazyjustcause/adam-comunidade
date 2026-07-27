@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Installs shared entity, gallery, and relationship storage.
  */
 final class Schema {
-	public const VERSION = '6.0.0';
+	public const VERSION = '6.1.0';
 
 	/**
 	 * Creates or upgrades Phase 4 tables.
@@ -109,8 +109,103 @@ final class Schema {
 			) {$collate};"
 		);
 
+		if ( ! self::migrate_brands_to_partners() ) {
+			return;
+		}
+
 		update_option( 'adam_comunidade_directory_db_version', self::VERSION, false );
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
+	}
+
+	/**
+	 * Merges the retired Brand entity type into the Partner directory.
+	 *
+	 * Existing names and slugs are retained whenever possible. Conflicts receive
+	 * a clear "Marca" suffix so no record is discarded. Relationships are copied
+	 * to their Partner equivalents before the obsolete edges are removed.
+	 *
+	 * @return bool
+	 */
+	private static function migrate_brands_to_partners(): bool {
+		global $wpdb;
+
+		$entries       = self::entries_table();
+		$relationships = self::relationships_table();
+		$brands        = $wpdb->get_results( "SELECT id,name,slug FROM {$entries} WHERE entity_type = 'brand' ORDER BY id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( ! $brands ) {
+			return true;
+		}
+
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) {
+			return false;
+		}
+
+		foreach ( $brands as $brand ) {
+			$name   = (string) $brand->name;
+			$slug   = (string) $brand->slug;
+			$suffix = 1;
+
+			while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$entries} WHERE entity_type = %s AND name = %s AND id <> %d", 'partner', $name, $brand->id ) ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				++$suffix;
+				$name = (string) $brand->name . ' (' . __( 'Marca', 'adam-comunidade' ) . ( $suffix > 2 ? ' ' . ( $suffix - 1 ) : '' ) . ')';
+			}
+
+			$slug_suffix = 1;
+			while ( $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$entries} WHERE entity_type = %s AND slug = %s AND id <> %d", 'partner', $slug, $brand->id ) ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				++$slug_suffix;
+				$slug = (string) $brand->slug . '-marca' . ( $slug_suffix > 2 ? '-' . ( $slug_suffix - 1 ) : '' );
+			}
+
+			$updated = $wpdb->update(
+				$entries,
+				array(
+					'entity_type' => 'partner',
+					'category'    => 'brand',
+					'name'        => $name,
+					'slug'        => $slug,
+				),
+				array( 'id' => (int) $brand->id ),
+				array( '%s', '%s', '%s', '%s' ),
+				array( '%d' )
+			);
+			if ( false === $updated ) {
+				$wpdb->query( 'ROLLBACK' );
+				return false;
+			}
+		}
+
+		$relationships_copied = $wpdb->query(
+			"INSERT IGNORE INTO {$relationships} (source_type,source_id,relation,target_type,target_id,created_at)
+			SELECT
+				IF(source_type = 'brand', 'partner', source_type),
+				source_id,
+				IF(
+					(source_type = 'brand' AND target_type = 'partner')
+					OR (source_type = 'partner' AND target_type = 'brand'),
+					'associated',
+					relation
+				),
+				IF(target_type = 'brand', 'partner', target_type),
+				target_id,
+				created_at
+			FROM {$relationships}
+			WHERE source_type = 'brand' OR target_type = 'brand'"
+		); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$relationships_deleted = false !== $relationships_copied
+			? $wpdb->query( "DELETE FROM {$relationships} WHERE source_type = 'brand' OR target_type = 'brand'" ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			: false;
+
+		if ( false === $relationships_copied || false === $relationships_deleted ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
+		if ( false === $wpdb->query( 'COMMIT' ) ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+		return true;
 	}
 
 	public static function entries_table(): string {

@@ -16,7 +16,6 @@ $adam_comunidade_statistics = array(
 $adam_type_labels = array(
 	'partner'     => __( 'Parceiro', 'adam-comunidade' ),
 	'institution' => __( 'Instituição', 'adam-comunidade' ),
-	'brand'       => __( 'Marca', 'adam-comunidade' ),
 );
 
 ?>
@@ -35,7 +34,6 @@ $adam_type_labels = array(
 			'fields'       => __( 'Adicionar campo', 'adam-comunidade' ),
 			'partners'     => __( 'Adicionar parceiro', 'adam-comunidade' ),
 			'institutions' => __( 'Adicionar instituição', 'adam-comunidade' ),
-			'brands'       => __( 'Adicionar marca', 'adam-comunidade' ),
 		);
 		foreach ( $adam_quick_actions as $adam_module => $adam_label ) :
 			?>
@@ -59,13 +57,12 @@ $adam_type_labels = array(
 		<div class="adam-section-heading">
 			<h2 id="adam-directory-statistics-heading"><?php esc_html_e( 'Ecossistema da Comunidade', 'adam-comunidade' ); ?></h2>
 		</div>
-		<div class="adam-stat-grid adam-stat-grid--five">
+		<div class="adam-stat-grid">
 			<?php
 			$adam_directory_statistics = array(
 				__( 'Equipas', 'adam-comunidade' )        => $team_counts['all'],
 				__( 'Campos', 'adam-comunidade' )       => $field_counts['all'],
 				__( 'Parceiros', 'adam-comunidade' )     => $directory_counts['partner']['all'],
-				__( 'Marcas', 'adam-comunidade' )       => $directory_counts['brand']['all'],
 				__( 'Instituições', 'adam-comunidade' ) => $directory_counts['institution']['all'],
 			);
 			foreach ( $adam_directory_statistics as $adam_label => $adam_value ) :
@@ -81,7 +78,7 @@ $adam_type_labels = array(
 	<section aria-labelledby="adam-community-insights-heading">
 		<div class="adam-section-heading"><h2 id="adam-community-insights-heading"><?php esc_html_e( 'Resumo da Comunidade', 'adam-comunidade' ); ?></h2><a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'moderation' ) ); ?>"><?php esc_html_e( 'Abrir aprovações', 'adam-comunidade' ); ?></a></div>
 		<div class="adam-stat-grid">
-			<?php foreach ( array( __( 'Submissões pendentes', 'adam-comunidade' ) => $community_insights['pending'], __( 'Pedidos de gestão pendentes', 'adam-comunidade' ) => $community_insights['claims'], __( 'Responsáveis verificados', 'adam-comunidade' ) => $community_insights['owners'], __( 'Próximas entradas do calendário', 'adam-comunidade' ) => $community_insights['calendar'] ) as $adam_label => $adam_value ) : ?><div class="adam-stat-card"><span class="adam-stat-card__value"><?php echo esc_html( (string) $adam_value ); ?></span><span class="adam-stat-card__label"><?php echo esc_html( $adam_label ); ?></span></div><?php endforeach; ?>
+			<?php foreach ( array( __( 'Submissões pendentes', 'adam-comunidade' ) => $community_insights['pending'], __( 'Pedidos de gestão pendentes', 'adam-comunidade' ) => $community_insights['claims'], __( 'Responsáveis verificados', 'adam-comunidade' ) => $community_insights['owners'] ) as $adam_label => $adam_value ) : ?><div class="adam-stat-card"><span class="adam-stat-card__value"><?php echo esc_html( (string) $adam_value ); ?></span><span class="adam-stat-card__label"><?php echo esc_html( $adam_label ); ?></span></div><?php endforeach; ?>
 		</div>
 	</section>
 

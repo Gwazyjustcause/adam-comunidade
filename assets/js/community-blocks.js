@@ -12,7 +12,6 @@
 		{ label: 'Campos', value: 'fields' },
 		{ label: 'Parceiros', value: 'partners' },
 		{ label: 'Instituições', value: 'institutions' },
-		{ label: 'Marcas', value: 'brands' }
 	];
 
 	blocks.registerBlockType('adam-comunidade/community-section', {
@@ -21,6 +20,7 @@
 		category: 'widgets',
 		edit: function (props) {
 			var a = props.attributes;
+			var selectedType = typeOptions.filter(function (item) { return item.value === a.type; })[0] || { label: 'Parceiros' };
 			return el(element.Fragment, {},
 				el(InspectorControls, {}, el(PanelBody, { title: i18n.__('Conteúdo da Comunidade', 'adam-comunidade') },
 					el(SelectControl, { label: i18n.__('Módulo', 'adam-comunidade'), value: a.type, options: typeOptions, onChange: function (value) { props.setAttributes({ type: value }); } }),
@@ -29,7 +29,7 @@
 					el(TextControl, { label: i18n.__('Chave da categoria', 'adam-comunidade'), value: a.category, onChange: function (value) { props.setAttributes({ category: value }); } }),
 					el(ToggleControl, { label: i18n.__('Apenas em destaque', 'adam-comunidade'), checked: a.featured, onChange: function (value) { props.setAttributes({ featured: value }); } })
 				)),
-				el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Secção da Comunidade ADAM', 'adam-comunidade')), el('p', {}, typeOptions.filter(function (item) { return item.value === a.type; })[0].label + ' · ' + a.number + ' cartões'))
+				el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Secção da Comunidade ADAM', 'adam-comunidade')), el('p', {}, selectedType.label + ' · ' + a.number + ' cartões'))
 			);
 		},
 		save: function () { return null; }
@@ -41,7 +41,7 @@
 		category: 'widgets',
 		edit: function (props) {
 			return el('div', {}, el(SelectControl, { label: i18n.__('Destaque', 'adam-comunidade'), value: props.attributes.type, options: [
-				{ label: 'Parceiro em destaque', value: 'featured_partner' }, { label: 'Parceiro mais recente', value: 'newest_partner' }, { label: 'Parceiro aleatório', value: 'random_partner' }, { label: 'Marca em destaque', value: 'featured_brand' }, { label: 'Instituição em destaque', value: 'institution_spotlight' }
+				{ label: 'Parceiro em destaque', value: 'featured_partner' }, { label: 'Parceiro mais recente', value: 'newest_partner' }, { label: 'Parceiro aleatório', value: 'random_partner' }, { label: 'Instituição em destaque', value: 'institution_spotlight' }
 			], onChange: function (value) { props.setAttributes({ type: value }); } }));
 		},
 		save: function () { return null; }

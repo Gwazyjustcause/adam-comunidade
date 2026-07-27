@@ -33,7 +33,7 @@ $gallery    = array_values(
 $public_links          = Public_Privacy::public_links( $entry );
 $has_description       = '' !== trim( (string) $entry->short_description ) || '' !== trim( wp_strip_all_tags( (string) $entry->full_description ) );
 $has_benefits          = 'partner' === $entry->entity_type && '' !== trim( wp_strip_all_tags( (string) $entry->benefits ) );
-$has_brand_information = 'brand' === $entry->entity_type
+$has_brand_information = 'partner' === $entry->entity_type && 'brand' === $entry->category
 	&& ( ! empty( $entry->official_distributor ) || '' !== trim( wp_strip_all_tags( (string) $entry->popular_products ) ) );
 $has_notes             = 'institution' === $entry->entity_type && '' !== trim( wp_strip_all_tags( (string) $entry->notes ) );
 $has_location          = '' !== trim( (string) $entry->address )

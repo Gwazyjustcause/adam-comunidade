@@ -49,7 +49,6 @@ get_header();
 		<?php echo do_shortcode( '[adam_community_section type="teams" number="6" order="newest"]' ); ?>
 		<?php echo do_shortcode( '[adam_community_section type="fields" number="6" order="newest"]' ); ?>
 		<?php echo do_shortcode( '[adam_community_section type="partners" number="6" order="priority"]' ); ?>
-		<?php echo do_shortcode( '[adam_community_section type="brands" number="6" order="random"]' ); ?>
 		<?php echo do_shortcode( '[adam_community_section type="institutions" number="6" order="newest"]' ); ?>
 		<?php echo Builder::news_cards( 6 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	</div>

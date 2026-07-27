@@ -25,11 +25,13 @@ final class Types {
 				'singular'   => __( 'Parceiro', 'adam-comunidade' ),
 				'module_id'  => 'partners',
 				'categories' => array(
+					'brand'         => __( 'Marca', 'adam-comunidade' ),
 					'sponsor'       => __( 'Patrocinador', 'adam-comunidade' ),
 					'loja'          => __( 'Loja', 'adam-comunidade' ),
 					'technical'     => __( 'Parceiro Técnico', 'adam-comunidade' ),
 					'institutional' => __( 'Parceiro Institucional', 'adam-comunidade' ),
 					'supporter'     => __( 'Apoiante', 'adam-comunidade' ),
+					'association'   => __( 'Associação', 'adam-comunidade' ),
 					'organisation'  => __( 'Organização', 'adam-comunidade' ),
 				),
 				'icon'       => 'groups',
@@ -49,14 +51,6 @@ final class Types {
 				),
 				'icon'       => 'bank',
 				'marker'     => 'institution',
-			),
-			'brand' => array(
-				'plural'     => __( 'Marcas', 'adam-comunidade' ),
-				'singular'   => __( 'Marca', 'adam-comunidade' ),
-				'module_id'  => 'brands',
-				'categories' => array(),
-				'icon'       => 'tag',
-				'marker'     => 'brand',
 			),
 		);
 

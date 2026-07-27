@@ -177,12 +177,11 @@ final class Router {
 			'menu'
 		);
 
-		$routes   = array( self::PARENT_SLUG => $dashboard ) + self::$routes;
-		$settings = $routes['adam-comunidade-settings'] ?? null;
-		unset( $routes['adam-comunidade-settings'] );
-		if ( $settings ) {
-			$routes['adam-comunidade-settings'] = $settings;
-		}
+		$routes = array( self::PARENT_SLUG => $dashboard ) + self::$routes;
+		uksort(
+			$routes,
+			static fn( string $first, string $second ): int => self::menu_order( $first ) <=> self::menu_order( $second )
+		);
 
 		foreach ( $routes as $slug => $route ) {
 			$parent_slug = ! empty( $route['visible'] ) ? self::PARENT_SLUG : self::HIDDEN_PARENT_SLUG;
@@ -376,6 +375,36 @@ final class Router {
 		}
 
 		self::$routes[ $slug ] = $normalized;
+	}
+
+	/**
+	 * Returns the administrator-focused order for visible menu pages.
+	 *
+	 * Hidden routes remain registered for direct links but are placed after the
+	 * visible navigation because their order is irrelevant to the menu.
+	 *
+	 * @param string $slug Route slug.
+	 * @return int
+	 */
+	private static function menu_order( string $slug ): int {
+		$preferred = array(
+			self::PARENT_SLUG              => 10,
+			'adam-comunidade-moderation'   => 20,
+			'adam-comunidade-teams'        => 30,
+			'adam-comunidade-fields'       => 40,
+			'adam-comunidade-partners'     => 50,
+			'adam-comunidade-institutions' => 60,
+			'adam-comunidade-news'         => 70,
+			'adam-comunidade-forms'        => 80,
+			'adam-comunidade-urls'         => 90,
+			'adam-comunidade-settings'     => 100,
+		);
+
+		if ( isset( $preferred[ $slug ] ) ) {
+			return $preferred[ $slug ];
+		}
+
+		return ! empty( self::$routes[ $slug ]['visible'] ) ? 85 : 95;
 	}
 
 	/**

@@ -33,7 +33,7 @@ final class Integrations {
 	}
 
 	public function body_classes( array $classes ): array {
-		if ( Managed_Pages::is_current( 'community' ) || get_query_var( 'adam_submission' ) || get_query_var( 'adam_owner_dashboard' ) || get_query_var( 'adam_calendar' ) ) {
+		if ( Managed_Pages::is_current( 'community' ) || get_query_var( 'adam_submission' ) || get_query_var( 'adam_owner_dashboard' ) ) {
 			$classes[] = 'adam-comunidade-view';
 			$classes[] = 'adam-comunidade-theme-' . sanitize_html_class( wp_get_theme()->get_stylesheet() );
 		}

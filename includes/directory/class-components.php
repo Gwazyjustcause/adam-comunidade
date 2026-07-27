@@ -36,7 +36,7 @@ final class Components {
 	public function register_shortcodes(): void {
 		add_shortcode( 'adam_featured_partner', fn( array $attributes = array() ): string => $this->highlight( 'partner', 'featured' ) );
 		add_shortcode( 'adam_newest_partner', fn( array $attributes = array() ): string => $this->highlight( 'partner', 'newest' ) );
-		add_shortcode( 'adam_featured_brand', fn( array $attributes = array() ): string => $this->highlight( 'brand', 'featured' ) );
+		add_shortcode( 'adam_featured_brand', fn( array $attributes = array() ): string => $this->highlight( 'partner', 'featured', 'brand' ) );
 		add_shortcode( 'adam_institution_spotlight', fn( array $attributes = array() ): string => $this->highlight( 'institution', 'featured' ) );
 		add_shortcode( 'adam_random_partner', fn( array $attributes = array() ): string => $this->highlight( 'partner', 'random' ) );
 		add_shortcode( 'adam_community_section', array( $this, 'section_shortcode' ) );
@@ -99,11 +99,11 @@ final class Components {
 						'featured_partner'      => array( 'partner', 'featured' ),
 						'newest_partner'        => array( 'partner', 'newest' ),
 						'random_partner'        => array( 'partner', 'random' ),
-						'featured_brand'        => array( 'brand', 'featured' ),
+						'featured_brand'        => array( 'partner', 'featured', 'brand' ),
 						'institution_spotlight' => array( 'institution', 'featured' ),
 					);
 					$choice = $types[ $attributes['type'] ?? '' ] ?? $types['featured_partner'];
-					return $this->highlight( $choice[0], $choice[1] );
+					return $this->highlight( $choice[0], $choice[1], $choice[2] ?? '' );
 				},
 			)
 		);
@@ -135,10 +135,14 @@ final class Components {
 	public function section( array $attributes ): string {
 		$this->assets();
 		$type     = sanitize_key( $attributes['type'] ?? 'teams' );
+		if ( 'brands' === $type ) {
+			$type                   = 'partners';
+			$attributes['category'] = 'brand';
+		}
 		$number   = max( 1, min( 24, absint( $attributes['number'] ?? 6 ) ) );
 		$order    = sanitize_key( $attributes['order'] ?? 'newest' );
 		$featured = filter_var( $attributes['featured'] ?? false, FILTER_VALIDATE_BOOL );
-		$labels   = array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'brands' => __( 'Marcas', 'adam-comunidade' ) );
+		$labels   = array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ) );
 		if ( ! isset( $labels[ $type ] ) ) {
 			return '';
 		}
@@ -162,7 +166,7 @@ final class Components {
 				$items[] = $this->core_card( $item, 'field', Field_Router::field_url( $item ), (int) $item->cover_id );
 			}
 		} else {
-			$singular = array( 'partners' => 'partner', 'institutions' => 'institution', 'brands' => 'brand' )[ $type ];
+			$singular = array( 'partners' => 'partner', 'institutions' => 'institution' )[ $type ];
 			$result   = $this->repository->query( $singular, array( 'status' => 'published', 'category' => sanitize_key( $attributes['category'] ?? '' ), 'featured' => $featured ? 1 : '', 'orderby' => 'alphabetical' === $order ? 'name' : ( 'priority' === $order ? 'priority' : 'created_at' ), 'order' => 'alphabetical' === $order ? 'ASC' : 'DESC', 'per_page' => $number ) );
 			if ( 'random' === $order ) {
 				$result = $this->repository->query( $singular, array( 'status' => 'published', 'category' => sanitize_key( $attributes['category'] ?? '' ), 'featured' => $featured ? 1 : '', 'per_page' => 100 ) );
@@ -179,9 +183,9 @@ final class Components {
 		return '<section class="adam-community-widget" data-adam-widget="' . esc_attr( $type ) . '"><h2>' . esc_html( $labels[ $type ] ) . '</h2><div class="adam-community-grid">' . implode( '', $items ) . '</div></section>';
 	}
 
-	public function highlight( string $type, string $mode ): string {
+	public function highlight( string $type, string $mode, string $category = '' ): string {
 		$this->assets();
-		$args = array( 'status' => 'published', 'per_page' => 'random' === $mode ? 100 : 1 );
+		$args = array( 'status' => 'published', 'category' => $category, 'per_page' => 'random' === $mode ? 100 : 1 );
 		if ( 'featured' === $mode ) {
 			$args['homepage_featured'] = 1;
 			$args['orderby']           = 'priority';
@@ -269,7 +273,7 @@ final class Components {
 				array(
 					'details' => __( 'Ver detalhes', 'adam-comunidade' ),
 					'empty'   => __( 'Ainda não existe conteúdo da comunidade com localização disponível.', 'adam-comunidade' ),
-					'types'   => array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ), 'brand' => __( 'Marca', 'adam-comunidade' ) ),
+					'types'   => array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ),
 				)
 			);
 		}

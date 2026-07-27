@@ -52,7 +52,6 @@ final class Controller {
 		if ( ! str_contains( $hook_suffix, 'adam-comunidade-directory' )
 			&& ! str_contains( $hook_suffix, 'adam-comunidade-partner' )
 			&& ! str_contains( $hook_suffix, 'adam-comunidade-institution' )
-			&& ! str_contains( $hook_suffix, 'adam-comunidade-brand' )
 		) {
 			return;
 		}
@@ -106,13 +105,11 @@ final class Controller {
 		}
 		$gallery = $entry ? $this->repository->gallery( $entry_id ) : array();
 		$selected = array(
-			'brand' => $entry ? $this->relationships->target_ids( $type, $entry_id, 'associated', 'brand' ) : array(),
-			'partner' => $entry ? $this->relationships->target_ids( $type, $entry_id, 'sold_by', 'partner' ) : array(),
+			'partner' => $entry ? $this->relationships->target_ids( $type, $entry_id, 'associated', 'partner' ) : array(),
 			'team'  => $entry ? $this->relationships->target_ids( $type, $entry_id, 'supports', 'team' ) : array(),
 			'field' => $entry ? $this->relationships->target_ids( $type, $entry_id, 'supports', 'field' ) : array(),
 		);
 		$choices = array(
-			'brand' => $this->repository->choices( 'brand' ),
 			'partner' => $this->repository->choices( 'partner' ),
 			'team'  => ( new Team_Repository() )->choices( 'published' ),
 			'field' => ( new Field_Repository() )->choices( 'published' ),
@@ -143,8 +140,7 @@ final class Controller {
 		}
 		$this->repository->sync_gallery( (int) $saved_id, $this->gallery_items( $input ) );
 		$relations = isset( $input['relations'] ) && is_array( $input['relations'] ) ? $input['relations'] : array();
-		$this->relationships->sync( $type, (int) $saved_id, 'associated', 'brand', (array) ( $relations['brand'] ?? array() ) );
-		$this->relationships->sync( $type, (int) $saved_id, 'sold_by', 'partner', (array) ( $relations['partner'] ?? array() ) );
+		$this->relationships->sync( $type, (int) $saved_id, 'associated', 'partner', (array) ( $relations['partner'] ?? array() ) );
 		$this->relationships->sync( $type, (int) $saved_id, 'supports', 'team', (array) ( $relations['team'] ?? array() ) );
 		$this->relationships->sync( $type, (int) $saved_id, 'supports', 'field', (array) ( $relations['field'] ?? array() ) );
 		do_action( 'adam_comunidade_directory_entry_saved', $type, (int) $saved_id, $data );
@@ -189,8 +185,7 @@ final class Controller {
 				);
 				$this->repository->sync_gallery( $new_id, $gallery );
 				foreach ( array(
-					array( 'associated', 'brand' ),
-					array( 'sold_by', 'partner' ),
+					array( 'associated', 'partner' ),
 					array( 'supports', 'team' ),
 					array( 'supports', 'field' ),
 				) as $relation ) {

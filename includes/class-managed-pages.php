@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.2.0';
+	private const VERSION = '1.3.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -34,6 +34,7 @@ final class Managed_Pages {
 		add_action( 'trashed_post', array( $this, 'page_trashed' ) );
 		add_action( 'untrashed_post', array( $this, 'page_untrashed' ) );
 		add_filter( 'redirect_canonical', array( $this, 'preserve_child_routes' ) );
+		add_action( 'template_redirect', array( $this, 'redirect_legacy_brands_page' ) );
 
 		if ( is_admin() ) {
 			Admin_Router::register_page(
@@ -88,13 +89,25 @@ final class Managed_Pages {
 				'default_slug'  => 'instituicoes',
 				'option'        => 'institutions_page_id',
 			),
-			'brands' => array(
-				'label'         => __( 'Marcas', 'adam-comunidade' ),
-				'default_title' => __( 'Marcas', 'adam-comunidade' ),
-				'default_slug'  => 'marcas',
-				'option'        => 'brands_page_id',
-			),
 		);
+	}
+
+	/**
+	 * Redirects the retired Brands archive to the unified Partners directory.
+	 *
+	 * The legacy Page is retained to avoid destructive content changes, but it
+	 * can no longer surface as a separate public directory.
+	 *
+	 * @return void
+	 */
+	public function redirect_legacy_brands_page(): void {
+		$settings       = wp_parse_args( get_option( Settings::OPTION_NAME, array() ), Settings::defaults() );
+		$brands_page_id = absint( $settings['brands_page_id'] ?? 0 );
+
+		if ( $brands_page_id && is_page( $brands_page_id ) ) {
+			wp_safe_redirect( self::url( 'partners' ), 301 );
+			exit;
+		}
 	}
 
 	/**
@@ -598,7 +611,6 @@ final class Managed_Pages {
 		Experience\Router::add_rewrite_rules();
 		Experience\Api_V2::add_rewrite_rules();
 		Experience\Portal::add_rewrite_rules();
-		Experience\Calendar::add_rewrite_rules();
 		flush_rewrite_rules( false );
 	}
 }

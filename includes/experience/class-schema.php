@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Installs aggregated analytics storage.
  */
 final class Schema {
-	public const VERSION = '6.0.0';
+	public const VERSION = '6.1.0';
 
 	public static function install(): void {
 		global $wpdb;
@@ -22,7 +22,6 @@ final class Schema {
 		$submissions = self::submissions_table();
 		$owners = self::owners_table();
 		$notifications = self::notifications_table();
-		$calendar = self::calendar_table();
 		dbDelta( "CREATE TABLE {$submissions} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			submission_type varchar(30) NOT NULL,
@@ -61,25 +60,6 @@ final class Schema {
 			PRIMARY KEY  (id),
 			KEY inbox (user_id,is_read,created_at)
 		) {$collate};" );
-		dbDelta( "CREATE TABLE {$calendar} (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			title varchar(191) NOT NULL,
-			slug varchar(191) NOT NULL,
-			entry_type varchar(40) NOT NULL,
-			summary text NULL,
-			start_at datetime NOT NULL,
-			end_at datetime NULL,
-			object_type varchar(40) NOT NULL DEFAULT '',
-			object_id bigint(20) unsigned NOT NULL DEFAULT 0,
-			status varchar(20) NOT NULL DEFAULT 'published',
-			created_by bigint(20) unsigned NOT NULL DEFAULT 0,
-			created_at datetime NOT NULL,
-			updated_at datetime NOT NULL,
-			PRIMARY KEY  (id),
-			UNIQUE KEY slug (slug),
-			KEY schedule (status,start_at),
-			KEY related (object_type,object_id)
-		) {$collate};" );
 		update_option( 'adam_comunidade_experience_db_version', self::VERSION, false );
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
 	}
@@ -87,5 +67,4 @@ final class Schema {
 	public static function submissions_table(): string { global $wpdb; return $wpdb->prefix . 'adam_submissions'; }
 	public static function owners_table(): string { global $wpdb; return $wpdb->prefix . 'adam_listing_owners'; }
 	public static function notifications_table(): string { global $wpdb; return $wpdb->prefix . 'adam_notifications'; }
-	public static function calendar_table(): string { global $wpdb; return $wpdb->prefix . 'adam_calendar'; }
 }

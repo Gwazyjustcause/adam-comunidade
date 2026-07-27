@@ -100,8 +100,9 @@ final class Api_V2 {
 			$data = array_map( static fn( \WP_Post $post ): array => array( 'id' => $post->ID, 'type' => 'news', 'title' => get_the_title( $post ), 'summary' => get_the_excerpt( $post ), 'content' => apply_filters( 'the_content', $post->post_content ), 'url' => get_permalink( $post ), 'published_at' => get_post_time( DATE_ATOM, true, $post ) ), $posts );
 			$result = array( 'total' => count( $data ), 'pages' => 1 );
 		} else {
-			$type = array( 'partners' => 'partner', 'brands' => 'brand', 'institutions' => 'institution' )[ $endpoint ];
-			$result = $this->directory->query( $type, $args + array( 'category' => (string) $request['category'], 'featured' => $request['featured'] ? 1 : '' ) );
+			$type     = 'institutions' === $endpoint ? 'institution' : 'partner';
+			$category = 'brands' === $endpoint ? 'brand' : (string) $request['category'];
+			$result = $this->directory->query( $type, $args + array( 'category' => $category, 'featured' => $request['featured'] ? 1 : '' ) );
 			$data = array_map( fn( object $item ): array => $this->item( $item, $type, Directory_Router::entry_url( $item ) ), $result['items'] );
 		}
 		$data = apply_filters( 'adam_comunidade_api_v2_response', $data, $endpoint, $request );
