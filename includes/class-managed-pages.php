@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.1.0';
+	private const VERSION = '1.2.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -66,7 +66,7 @@ final class Managed_Pages {
 			),
 			'teams' => array(
 				'label'         => __( 'Equipas', 'adam-comunidade' ),
-				'default_title' => __( 'Equipas Associadas', 'adam-comunidade' ),
+				'default_title' => __( 'Equipas', 'adam-comunidade' ),
 				'default_slug'  => 'equipas',
 				'option'        => 'teams_page_id',
 			),
@@ -145,6 +145,17 @@ final class Managed_Pages {
 				array(
 					'ID'         => $page_id,
 					'post_title' => 'Campos',
+				)
+			);
+		}
+
+		$page_id = self::id( 'teams', true );
+		$page    = $page_id ? get_post( $page_id ) : null;
+		if ( $page && 'Equipas Associadas' === $page->post_title ) {
+			wp_update_post(
+				array(
+					'ID'         => $page_id,
+					'post_title' => 'Equipas',
 				)
 			);
 		}

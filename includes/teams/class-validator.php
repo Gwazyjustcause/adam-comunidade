@@ -42,15 +42,15 @@ final class Validator {
 		$slug   = sanitize_title( (string) ( $input['slug'] ?? $name ) );
 
 		if ( '' === $name ) {
-			$errors->add( 'name_required', __( 'Team name is required.', 'adam-comunidade' ) );
+			$errors->add( 'name_required', __( 'O nome da equipa é obrigatório.', 'adam-comunidade' ) );
 		} elseif ( $this->repository->exists( 'name', $name, $team_id ) ) {
-			$errors->add( 'name_exists', __( 'A team with this name already exists.', 'adam-comunidade' ) );
+			$errors->add( 'name_exists', __( 'Já existe uma equipa com este nome.', 'adam-comunidade' ) );
 		}
 
 		if ( '' === $slug ) {
-			$errors->add( 'slug_required', __( 'A valid team slug is required.', 'adam-comunidade' ) );
+			$errors->add( 'slug_required', __( 'É obrigatório indicar um slug válido para a equipa.', 'adam-comunidade' ) );
 		} elseif ( $this->repository->exists( 'slug', $slug, $team_id ) ) {
-			$errors->add( 'slug_exists', __( 'A team with this slug already exists.', 'adam-comunidade' ) );
+			$errors->add( 'slug_exists', __( 'Já existe uma equipa com este slug.', 'adam-comunidade' ) );
 		}
 
 		$status = sanitize_key( (string) ( $input['status'] ?? 'draft' ) );
@@ -69,7 +69,7 @@ final class Validator {
 		$email          = sanitize_email( (string) ( $input['email'] ?? '' ) );
 
 		if ( ! empty( $input['email'] ) && ! is_email( $email ) ) {
-			$errors->add( 'invalid_email', __( 'Enter a valid email address.', 'adam-comunidade' ) );
+			$errors->add( 'invalid_email', __( 'Introduza um endereço de email válido.', 'adam-comunidade' ) );
 		}
 
 		$url_fields = array( 'maps_url', 'website', 'facebook', 'instagram', 'discord', 'youtube', 'tiktok' );
@@ -84,7 +84,7 @@ final class Validator {
 					'invalid_' . $field,
 					sprintf(
 						/* translators: %s: field label. */
-						__( 'Enter a valid URL for %s.', 'adam-comunidade' ),
+						__( 'Introduza um URL válido para %s.', 'adam-comunidade' ),
 						ucwords( str_replace( '_', ' ', $field ) )
 					)
 				);
@@ -96,7 +96,7 @@ final class Validator {
 		$founded   = absint( $input['founded'] ?? 0 );
 
 		if ( $founded && ( $founded < 1800 || $founded > (int) gmdate( 'Y' ) ) ) {
-			$errors->add( 'invalid_founded', __( 'Enter a valid founding year.', 'adam-comunidade' ) );
+			$errors->add( 'invalid_founded', __( 'Introduza um ano de fundação válido.', 'adam-comunidade' ) );
 		}
 
 		if ( $errors->has_errors() ) {
@@ -110,6 +110,7 @@ final class Validator {
 				'slug'             => $slug,
 				'status'           => $status,
 				'featured'         => empty( $input['featured'] ) ? 0 : 1,
+				'is_associated'    => empty( $input['is_associated'] ) ? 0 : 1,
 				'verification'     => in_array( sanitize_key( $input['verification'] ?? '' ), array( '', 'verified_team' ), true ) ? sanitize_key( $input['verification'] ?? '' ) : '',
 				'logo_id'          => absint( $input['logo_id'] ?? 0 ),
 				'cover_id'         => absint( $input['cover_id'] ?? 0 ),
@@ -173,7 +174,7 @@ final class Validator {
 				'invalid_' . sanitize_key( $label ),
 				sprintf(
 					/* translators: %s: coordinate label. */
-					__( 'Enter a valid %s.', 'adam-comunidade' ),
+					__( 'Introduza uma %s válida.', 'adam-comunidade' ),
 					$label
 				)
 			);

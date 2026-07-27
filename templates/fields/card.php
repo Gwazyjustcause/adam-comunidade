@@ -14,7 +14,7 @@ use ADAM\Comunidade\Fields\View;
 $adam_styles     = Options::decode_list( $field->playing_styles );
 $adam_associated = ! empty( $field->is_associated );
 ?>
-<article class="adam-field-card<?php echo $adam_associated ? ' adam-field-card--associated' : ''; ?>">
+<article class="adam-field-card adam-directory-card<?php echo $adam_associated ? ' adam-field-card--associated' : ''; ?>">
 	<a class="adam-field-card__cover" href="<?php echo esc_url( Router::field_url( $field ) ); ?>" tabindex="-1" aria-hidden="true">
 		<?php if ( $field->cover_id ) : ?>
 			<?php echo wp_get_attachment_image( (int) $field->cover_id, 'adam-field-card', false, array( 'loading' => 'lazy' ) ); ?>

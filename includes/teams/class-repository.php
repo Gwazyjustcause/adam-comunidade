@@ -146,6 +146,8 @@ final class Repository {
 				'search'      => '',
 				'status'      => '',
 				'featured'    => '',
+				'associated'  => '',
+				'prioritize_associated' => false,
 				'district'    => '',
 				'municipality' => '',
 				'playing_style' => '',
@@ -186,6 +188,10 @@ final class Repository {
 			$where[]      = 'featured = %d';
 			$parameters[] = absint( $args['featured'] );
 		}
+		if ( '' !== (string) $args['associated'] ) {
+			$where[]      = 'is_associated = %d';
+			$parameters[] = absint( $args['associated'] );
+		}
 
 		if ( $args['recruitment'] ) {
 			$where[]      = 'recruitment_status = %s';
@@ -207,7 +213,10 @@ final class Repository {
 		$table           = Schema::teams_table();
 
 		$count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
-		$list_sql  = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
+		$order_sql = ! empty( $args['prioritize_associated'] )
+			? "is_associated DESC, {$orderby} {$order}"
+			: "{$orderby} {$order}";
+		$list_sql  = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$order_sql} LIMIT %d OFFSET %d";
 		if ( empty( $parameters ) ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Built from fixed clauses and an internal table name.
 			$total = (int) $wpdb->get_var( $count_sql );

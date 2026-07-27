@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Experience\Templates;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Experience\Portal;
 
 /**
  * Owns clean team URLs and public data resolution.
@@ -195,9 +196,16 @@ final class Router {
 			ADAM_COMUNIDADE_VERSION
 		);
 		wp_enqueue_script(
+			'adam-comunidade-directory-carousel',
+			Helpers::url( 'assets/js/fields-public.js' ),
+			array(),
+			ADAM_COMUNIDADE_VERSION,
+			true
+		);
+		wp_enqueue_script(
 			'adam-comunidade-teams',
 			Helpers::url( 'assets/js/teams-public.js' ),
-			array(),
+			array( 'adam-comunidade-directory-carousel' ),
 			ADAM_COMUNIDADE_VERSION,
 			true
 		);
@@ -207,7 +215,7 @@ final class Router {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'adam_teams_filter' ),
-				'error'   => __( 'Teams could not be loaded. Please try again.', 'adam-comunidade' ),
+				'error'   => __( 'Não foi possível carregar as equipas. Tente novamente.', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -236,6 +244,8 @@ final class Router {
 				'municipality'  => $this->post_value( 'municipality' ),
 				'playing_style' => sanitize_key( $this->post_value( 'playing_style' ) ),
 				'recruitment'   => sanitize_key( $this->post_value( 'recruitment' ) ),
+				'associated'    => 'associated' === $this->post_value( 'association' ) ? 1 : '',
+				'prioritize_associated' => true,
 				'orderby'       => $selected_sort[0],
 				'order'         => $selected_sort[1],
 				'page'          => $page,
@@ -250,7 +260,10 @@ final class Router {
 
 		if ( '' === $cards ) {
 			$cards = '<div class="adam-comunidade__empty adam-teams-empty">'
-				. esc_html__( 'Nenhuma equipa corresponde aos filtros selecionados.', 'adam-comunidade' ) . '</div>';
+				. '<h2>' . esc_html__( 'Nenhuma equipa corresponde aos filtros selecionados.', 'adam-comunidade' ) . '</h2>'
+				. '<p>' . esc_html__( 'Experimente alterar os filtros ou ajude-nos a adicionar uma equipa ao diretório.', 'adam-comunidade' ) . '</p>'
+				. '<a class="adam-team-button adam-directory-button" href="' . esc_url( Portal::submission_url( 'team' ) ) . '">'
+				. esc_html__( 'Submeter uma Equipa', 'adam-comunidade' ) . '</a></div>';
 		}
 
 		wp_send_json_success(

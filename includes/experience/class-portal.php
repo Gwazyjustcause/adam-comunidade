@@ -229,7 +229,7 @@ final class Portal {
 				<?php foreach ( $form['fields'] as $key => $field ) : ?>
 					<?php if ( ! empty( $field['visible'] ) ) : ?>
 						<?php if ( 'field' === $type && 'recommended_players' === $key ) : ?><div class="adam-portal-form__wide adam-portal-section-heading"><h2><?php esc_html_e( 'Capacidade', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Indique valores aproximados para ajudar visitantes e o planeamento de eventos.', 'adam-comunidade' ); ?></p></div><?php endif; ?>
-						<?php self::render_field( $key, $field, $values[ $key ] ?? '', (string) ( $errors[ $key ] ?? '' ) ); ?>
+						<?php self::render_field( $key, $field, $values[ $key ] ?? '', (string) ( $errors[ $key ] ?? '' ), $type ); ?>
 					<?php endif; ?>
 				<?php endforeach; ?>
 				<label class="adam-portal-consent adam-portal-form__wide<?php echo isset( $errors['consent'] ) ? ' has-error' : ''; ?>">
@@ -249,7 +249,7 @@ final class Portal {
 	 * @param string              $key Field key.
 	 * @param array<string,mixed> $field Field configuration.
 	 */
-	private static function render_field( string $key, array $field, mixed $value = '', string $error = '' ): void {
+	private static function render_field( string $key, array $field, mixed $value = '', string $error = '', string $object_type = '' ): void {
 		$type     = (string) $field['type'];
 		$required = ! empty( $field['required'] );
 		$is_wide  = in_array( $type, array( 'textarea', 'richtext', 'playing_styles', 'amenities', 'file' ), true );
@@ -285,7 +285,7 @@ final class Portal {
 		if ( in_array( $type, array( 'playing_styles', 'amenities' ), true ) ) {
 			$selected = array_map( 'strval', (array) $value );
 			$options  = 'playing_styles' === $type
-				? Field_Options::playing_styles()
+				? ( 'team' === $object_type ? \ADAM\Comunidade\Teams\Options::playing_styles() : Field_Options::playing_styles() )
 				: array_column( ( new Amenity_Repository() )->all( 'field', true ), 'label', 'id' );
 			?>
 			<fieldset class="adam-portal-form__wide adam-portal-options<?php echo $error ? ' has-error' : ''; ?>">
@@ -309,6 +309,21 @@ final class Portal {
 				<?php wp_editor( wp_kses_post( (string) $value ), 'adam_public_' . sanitize_key( $key ), array( 'textarea_name' => $key, 'textarea_rows' => 9, 'media_buttons' => false, 'teeny' => true ) ); ?>
 				<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
 			</div>
+			<?php
+			return;
+		}
+		if ( 'team_recruitment' === $type ) {
+			?>
+			<label class="<?php echo esc_attr( $error ? 'has-error' : '' ); ?>">
+				<?php echo esc_html( $field['label'] ); ?>
+				<select name="<?php echo esc_attr( $name ); ?>">
+					<option value=""><?php esc_html_e( 'Não indicado', 'adam-comunidade' ); ?></option>
+					<?php foreach ( \ADAM\Comunidade\Teams\Options::recruitment_statuses() as $option_key => $option_label ) : ?>
+						<option value="<?php echo esc_attr( $option_key ); ?>" <?php selected( (string) $value, $option_key ); ?>><?php echo esc_html( $option_label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
+			</label>
 			<?php
 			return;
 		}
@@ -392,7 +407,7 @@ final class Portal {
 					? wp_unslash( $_POST[ $key ] )
 					: array();
 				if ( 'playing_styles' === $field['type'] ) {
-					$allowed = array_keys( Field_Options::playing_styles() );
+					$allowed = array_keys( 'team' === $type ? \ADAM\Comunidade\Teams\Options::playing_styles() : Field_Options::playing_styles() );
 					$value   = array_values( array_intersect( array_map( 'sanitize_key', $raw ), $allowed ) );
 					$payload['playing_styles'] = $value;
 				} else {
@@ -466,6 +481,12 @@ final class Portal {
 			} elseif ( 'field_photos' === $key ) {
 				$payload['gallery_ids'] = array_map( 'absint', (array) $result );
 				$payload['cover_id']    = $payload['gallery_ids'][0] ?? 0;
+			} elseif ( 'team_logo' === $key ) {
+				$payload['logo_id'] = absint( $result );
+			} elseif ( 'team_cover' === $key ) {
+				$payload['cover_id'] = absint( $result );
+			} elseif ( 'team_photos' === $key ) {
+				$payload['gallery'] = array_map( 'absint', (array) $result );
 			} else {
 				$payload[ $key ] = $result;
 			}
@@ -475,6 +496,13 @@ final class Portal {
 		$payload['slug'] = sanitize_title( $payload['name'] );
 		if ( 'field' === $type ) {
 			$payload['verification']  = 'verified_field';
+			$payload['is_associated'] = 0;
+		}
+		if ( 'team' === $type ) {
+			$recruitment = sanitize_key( (string) ( $payload['recruitment_status'] ?? '' ) );
+			$payload['recruitment_status'] = isset( \ADAM\Comunidade\Teams\Options::recruitment_statuses()[ $recruitment ] )
+				? $recruitment
+				: 'closed';
 			$payload['is_associated'] = 0;
 		}
 		$submission_id = $this->insert_submission( 'new', $type, 0, $payload, $email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );

@@ -18,6 +18,9 @@ $adam_base_url             = \ADAM\Comunidade\Admin\Router::module_url( 'teams' 
 			<h1><?php esc_html_e( 'Equipas', 'adam-comunidade' ); ?></h1>
 			<p><?php esc_html_e( 'Crie, publique e mantenha as páginas das equipas associadas.', 'adam-comunidade' ); ?></p>
 		</div>
+		<a class="button adam-button adam-button--secondary" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'team-hero' ) ); ?>">
+			<?php esc_html_e( 'Gerir hero', 'adam-comunidade' ); ?>
+		</a>
 		<a class="button button-primary adam-button" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams', 'add' ) ); ?>">
 			<?php esc_html_e( 'Adicionar equipa', 'adam-comunidade' ); ?>
 		</a>

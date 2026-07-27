@@ -8,9 +8,9 @@
 	let requestController;
 	let debounceTimer;
 
-	document.querySelectorAll( '[data-adam-fields-carousel]' ).forEach( ( carousel ) => {
-		const slides = Array.from( carousel.querySelectorAll( '[data-adam-fields-slide]' ) );
-		const indicators = Array.from( carousel.querySelectorAll( '[data-adam-fields-indicator]' ) );
+	document.querySelectorAll( '[data-adam-fields-carousel], [data-adam-directory-carousel]' ).forEach( ( carousel ) => {
+		const slides = Array.from( carousel.querySelectorAll( '[data-adam-fields-slide], [data-adam-directory-slide]' ) );
+		const indicators = Array.from( carousel.querySelectorAll( '[data-adam-fields-indicator], [data-adam-directory-indicator]' ) );
 		if ( slides.length < 2 ) {
 			return;
 		}
@@ -45,16 +45,16 @@
 			}
 		}
 
-		carousel.querySelector( '[data-adam-fields-prev]' )?.addEventListener( 'click', () => {
+		carousel.querySelector( '[data-adam-fields-prev], [data-adam-directory-prev]' )?.addEventListener( 'click', () => {
 			show( current - 1 );
 			start();
 		} );
-		carousel.querySelector( '[data-adam-fields-next]' )?.addEventListener( 'click', () => {
+		carousel.querySelector( '[data-adam-fields-next], [data-adam-directory-next]' )?.addEventListener( 'click', () => {
 			show( current + 1 );
 			start();
 		} );
 		indicators.forEach( ( indicator ) => indicator.addEventListener( 'click', () => {
-			show( Number.parseInt( indicator.dataset.adamFieldsIndicator, 10 ) );
+			show( Number.parseInt( indicator.dataset.adamFieldsIndicator ?? indicator.dataset.adamDirectoryIndicator, 10 ) );
 			start();
 		} ) );
 		carousel.addEventListener( 'mouseenter', stop );

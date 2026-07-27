@@ -218,6 +218,7 @@ if ( $team_id && $adam_slug ) {
 					<?php foreach ( Options::statuses() as $adam_key => $adam_label ) : ?><option value="<?php echo esc_attr( $adam_key ); ?>" <?php selected( $adam_status, $adam_key ); ?>><?php echo esc_html( $adam_label ); ?></option><?php endforeach; ?>
 				</select></label>
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[featured]" value="1" <?php checked( (int) $adam_value( 'featured', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Equipa em destaque', 'adam-comunidade' ); ?></span></label>
+				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[is_associated]" value="1" <?php checked( (int) $adam_value( 'is_associated', 0 ), 1 ); ?>> <span><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span></label>
 				<label class="adam-field adam-field--checkbox"><input type="checkbox" name="team[verification]" value="verified_team" <?php checked( $adam_value( 'verification' ), 'verified_team' ); ?>> <span><?php esc_html_e( 'Equipa verificada', 'adam-comunidade' ); ?></span></label>
 				<button class="button button-primary adam-button" type="submit"><?php esc_html_e( 'Guardar equipa', 'adam-comunidade' ); ?></button>
 			</aside>

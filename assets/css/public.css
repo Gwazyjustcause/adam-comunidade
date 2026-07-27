@@ -33,6 +33,35 @@
 }
 
 /**
+ * Shared directory primitives used by Campos, Equipas and future archives.
+ */
+.adam-directory-filters {
+	background: #fff;
+	border: 1px solid var(--adam-border);
+	border-radius: 14px;
+}
+
+.adam-directory-card {
+	background: #fff;
+	border: 1px solid var(--adam-border);
+	border-radius: 14px;
+}
+
+.adam-directory-empty h2 {
+	color: #17241a;
+	margin: 0 0 8px;
+}
+
+.adam-directory-empty p {
+	margin: 0 auto 20px;
+	max-width: 42rem;
+}
+
+.adam-directory-badge {
+	display: inline-flex;
+}
+
+/**
  * Shared public hero. Feature styles control layout-specific geometry only.
  */
 .adam-public-hero {

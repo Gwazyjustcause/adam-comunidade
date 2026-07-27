@@ -15,7 +15,9 @@ use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
 use ADAM\Comunidade\Teams\Validator;
+use ADAM\Comunidade\Teams\Hero_Carousel;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
+use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
 /**
  * Coordinates team admin screens and actions.
@@ -58,7 +60,17 @@ final class Controller {
 				'load'          => array( $this, 'add_screen_options' ),
 			)
 		);
+		Admin_Router::register_page(
+			'team-hero',
+			array(
+				'title'      => __( 'Hero das equipas', 'adam-comunidade' ),
+				'controller' => $this,
+				'method'     => 'render_hero',
+				'visible'    => false,
+			)
+		);
 		add_action( 'admin_post_adam_team_save', array( $this, 'save' ) );
+		add_action( 'admin_post_adam_teams_hero_save', array( $this, 'save_hero' ) );
 		add_action( 'admin_post_adam_team_action', array( $this, 'single_action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( $this, 'save_screen_option' ), 10, 3 );
@@ -115,6 +127,12 @@ final class Controller {
 			array( 'adam-comunidade-admin' ),
 			ADAM_COMUNIDADE_VERSION
 		);
+		wp_enqueue_style(
+			'adam-comunidade-fields-admin',
+			Helpers::url( 'assets/css/fields-admin.css' ),
+			array( 'adam-comunidade-teams-admin' ),
+			ADAM_COMUNIDADE_VERSION
+		);
 		wp_enqueue_script(
 			'adam-comunidade-teams-admin',
 			Helpers::url( 'assets/js/teams-admin.js' ),
@@ -151,6 +169,37 @@ final class Controller {
 		$view      = Helpers::path( 'admin/views/teams/list.php' );
 
 		require $view;
+	}
+
+	/**
+	 * Renders the reusable hero image manager for Teams.
+	 */
+	public function render_hero(): void {
+		$hero_settings = Hero_Carousel::settings();
+		$hero_images   = array();
+		foreach ( (array) $hero_settings['images'] as $image ) {
+			$image      = (array) $image;
+			$attachment = Upload_Component::attachment( absint( $image['id'] ?? 0 ) );
+			if ( ! empty( $attachment['id'] ) ) {
+				$attachment['enabled'] = ! empty( $image['enabled'] );
+				$hero_images[]         = $attachment;
+			}
+		}
+		require Helpers::path( 'admin/views/teams/hero.php' );
+	}
+
+	/**
+	 * Saves Teams carousel settings.
+	 */
+	public function save_hero(): void {
+		Admin_Router::authorize();
+		check_admin_referer( 'adam_teams_hero_save' );
+		$input = isset( $_POST['hero'] ) && is_array( $_POST['hero'] ) ? wp_unslash( $_POST['hero'] ) : array();
+		Hero_Carousel::save( $input );
+		Logger::info( 'Teams hero carousel changed', array( 'user_id' => get_current_user_id() ) );
+		Helpers::add_admin_notice( __( 'O hero das equipas foi guardado.', 'adam-comunidade' ), 'success' );
+		wp_safe_redirect( Admin_Router::page_url( 'team-hero' ) );
+		exit;
 	}
 
 	/**

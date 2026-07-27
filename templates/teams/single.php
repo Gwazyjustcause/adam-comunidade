@@ -39,7 +39,7 @@ $adam_contacts    = array_filter(
 		'youtube'   => array( 'YouTube', $adam_team->youtube ),
 		'tiktok'    => array( 'TikTok', $adam_team->tiktok ),
 		'email'     => array( __( 'Email', 'adam-comunidade' ), $adam_team->email ? 'mailto:' . $adam_team->email : '' ),
-		'phone'     => array( __( 'Phone', 'adam-comunidade' ), $adam_team->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $adam_team->phone ) : '' ),
+		'phone'     => array( __( 'Telefone', 'adam-comunidade' ), $adam_team->phone ? 'tel:' . preg_replace( '/[^0-9+]/', '', $adam_team->phone ) : '' ),
 	),
 	static fn( array $contact ): bool => ! empty( $contact[1] )
 );
@@ -65,48 +65,49 @@ get_header();
 			</div>
 			<div>
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $adam_team->name ); ?></h1>
-				<?php if ( 'verified_team' === ( $adam_team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Verified Team', 'adam-comunidade' ); ?></span><?php endif; ?>
+				<?php if ( ! empty( $adam_team->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
+				<?php if ( 'verified_team' === ( $adam_team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Equipa verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( implode( ', ', array_filter( array( $adam_team->municipality, $adam_team->district ) ) ) ); ?></p>
 				<div class="<?php echo esc_attr( Public_Hero::element( 'meta', 'adam-team-hero__meta' ) ); ?>">
-					<span><?php echo esc_html( sprintf( _n( '%d member', '%d members', (int) $adam_team->members, 'adam-comunidade' ), (int) $adam_team->members ) ); ?></span>
+					<?php if ( $adam_team->members ) : ?><span><?php echo esc_html( sprintf( _n( '%d membro', '%d membros', (int) $adam_team->members, 'adam-comunidade' ), (int) $adam_team->members ) ); ?></span><?php endif; ?>
 					<span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_team->recruitment_status ); ?>"><?php echo esc_html( $adam_recruitment ); ?></span>
 				</div>
-				<?php if ( $adam_team->recruitment_min_age || $adam_team->recruitment_experience || $adam_team->recruitment_equipment || $adam_team->recruitment_training ) : ?><div class="adam-recruitment-details"><strong><?php esc_html_e( 'Recruitment details', 'adam-comunidade' ); ?></strong><?php if ( $adam_team->recruitment_min_age ) : ?><span><?php echo esc_html( sprintf( __( 'Minimum age: %d', 'adam-comunidade' ), $adam_team->recruitment_min_age ) ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_experience ) : ?><span><?php echo esc_html( $adam_team->recruitment_experience ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_equipment ) : ?><span><?php echo esc_html( $adam_team->recruitment_equipment ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_training ) : ?><span><?php esc_html_e( 'Training available', 'adam-comunidade' ); ?></span><?php endif; ?></div><?php endif; ?>
+				<?php if ( $adam_team->recruitment_min_age || $adam_team->recruitment_experience || $adam_team->recruitment_equipment || $adam_team->recruitment_training ) : ?><div class="adam-recruitment-details"><strong><?php esc_html_e( 'Detalhes do recrutamento', 'adam-comunidade' ); ?></strong><?php if ( $adam_team->recruitment_min_age ) : ?><span><?php echo esc_html( sprintf( __( 'Idade mínima: %d', 'adam-comunidade' ), $adam_team->recruitment_min_age ) ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_experience ) : ?><span><?php echo esc_html( $adam_team->recruitment_experience ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_equipment ) : ?><span><?php echo esc_html( $adam_team->recruitment_equipment ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_training ) : ?><span><?php esc_html_e( 'Treino disponível', 'adam-comunidade' ); ?></span><?php endif; ?></div><?php endif; ?>
 			</div>
 		</div>
 	</section>
 
 	<div class="adam-team-container adam-team-content">
 		<?php if ( $adam_team->short_description || $adam_team->full_description ) : ?>
-			<section class="adam-team-section"><h2><?php esc_html_e( 'About', 'adam-comunidade' ); ?></h2>
+			<section class="adam-team-section"><h2><?php esc_html_e( 'Sobre', 'adam-comunidade' ); ?></h2>
 				<?php if ( $adam_team->short_description ) : ?><p class="adam-team-lead"><?php echo esc_html( $adam_team->short_description ); ?></p><?php endif; ?>
 				<?php echo wp_kses_post( wpautop( $adam_team->full_description ) ); ?>
 			</section>
 		<?php endif; ?>
 
-		<section class="adam-team-section"><h2><?php esc_html_e( 'Statistics', 'adam-comunidade' ); ?></h2><div class="adam-team-stats">
-			<div><strong><?php echo esc_html( $adam_team->founded ?: '—' ); ?></strong><span><?php esc_html_e( 'Founded', 'adam-comunidade' ); ?></span></div>
-			<div><strong><?php echo esc_html( (string) $adam_team->members ); ?></strong><span><?php esc_html_e( 'Members', 'adam-comunidade' ); ?></span></div>
-			<div><strong><?php echo esc_html( (string) count( $adam_styles ) ); ?></strong><span><?php esc_html_e( 'Playing Styles', 'adam-comunidade' ); ?></span></div>
+		<?php if ( $adam_team->founded || $adam_team->members || $adam_styles || $adam_equipment ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Dados da equipa', 'adam-comunidade' ); ?></h2><div class="adam-team-stats">
+			<?php if ( $adam_team->founded ) : ?><div><strong><?php echo esc_html( (string) $adam_team->founded ); ?></strong><span><?php esc_html_e( 'Fundação', 'adam-comunidade' ); ?></span></div><?php endif; ?>
+			<?php if ( $adam_team->members ) : ?><div><strong><?php echo esc_html( (string) $adam_team->members ); ?></strong><span><?php esc_html_e( 'Membros', 'adam-comunidade' ); ?></span></div><?php endif; ?>
+			<?php if ( $adam_styles ) : ?><div><strong><?php echo esc_html( (string) count( $adam_styles ) ); ?></strong><span><?php esc_html_e( 'Estilos de jogo', 'adam-comunidade' ); ?></span></div><?php endif; ?>
 		</div>
 		<?php if ( $adam_styles || $adam_equipment ) : ?><div class="adam-team-badges adam-team-badges--large">
 			<?php foreach ( array_merge( $adam_styles, $adam_equipment ) as $adam_tag ) : ?><span><?php echo esc_html( View::label( $adam_tag, array_merge( Options::playing_styles(), Options::equipment_tags() ) ) ); ?></span><?php endforeach; ?>
-		</div><?php endif; ?></section>
+		</div><?php endif; ?></section><?php endif; ?>
 
-		<?php if ( $adam_gallery ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Gallery', 'adam-comunidade' ); ?></h2><div class="adam-team-gallery">
+		<?php if ( $adam_gallery ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Fotografias', 'adam-comunidade' ); ?></h2><div class="adam-team-gallery">
 			<?php foreach ( $adam_gallery as $adam_image_id ) : ?>
 				<?php $adam_full_image = wp_get_attachment_image_url( $adam_image_id, 'full' ); ?>
 				<a href="<?php echo esc_url( $adam_full_image ); ?>" data-adam-lightbox><?php echo wp_get_attachment_image( $adam_image_id, 'large', false, array( 'loading' => 'lazy' ) ); ?></a>
 			<?php endforeach; ?>
 		</div></section><?php endif; ?>
 
-		<?php if ( $adam_contacts ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Contacts', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
+		<?php if ( $adam_contacts ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Contactos', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
 			<?php foreach ( $adam_contacts as $adam_contact ) : ?><a href="<?php echo esc_url( $adam_contact[1] ); ?>" class="adam-team-button" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $adam_contact[0] ); ?></a><?php endforeach; ?>
 		</div></section><?php endif; ?>
 
 		<?php if ( $adam_team->address || $adam_team->maps_url || ( $adam_team->latitude && $adam_team->longitude ) ) : ?>
 			<section class="adam-team-section">
-				<h2><?php esc_html_e( 'Map', 'adam-comunidade' ); ?></h2>
+				<h2><?php esc_html_e( 'Localização', 'adam-comunidade' ); ?></h2>
 				<?php if ( $adam_team->address ) : ?>
 					<p class="adam-team-address"><?php echo esc_html( $adam_team->address ); ?></p>
 				<?php endif; ?>
@@ -121,7 +122,7 @@ get_header();
 					?>
 					<div class="adam-team-map">
 						<iframe
-							title="<?php esc_attr_e( 'Team location map', 'adam-comunidade' ); ?>"
+							title="<?php esc_attr_e( 'Mapa da localização da equipa', 'adam-comunidade' ); ?>"
 							loading="lazy"
 							src="<?php echo esc_url( $adam_map_url ); ?>"
 						></iframe>
@@ -129,27 +130,23 @@ get_header();
 				<?php endif; ?>
 				<?php if ( $adam_team->maps_url ) : ?>
 					<a class="adam-team-text-link" href="<?php echo esc_url( $adam_team->maps_url ); ?>" target="_blank" rel="noopener noreferrer">
-						<?php esc_html_e( 'Open in Google Maps', 'adam-comunidade' ); ?>
+						<?php esc_html_e( 'Abrir no Google Maps', 'adam-comunidade' ); ?>
 					</a>
 				<?php endif; ?>
 			</section>
 		<?php endif; ?>
 
-		<section class="adam-team-section adam-associated-fields">
+		<?php if ( $adam_associated_fields ) : ?><section class="adam-team-section adam-associated-fields">
 			<h2><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></h2>
-			<?php if ( $adam_associated_fields ) : ?>
-				<div class="adam-field-grid">
-					<?php foreach ( $adam_associated_fields as $adam_associated_field ) : ?>
-						<?php echo Field_View::card( $adam_associated_field, $adam_field_repository ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<?php endforeach; ?>
-				</div>
-			<?php else : ?>
-				<div class="adam-comunidade__empty"><p><?php esc_html_e( 'No associated fields are currently published.', 'adam-comunidade' ); ?></p></div>
-			<?php endif; ?>
-		</section>
+			<div class="adam-field-grid">
+				<?php foreach ( $adam_associated_fields as $adam_associated_field ) : ?>
+					<?php echo Field_View::card( $adam_associated_field, $adam_field_repository ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php endforeach; ?>
+			</div>
+		</section><?php endif; ?>
 		<?php do_action( 'adam_comunidade_team_after_content', $adam_team ); ?>
 	</div>
-	<div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Image viewer', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Close image viewer', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div>
+	<div class="adam-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Fechar visualizador de imagens', 'adam-comunidade' ); ?>">&times;</button><img src="" alt=""></div>
 </main>
 <?php
 get_footer();

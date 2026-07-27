@@ -140,6 +140,7 @@ final class Manager {
 			'richtext' => __( 'Editor de texto formatado', 'adam-comunidade' ),
 			'playing_styles' => __( 'Estilos de jogo configurados', 'adam-comunidade' ),
 			'amenities' => __( 'Comodidades configuradas', 'adam-comunidade' ),
+			'team_recruitment' => __( 'Estados de recrutamento configurados', 'adam-comunidade' ),
 			'file'     => __( 'Ficheiro', 'adam-comunidade' ),
 		);
 	}
@@ -193,7 +194,31 @@ final class Manager {
 					),
 				)
 			),
-			'team' => array_merge( $base, array( 'title' => __( 'Submeter Equipa', 'adam-comunidade' ), 'fields' => $common ) ),
+			'team' => array_merge(
+				$base,
+				array(
+					'title'  => __( 'Submeter Equipa', 'adam-comunidade' ),
+					'fields' => array_merge(
+						array_slice( $common, 0, 1, true ),
+						array(
+							'short_name' => $this->field( 'short_name', __( 'Nome abreviado', 'adam-comunidade' ), 'text', false ),
+						),
+						array_slice( $common, 1, null, true ),
+						array(
+							'full_description' => $this->field( 'full_description', __( 'Apresentação completa', 'adam-comunidade' ), 'richtext', false ),
+							'founded' => $this->field( 'founded', __( 'Ano de fundação', 'adam-comunidade' ), 'number', false ),
+							'members' => $this->field( 'members', __( 'Número de membros', 'adam-comunidade' ), 'number', false ),
+							'playing_styles' => $this->field( 'playing_styles', __( 'Estilos de jogo', 'adam-comunidade' ), 'playing_styles', false, '', __( 'Selecione todos os estilos praticados pela equipa.', 'adam-comunidade' ) ),
+							'recruitment_status' => $this->field( 'recruitment_status', __( 'Estado do recrutamento', 'adam-comunidade' ), 'team_recruitment', false ),
+							'facebook' => $this->field( 'facebook', 'Facebook', 'url', false, 'https://' ),
+							'instagram' => $this->field( 'instagram', 'Instagram', 'url', false, 'https://' ),
+							'team_logo' => $this->field( 'team_logo', __( 'Logótipo da equipa', 'adam-comunidade' ), 'file', false, '', __( 'JPG, PNG ou WebP.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 1 ),
+							'team_cover' => $this->field( 'team_cover', __( 'Imagem de capa', 'adam-comunidade' ), 'file', false, '', __( 'Imagem panorâmica em JPG, PNG ou WebP.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 1 ),
+							'team_photos' => $this->field( 'team_photos', __( 'Fotografias da equipa', 'adam-comunidade' ), 'file', false, '', __( 'Pode enviar até cinco fotografias.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 5 ),
+						)
+					),
+				)
+			),
 			'partner' => array_merge( $base, array( 'title' => __( 'Submeter Parceiro', 'adam-comunidade' ), 'fields' => $common ) ),
 			'institution' => array_merge( $base, array( 'title' => __( 'Submeter Instituição', 'adam-comunidade' ), 'fields' => $common ) ),
 		);
@@ -248,6 +273,7 @@ final class Manager {
 			'playing_styles' => 'playing_styles',
 			'amenities'      => 'amenities',
 			'rules'          => 'richtext',
+			'recruitment_status' => 'team_recruitment',
 		);
 	}
 }

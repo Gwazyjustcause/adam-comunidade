@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Installs and upgrades the Teams module tables.
  */
 final class Schema {
-	public const VERSION = '6.0.0';
+	public const VERSION = '6.1.0';
 
 	/**
 	 * Creates or upgrades the module tables.
@@ -36,6 +36,7 @@ final class Schema {
 			slug varchar(191) NOT NULL,
 			status varchar(20) NOT NULL DEFAULT 'draft',
 			featured tinyint(1) unsigned NOT NULL DEFAULT 0,
+			is_associated tinyint(1) unsigned NOT NULL DEFAULT 0,
 			verification varchar(40) NOT NULL DEFAULT '',
 			logo_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			cover_id bigint(20) unsigned NOT NULL DEFAULT 0,
@@ -78,6 +79,7 @@ final class Schema {
 			UNIQUE KEY slug (slug),
 			KEY status_updated (status,updated_at),
 			KEY featured_status (featured,status),
+			KEY associated_status (is_associated,status),
 			KEY district (district),
 			KEY municipality (municipality)
 		) {$charset_collate};";

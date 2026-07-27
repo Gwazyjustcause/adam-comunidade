@@ -110,7 +110,7 @@ get_header();
 	</section>
 
 	<div class="adam-fields-container adam-fields-directory-body">
-		<form class="adam-field-filters" id="adam-field-filters">
+		<form class="adam-field-filters adam-directory-filters" id="adam-field-filters">
 			<label class="adam-field-filter-search"><span><?php esc_html_e( 'Pesquisar', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $query_search ); ?>" placeholder="<?php esc_attr_e( 'Nome do campo, localização…', 'adam-comunidade' ); ?>"></label>
 			<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><select name="district"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $districts as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $selected_district, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label>
 			<label><span><?php esc_html_e( 'Município', 'adam-comunidade' ); ?></span><select name="municipality"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $municipalities as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $query_municipality, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label>
@@ -118,7 +118,7 @@ get_header();
 			<label><span><?php esc_html_e( 'Instalações', 'adam-comunidade' ); ?></span><select name="amenity_id"><option value=""><?php esc_html_e( 'Todas', 'adam-comunidade' ); ?></option><?php foreach ( $amenities as $amenity ) : ?><option value="<?php echo esc_attr( (string) $amenity->id ); ?>" <?php selected( $query_amenity, (int) $amenity->id ); ?>><?php echo esc_html( $amenity->label ); ?></option><?php endforeach; ?></select></label>
 			<label><span><?php esc_html_e( 'Associação', 'adam-comunidade' ); ?></span><select name="associated"><option value=""><?php esc_html_e( 'Todos os campos', 'adam-comunidade' ); ?></option><option value="only" <?php selected( $query_associated, 'only' ); ?>><?php esc_html_e( 'Apenas Associados ADAM', 'adam-comunidade' ); ?></option></select></label>
 			<label><span><?php esc_html_e( 'Ordenar', 'adam-comunidade' ); ?></span><select name="sort"><option value="alphabetical" <?php selected( $query_sort, 'alphabetical' ); ?>><?php esc_html_e( 'Mais relevantes', 'adam-comunidade' ); ?></option><option value="newest" <?php selected( $query_sort, 'newest' ); ?>><?php esc_html_e( 'Mais recentes', 'adam-comunidade' ); ?></option><option value="capacity" <?php selected( $query_sort, 'capacity' ); ?>><?php esc_html_e( 'Maior capacidade', 'adam-comunidade' ); ?></option></select></label>
-			<button class="adam-field-button" type="submit"><?php esc_html_e( 'Aplicar filtros', 'adam-comunidade' ); ?></button>
+			<button class="adam-field-button adam-directory-button" type="submit"><?php esc_html_e( 'Aplicar filtros', 'adam-comunidade' ); ?></button>
 		</form>
 
 		<p class="adam-field-results-count"><span id="adam-field-total"><?php echo esc_html( (string) $result['total'] ); ?></span> <?php esc_html_e( 'campos encontrados', 'adam-comunidade' ); ?></p>
@@ -126,18 +126,18 @@ get_header();
 			<?php if ( $associated_fields ) : ?>
 				<section class="adam-field-group adam-field-group--associated">
 					<header><h2><?php esc_html_e( 'Campos Associados', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Campos com associação ativa à ADAM e prioridade na listagem.', 'adam-comunidade' ); ?></p></header>
-					<div class="adam-field-grid"><?php foreach ( $associated_fields as $field ) : echo View::card( $field, $repository ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+					<div class="adam-field-grid adam-directory-grid"><?php foreach ( $associated_fields as $field ) : echo View::card( $field, $repository ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 				</section>
 			<?php endif; ?>
 			<?php if ( $independent_fields ) : ?>
 				<section class="adam-field-group">
 					<header><h2><?php esc_html_e( 'Outros Campos', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Campos independentes, privados ou pertencentes a equipas, todos com autorização verificada.', 'adam-comunidade' ); ?></p></header>
-					<div class="adam-field-grid"><?php foreach ( $independent_fields as $field ) : echo View::card( $field, $repository ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+					<div class="adam-field-grid adam-directory-grid"><?php foreach ( $independent_fields as $field ) : echo View::card( $field, $repository ); endforeach; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 				</section>
 			<?php endif; ?>
-			<?php if ( ! $result['items'] ) : ?><div class="adam-comunidade__empty adam-fields-empty"><?php esc_html_e( 'Nenhum campo corresponde aos filtros selecionados.', 'adam-comunidade' ); ?></div><?php endif; ?>
+			<?php if ( ! $result['items'] ) : ?><div class="adam-comunidade__empty adam-fields-empty adam-directory-empty"><?php esc_html_e( 'Nenhum campo corresponde aos filtros selecionados.', 'adam-comunidade' ); ?></div><?php endif; ?>
 		</div>
-		<div id="adam-field-pagination"><?php echo View::pagination( 1, $result['pages'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<div class="adam-directory-pagination" id="adam-field-pagination"><?php echo View::pagination( 1, $result['pages'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 
 		<section class="adam-field-submission-cta">
 			<div>
@@ -145,7 +145,7 @@ get_header();
 				<h2><?php esc_html_e( 'Queres que o teu campo apareça aqui?', 'adam-comunidade' ); ?></h2>
 				<p><?php esc_html_e( 'Submete as informações e a prova de autorização. A equipa ADAM verifica manualmente cada pedido antes da publicação.', 'adam-comunidade' ); ?></p>
 				<div class="adam-field-legal-summary"><strong><?php esc_html_e( 'Documento obrigatório', 'adam-comunidade' ); ?></strong><span><?php esc_html_e( 'Sem prova de autorização legal, o campo não será aprovado.', 'adam-comunidade' ); ?></span></div>
-				<a class="adam-field-button" href="<?php echo esc_url( $submission_url ); ?>"><?php esc_html_e( 'Submeter Campo', 'adam-comunidade' ); ?></a>
+				<a class="adam-field-button adam-directory-button" href="<?php echo esc_url( $submission_url ); ?>"><?php esc_html_e( 'Submeter Campo', 'adam-comunidade' ); ?></a>
 			</div>
 			<ol>
 				<li><strong><?php esc_html_e( 'Preenche o formulário', 'adam-comunidade' ); ?></strong><span><?php esc_html_e( 'Indica os dados e contactos do campo.', 'adam-comunidade' ); ?></span></li>

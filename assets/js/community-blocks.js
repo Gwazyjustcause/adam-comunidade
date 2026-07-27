@@ -8,7 +8,7 @@
 	var TextControl = components.TextControl;
 	var ToggleControl = components.ToggleControl;
 	var typeOptions = [
-		{ label: 'Equipas Associadas', value: 'teams' },
+		{ label: 'Equipas', value: 'teams' },
 		{ label: 'Campos', value: 'fields' },
 		{ label: 'Parceiros', value: 'partners' },
 		{ label: 'Instituições', value: 'institutions' },
