@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Experience\Email_Service;
 use ADAM\Comunidade\Experience\Moderation_Reasons;
+use ADAM\Comunidade\Experience\Schema as Experience_Schema;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
@@ -77,6 +78,10 @@ final class Service {
 		$email   = strtolower( sanitize_email( $email ) );
 		$manager = $this->manager_by_email( $email );
 		if ( $manager && 'active' === (string) $manager->status ) {
+			$associated = $this->associate_changes_submission( (int) $manager->id, $email, $entity_type, $submission_id );
+			if ( is_wp_error( $associated ) ) {
+				return $associated;
+			}
 			return array( 'manager_id' => (int) $manager->id, 'state' => 'active', 'action_url' => Portal::url() );
 		}
 		if ( $manager && 'invited' === (string) $manager->status ) {
@@ -109,9 +114,13 @@ final class Service {
 				// The unique email constraint may have won a concurrent request.
 				$concurrent = $this->manager_by_email( $email );
 				if ( $concurrent ) {
-					return 'active' === (string) $concurrent->status
-						? array( 'manager_id' => (int) $concurrent->id, 'state' => 'active', 'action_url' => Portal::url() )
-						: array( 'manager_id' => (int) $concurrent->id, 'state' => 'pending_activation', 'action_url' => '' );
+					if ( 'active' === (string) $concurrent->status ) {
+						$associated = $this->associate_changes_submission( (int) $concurrent->id, $email, $entity_type, $submission_id );
+						return is_wp_error( $associated )
+							? $associated
+							: array( 'manager_id' => (int) $concurrent->id, 'state' => 'active', 'action_url' => Portal::url() );
+					}
+					return array( 'manager_id' => (int) $concurrent->id, 'state' => 'pending_activation', 'action_url' => '' );
 				}
 				return new \WP_Error( 'manager_create_failed', __( 'Não foi possível preparar a conta de Gestor.', 'adam-comunidade' ) );
 			}
@@ -123,6 +132,48 @@ final class Service {
 			return $url;
 		}
 		return array( 'manager_id' => $manager_id, 'state' => 'activation_required', 'action_url' => $url );
+	}
+
+	/**
+	 * Removes the private workspace when the originating submission is rejected.
+	 */
+	public function discard_submission_workspace( string $type, int $entity_id, int $submission_id ): bool {
+		global $wpdb;
+		$type = sanitize_key( $type );
+		if ( $entity_id < 1 || $submission_id < 1 ) {
+			return true;
+		}
+		$submission_matches = (bool) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT 1 FROM ' . Experience_Schema::submissions_table() . " WHERE id=%d AND submission_type='new' AND object_type=%s AND object_id=%d AND status='rejected'",
+				$submission_id,
+				$type,
+				$entity_id
+			)
+		);
+		$record = $submission_matches ? $this->record( $type, $entity_id ) : null;
+		if ( ! $record || 'draft' !== (string) ( $record->status ?? '' ) ) {
+			return true;
+		}
+		$wpdb->update(
+			Schema::assignments_table(),
+			array( 'status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ),
+			array( 'entity_type' => $type, 'entity_id' => $entity_id, 'status' => 'active' )
+		);
+		$deleted = match ( $type ) {
+			'team'  => ( new Team_Repository() )->delete( $entity_id ),
+			'field' => ( new Field_Repository() )->delete( $entity_id ),
+			'partner', 'institution' => ( new Directory_Repository() )->delete( $entity_id ),
+			default => false,
+		};
+		if ( $deleted ) {
+			$wpdb->update(
+				Experience_Schema::submissions_table(),
+				array( 'object_id' => 0, 'updated_at' => current_time( 'mysql', true ) ),
+				array( 'id' => $submission_id, 'object_id' => $entity_id )
+			);
+		}
+		return (bool) $deleted;
 	}
 
 	/**
@@ -238,6 +289,13 @@ final class Service {
 		if ( 1 !== $claimed ) {
 			return new \WP_Error( 'used_token', __( 'Este convite já foi utilizado ou expirou.', 'adam-comunidade' ) );
 		}
+		$manager_email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id=%d', (int) $invitation->manager_id ) );
+		$associated = $this->associate_pending_changes_submissions( (int) $invitation->manager_id, $manager_email );
+		if ( is_wp_error( $associated ) ) {
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . Schema::invitations_table() . ' SET used_at = NULL WHERE id = %d AND used_at = %s', (int) $invitation->id, $now ) );
+			Logger::error( 'community_manager_activation_assignment_failed', array( 'manager_id' => (int) $invitation->manager_id, 'error_code' => $associated->get_error_code() ) );
+			return new \WP_Error( 'activation_assignment_failed', __( 'Não foi possível preparar a organização para edição. Tente novamente.', 'adam-comunidade' ) );
+		}
 		$activated = $wpdb->update(
 			Schema::managers_table(),
 			array( 'password_hash' => password_hash( $password, PASSWORD_DEFAULT ), 'status' => 'active', 'updated_at' => $now ),
@@ -265,7 +323,6 @@ final class Service {
 			Logger::error( 'community_manager_invitation_replay_cleanup_failed', array( 'manager_id' => (int) $invitation->manager_id ) );
 		}
 		$wpdb->delete( Schema::sessions_table(), array( 'manager_id' => (int) $invitation->manager_id ) );
-		$manager_email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id=%d', (int) $invitation->manager_id ) );
 		if ( is_email( $manager_email ) ) {
 			$this->emails->send(
 				'manager_password_created',
@@ -774,6 +831,7 @@ final class Service {
 		if ( ! $current ) {
 			return new \WP_Error( 'not_found', __( 'O registo já não está disponível.', 'adam-comunidade' ) );
 		}
+		$source_submission = $this->changes_submission_for_manager( $manager_id, $type, $id );
 		$active_revision = $this->active_revision( $type, $id );
 		if ( $active_revision && (int) $active_revision->manager_id !== $manager_id ) {
 			return new \WP_Error( 'revision_conflict', __( 'Já existe uma revisão desta organização a aguardar análise. Tente novamente depois de a ADAM concluir essa revisão.', 'adam-comunidade' ) );
@@ -816,7 +874,15 @@ final class Service {
 		}
 		$payload = $this->normalize_revision_payload( $type, $payload );
 		if ( $this->payload_hash( $baseline ) === $this->payload_hash( $payload ) ) {
-			return new \WP_Error( 'revision_unchanged', __( 'Não existem alterações para enviar. O registo publicado já contém estes dados.', 'adam-comunidade' ) );
+			return new \WP_Error(
+				'revision_unchanged',
+				$source_submission
+					? __( 'Não existem alterações para reenviar.', 'adam-comunidade' )
+					: __( 'Não existem alterações para enviar. O registo publicado já contém estes dados.', 'adam-comunidade' )
+			);
+		}
+		if ( $source_submission ) {
+			return $this->resubmit_changes_submission( $source_submission, $manager_id, $type, $id, $data, $payload );
 		}
 
 		$now = current_time( 'mysql', true );
@@ -1136,6 +1202,246 @@ final class Service {
 			return array() === $value;
 		}
 		return null === $value || '' === trim( (string) $value );
+	}
+
+	/**
+	 * Finds the public submission that owns an unpublished manager workspace.
+	 */
+	private function changes_submission_for_manager( int $manager_id, string $type, int $entity_id ): ?object {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT s.* FROM ' . Experience_Schema::submissions_table() . ' s'
+				. ' INNER JOIN ' . Schema::managers_table() . ' m ON m.id=%d AND m.email=s.contact_email'
+				. " WHERE s.submission_type='new' AND s.object_type=%s AND s.object_id=%d AND s.status IN ('changes_requested','pending')"
+				. ' ORDER BY s.id DESC LIMIT 1',
+				$manager_id,
+				sanitize_key( $type ),
+				$entity_id
+			)
+		);
+		return is_object( $row ) ? $row : null;
+	}
+
+	/**
+	 * Updates the private workspace and returns the original request to review.
+	 *
+	 * @return int|\WP_Error
+	 */
+	private function resubmit_changes_submission( object $submission, int $manager_id, string $type, int $entity_id, array $data, array $changes ): int|\WP_Error {
+		global $wpdb;
+		$stored_payload = json_decode( (string) ( $submission->payload ?? '' ), true );
+		$next_payload   = array_merge( is_array( $stored_payload ) ? $stored_payload : array(), $changes );
+		$relations      = array_intersect_key( $changes, array_flip( array( 'amenity_ids', 'gallery_ids' ) ) );
+		$data['status'] = 'draft';
+		if ( 'team' === $type && isset( $relations['gallery_ids'] ) ) {
+			$data['gallery']         = $relations['gallery_ids'];
+			$next_payload['gallery'] = $relations['gallery_ids'];
+		}
+
+		if ( 'team' === $type ) {
+			$repo = new Team_Repository();
+		} elseif ( 'field' === $type ) {
+			$repo = new Field_Repository();
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			$repo = new Directory_Repository();
+		} else {
+			return new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+		}
+
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'resubmission_failed', __( 'Não foi possível reenviar as alterações.', 'adam-comunidade' ) );
+		}
+		$locked_status = (string) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT status FROM ' . Experience_Schema::submissions_table() . " WHERE id=%d AND object_id=%d AND status IN ('changes_requested','pending') FOR UPDATE",
+				(int) $submission->id,
+				$entity_id
+			)
+		);
+		if ( '' === $locked_status ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'submission_processing', __( 'Esta submissão já está a ser analisada.', 'adam-comunidade' ) );
+		}
+		if ( ! $repo->update( $entity_id, $data ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'workspace_update_failed', __( 'Não foi possível atualizar a organização.', 'adam-comunidade' ) );
+		}
+		$synced = $this->sync_workspace_relations( $type, $entity_id, $repo, $relations );
+		if ( is_wp_error( $synced ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return $synced;
+		}
+		$updated = $wpdb->update(
+			Experience_Schema::submissions_table(),
+			array(
+				'payload'    => wp_json_encode( $next_payload ),
+				'status'     => 'pending',
+				'admin_note' => '',
+				'updated_at' => current_time( 'mysql', true ),
+			),
+			array( 'id' => (int) $submission->id, 'status' => $locked_status, 'object_id' => $entity_id )
+		);
+		if ( 1 !== $updated || false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'resubmission_failed', __( 'Não foi possível reenviar as alterações.', 'adam-comunidade' ) );
+		}
+		do_action( 'adam_comunidade_submission_resubmitted', (int) $submission->id, $manager_id, $type, $entity_id );
+		return (int) $submission->id;
+	}
+
+	/**
+	 * Associates every outstanding review request for the activated email.
+	 *
+	 * @return true|\WP_Error
+	 */
+	private function associate_pending_changes_submissions( int $manager_id, string $email ): true|\WP_Error {
+		global $wpdb;
+		if ( $manager_id < 1 || ! is_email( $email ) ) {
+			return new \WP_Error( 'invalid_pending_assignment', __( 'Não foi possível identificar os pedidos pendentes desta conta.', 'adam-comunidade' ) );
+		}
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Experience_Schema::submissions_table() . " WHERE submission_type='new' AND status='changes_requested' AND contact_email=%s ORDER BY id",
+				strtolower( sanitize_email( $email ) )
+			)
+		);
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$result = $this->ensure_submission_workspace( $manager_id, $row );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Associates one request immediately when the manager is already active.
+	 *
+	 * @return true|\WP_Error
+	 */
+	private function associate_changes_submission( int $manager_id, string $email, string $type, int $submission_id ): true|\WP_Error {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Experience_Schema::submissions_table() . " WHERE id=%d AND submission_type='new' AND object_type=%s AND status='changes_requested' AND contact_email=%s",
+				$submission_id,
+				sanitize_key( $type ),
+				strtolower( sanitize_email( $email ) )
+			)
+		);
+		return $row
+			? $this->ensure_submission_workspace( $manager_id, $row )
+			: new \WP_Error( 'submission_not_found', __( 'O pedido de alterações já não está disponível.', 'adam-comunidade' ) );
+	}
+
+	/**
+	 * Materializes an unpublished workspace and assigns it to the manager.
+	 *
+	 * @return true|\WP_Error
+	 */
+	private function ensure_submission_workspace( int $manager_id, object $submission ): true|\WP_Error {
+		global $wpdb;
+		$type = sanitize_key( (string) ( $submission->object_type ?? '' ) );
+		if ( ! in_array( $type, Policy::entity_types(), true ) ) {
+			return new \WP_Error( 'unsupported_submission_type', __( 'Este tipo de organização não pode ser editado pelo Gestor.', 'adam-comunidade' ) );
+		}
+		$entity_id = (int) ( $submission->object_id ?? 0 );
+		$record    = $entity_id ? $this->record( $type, $entity_id ) : null;
+		if ( ! $record ) {
+			$payload = json_decode( (string) ( $submission->payload ?? '' ), true );
+			$created = $this->create_submission_workspace( $type, is_array( $payload ) ? $payload : array() );
+			if ( is_wp_error( $created ) ) {
+				return $created;
+			}
+			$entity_id = $created;
+			$linked = $wpdb->update(
+				Experience_Schema::submissions_table(),
+				array( 'object_id' => $entity_id, 'updated_at' => current_time( 'mysql', true ) ),
+				array( 'id' => (int) $submission->id, 'object_id' => 0, 'status' => 'changes_requested' )
+			);
+			if ( 1 !== $linked ) {
+				$winner_id = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						'SELECT object_id FROM ' . Experience_Schema::submissions_table() . ' WHERE id=%d',
+						(int) $submission->id
+					)
+				);
+				$this->delete_workspace_record( $type, $entity_id );
+				if ( $winner_id < 1 || ! $this->record( $type, $winner_id ) ) {
+					return new \WP_Error( 'submission_link_failed', __( 'Não foi possível preparar a organização para edição.', 'adam-comunidade' ) );
+				}
+				$entity_id = $winner_id;
+			}
+		}
+		return $this->assign_existing( $manager_id, $type, $entity_id );
+	}
+
+	/**
+	 * Creates an entity record that remains private until final approval.
+	 *
+	 * @return int|\WP_Error
+	 */
+	private function create_submission_workspace( string $type, array $payload ): int|\WP_Error {
+		$relations = array_intersect_key( $payload, array_flip( array( 'amenity_ids', 'gallery_ids' ) ) );
+		$input     = Policy::decode_lists( $type, array_merge( $payload, array( 'status' => 'draft' ) ) );
+		if ( 'team' === $type ) {
+			$repo = new Team_Repository();
+			if ( isset( $relations['gallery_ids'] ) ) {
+				$input['gallery'] = $relations['gallery_ids'];
+			}
+			$data = ( new Team_Validator( $repo ) )->validate( $input );
+		} elseif ( 'field' === $type ) {
+			$repo = new Field_Repository();
+			$data = ( new Field_Validator( $repo ) )->validate( $input );
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			$repo = new Directory_Repository();
+			$data = Directory_Validator::sanitize( $type, $input );
+		} else {
+			return new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+		}
+		if ( is_wp_error( $data ) ) {
+			return $data;
+		}
+		$created = $repo->create( $data );
+		if ( ! $created ) {
+			return new \WP_Error( 'workspace_create_failed', __( 'Não foi possível preparar a organização para edição.', 'adam-comunidade' ) );
+		}
+		$entity_id = (int) $created;
+		$synced    = $this->sync_workspace_relations( $type, $entity_id, $repo, $relations );
+		if ( is_wp_error( $synced ) ) {
+			$this->delete_workspace_record( $type, $entity_id );
+			return $synced;
+		}
+		return $entity_id;
+	}
+
+	/**
+	 * Synchronizes relations that live outside the main entity table.
+	 *
+	 * @return true|\WP_Error
+	 */
+	private function sync_workspace_relations( string $type, int $entity_id, object $repo, array $relations ): true|\WP_Error {
+		if ( 'field' === $type && isset( $relations['amenity_ids'] ) && ! $repo->sync_amenities( $entity_id, $relations['amenity_ids'] ) ) {
+			return new \WP_Error( 'workspace_amenities_failed', __( 'Não foi possível preparar as comodidades para edição.', 'adam-comunidade' ) );
+		}
+		if ( in_array( $type, array( 'field', 'partner', 'institution' ), true ) && isset( $relations['gallery_ids'] ) ) {
+			$items = array_map( static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ), array_map( 'absint', $relations['gallery_ids'] ) );
+			if ( ! $repo->sync_gallery( $entity_id, $items ) ) {
+				return new \WP_Error( 'workspace_gallery_failed', __( 'Não foi possível preparar as fotografias para edição.', 'adam-comunidade' ) );
+			}
+		}
+		return true;
+	}
+
+	private function delete_workspace_record( string $type, int $entity_id ): void {
+		if ( 'team' === $type ) {
+			( new Team_Repository() )->delete( $entity_id );
+		} elseif ( 'field' === $type ) {
+			( new Field_Repository() )->delete( $entity_id );
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			( new Directory_Repository() )->delete( $entity_id );
+		}
 	}
 
 	/**

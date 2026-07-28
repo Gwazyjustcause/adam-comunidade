@@ -874,6 +874,12 @@ final class Portal {
 			wp_die( esc_html__( 'Não foi possível concluir a decisão. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
 		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
+		if ( 'reject' === $decision && 'new' === $row->submission_type && $object_id > 0 ) {
+			$discarded = ( new Manager_Service( self::emails() ) )->discard_submission_workspace( (string) $row->object_type, $object_id, $id );
+			if ( ! $discarded ) {
+				Logger::error( 'community_manager_rejected_workspace_cleanup_failed', array( 'submission_id' => $id, 'entity_type' => (string) $row->object_type, 'entity_id' => $object_id ) );
+			}
+		}
 		$manager_access = array( 'manager_id' => 0, 'state' => 'none', 'action_url' => '' );
 		if ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
 			$manager_service = new Manager_Service( self::emails() );

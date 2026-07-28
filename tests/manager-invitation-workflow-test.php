@@ -21,12 +21,25 @@ $admin   = (string) file_get_contents( $root . '/includes/managers/class-admin.p
 $assert( str_contains( $schema, 'UNIQUE KEY email (email)' ), 'Manager email addresses must remain unique at database level.' );
 $assert( str_contains( $service, 'function provision_organisation' ), 'Approved organisations do not use the canonical account provisioning workflow.' );
 $assert( str_contains( $service, 'function prepare_changes_access' ), 'Requests for changes do not resolve account access automatically.' );
+$assert(
+	str_contains( $service, 'associate_pending_changes_submissions' )
+	&& str_contains( $service, 'ensure_submission_workspace' )
+	&& str_contains( $service, "array_merge( \$payload, array( 'status' => 'draft' ) )" ),
+	'Activation does not create and assign a private workspace for pending review requests.'
+);
+$assert(
+	str_contains( $service, 'changes_submission_for_manager' )
+	&& str_contains( $service, 'resubmit_changes_submission' )
+	&& str_contains( $service, "'status'     => 'pending'" ),
+	'Manager corrections are not returned to the originating submission review queue.'
+);
 $assert( str_contains( $service, 'function manager_by_email' ) && str_contains( $service, 'strtolower( sanitize_email( $email ) )' ), 'Manager identities are not normalized and resolved by email.' );
 $assert( str_contains( $service, "'state' => 'active'" ) && str_contains( $service, "'state' => 'pending_activation'" ), 'Existing manager states are not distinguished.' );
 $assert( str_contains( $service, "purpose = 'invitation' AND used_at IS NULL AND id <> %d" ), 'A manager can retain multiple current activation tokens.' );
 $assert( str_contains( $portal, "'approve' === \$decision" ) && str_contains( $portal, 'provision_organisation' ), 'Approval does not assign the organisation automatically.' );
 $assert( str_contains( $portal, "'changes' === \$decision" ) && str_contains( $portal, 'prepare_changes_access' ), 'Request-changes emails are not account-aware.' );
 $assert( ! preg_match( '/\'reject\'\s*===\s*\$decision[^}]+(?:provision_organisation|prepare_changes_access)/s', $portal ), 'Permanent rejection must not create or prepare a manager account.' );
+$assert( str_contains( $portal, 'discard_submission_workspace' ), 'Rejected submissions can leave an editable manager workspace behind.' );
 $assert( str_contains( $emails, "'manager_organisation_assigned'" ) && str_contains( $emails, 'Aceder à Área do Gestor' ), 'Existing managers do not receive the portal workflow.' );
 $assert( str_contains( $emails, "'manager_organisation_pending_activation'" ), 'Pending accounts do not receive a duplicate-safe notification.' );
 $assert( str_contains( $emails, '{{manager_action_url}}' ) && str_contains( $emails, '{{manager_action_label}}' ), 'Request-changes templates do not adapt their call to action.' );

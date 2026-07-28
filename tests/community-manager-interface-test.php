@@ -33,7 +33,10 @@ foreach ( array( 'adam_manager_admin_cancel_invitation', 'adam_manager_admin_res
 }
 $assert( str_contains( $service, "array( 'release', 'transfer' )" ), 'Manager deletion does not support both assignment outcomes.' );
 $assert( str_contains( $service, "'status' => 'deleted'" ) && str_contains( $service, "'password_hash' => ''" ), 'Manager deletion is not a credential-revoking soft delete.' );
-$assert( ! preg_match( '/(?:Team|Field|Directory)_Repository[^;]+->delete\\s*\\(/', $service ), 'Deleting a manager may delete a Community entity.' );
+$delete_manager_start = strpos( $service, 'public function delete_manager' );
+$delete_manager_end   = strpos( $service, 'public function can_manage', $delete_manager_start );
+$delete_manager_body  = substr( $service, $delete_manager_start, $delete_manager_end - $delete_manager_start );
+$assert( ! preg_match( '/(?:Team|Field|Directory)_Repository[^;]+->delete\\s*\\(/', $delete_manager_body ), 'Deleting a manager may delete a Community entity.' );
 $assert( str_contains( $service, "'START TRANSACTION'" ) && str_contains( $service, "'ROLLBACK'" ), 'Manager deletion is not atomic.' );
 $assert( str_contains( $view, 'data-adam-confirm' ) && str_contains( $admin_js, 'window.confirm' ), 'Destructive actions do not require confirmation.' );
 
