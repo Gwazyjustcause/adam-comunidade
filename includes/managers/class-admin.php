@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
+use ADAM\Comunidade\Experience\Moderation_Component;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
@@ -144,7 +145,7 @@ final class Admin {
 				<article class="adam-card adam-manager-revision-card">
 					<header class="adam-manager-revision-header">
 						<div>
-							<span class="adam-card__eyebrow"><?php echo esc_html( 'needs_info' === $revision->status ? __( 'A aguardar informação', 'adam-comunidade' ) : __( 'Revisão de Gestor', 'adam-comunidade' ) ); ?></span>
+							<span class="adam-card__eyebrow"><?php echo esc_html( 'needs_info' === $revision->status ? __( 'A aguardar alterações', 'adam-comunidade' ) : __( 'Revisão de Gestor', 'adam-comunidade' ) ); ?></span>
 							<h3><?php echo esc_html( (string) $record->name ); ?></h3>
 							<p><?php echo esc_html( (string) $revision->email ); ?> · <?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->submitted_at ) ); ?></p>
 						</div>
@@ -164,7 +165,7 @@ final class Admin {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
-					<?php if ( 'needs_info' === $revision->status && $revision->admin_note ) : ?><p class="adam-revision-previous-note"><strong><?php esc_html_e( 'Informação anteriormente pedida:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $revision->admin_note ); ?></p><?php endif; ?>
+					<?php if ( 'needs_info' === $revision->status && $revision->admin_note ) : ?><p class="adam-revision-previous-note"><strong><?php esc_html_e( 'Alterações anteriormente pedidas:', 'adam-comunidade' ); ?></strong><br><?php echo nl2br( esc_html( (string) $revision->admin_note ) ); ?></p><?php endif; ?>
 					<?php if ( ! $changes ) : ?><p><?php esc_html_e( 'Esta proposta não contém diferenças detetáveis.', 'adam-comunidade' ); ?></p><?php endif; ?>
 					<div class="adam-revision-comparison" role="table" aria-label="<?php esc_attr_e( 'Comparação das alterações propostas', 'adam-comunidade' ); ?>">
 						<div class="adam-revision-comparison__head" role="row"><span role="columnheader"><?php esc_html_e( 'Campo', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão publicada', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão proposta', 'adam-comunidade' ); ?></span></div>
@@ -176,14 +177,34 @@ final class Admin {
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<form class="adam-revision-actions" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-						<input type="hidden" name="action" value="adam_moderate_manager_revision">
-						<input type="hidden" name="revision_id" value="<?php echo esc_attr( (string) $revision->id ); ?>">
-						<?php wp_nonce_field( 'adam_moderate_manager_revision_' . $revision->id ); ?>
-						<label><span><?php esc_html_e( 'Nota para o Gestor', 'adam-comunidade' ); ?></span><textarea name="admin_note" rows="3"><?php echo esc_textarea( (string) $revision->admin_note ); ?></textarea></label>
-						<?php if ( $has_conflict ) : ?><label class="adam-revision-conflict-confirm"><input type="checkbox" name="confirm_conflict" value="1"> <span><?php esc_html_e( 'Revisei o conflito e pretendo substituir a versão publicada.', 'adam-comunidade' ); ?></span></label><?php endif; ?>
-						<p><button class="button button-primary" name="decision" value="approve" data-adam-confirm="<?php esc_attr_e( 'Aprovar todas estas alterações e atualizar imediatamente a página pública?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Aprovar todas as alterações', 'adam-comunidade' ); ?></button> <button class="button" name="decision" value="info" data-adam-confirm="<?php esc_attr_e( 'Pedir informação adicional ao Gestor?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Pedir informação', 'adam-comunidade' ); ?></button> <button class="button button-link-delete" name="decision" value="reject" data-adam-confirm="<?php esc_attr_e( 'Rejeitar todas estas alterações? A página pública permanecerá inalterada.', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Rejeitar todas', 'adam-comunidade' ); ?></button></p>
-					</form>
+					<?php
+					Moderation_Component::render(
+						array(
+							'context'      => 'manager-revision',
+							'identifier'   => (int) $revision->id,
+							'class'        => 'adam-revision-actions',
+							'nonce_action' => 'adam_moderate_manager_revision_' . $revision->id,
+							'hidden'       => array(
+								'action'      => 'adam_moderate_manager_revision',
+								'revision_id' => (int) $revision->id,
+							),
+							'approve_label' => __( 'Aprovar alterações', 'adam-comunidade' ),
+							'changes_label' => __( 'Pedir alterações', 'adam-comunidade' ),
+							'reject_label'  => __( 'Rejeitar alterações', 'adam-comunidade' ),
+							'changes_title' => __( 'Pedir alterações ao Gestor', 'adam-comunidade' ),
+							'changes_intro' => __( 'Selecione os pontos que o Gestor deve corrigir antes de uma nova análise.', 'adam-comunidade' ),
+							'reject_title'  => __( 'Rejeitar alterações', 'adam-comunidade' ),
+							'reject_intro'  => __( 'Selecione os motivos pelos quais estas alterações não podem ser aceites.', 'adam-comunidade' ),
+							'approve_fields' => static function () use ( $has_conflict ): void {
+								if ( $has_conflict ) {
+									?>
+									<label class="adam-revision-conflict-confirm"><input type="checkbox" name="confirm_conflict" value="1"> <span><?php esc_html_e( 'Revisei o conflito e pretendo substituir a versão publicada.', 'adam-comunidade' ); ?></span></label>
+									<?php
+								}
+							},
+						)
+					);
+					?>
 				</article>
 			<?php endforeach; ?>
 		</div>
@@ -200,12 +221,17 @@ final class Admin {
 		Admin_Router::authorize();
 		$id = absint( $_POST['revision_id'] ?? 0 );
 		check_admin_referer( 'adam_moderate_manager_revision_' . $id );
+		$decision = sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) );
+		$reasons  = isset( $_POST['moderation_reasons'] ) && is_array( $_POST['moderation_reasons'] )
+			? array_map( 'strval', wp_unslash( $_POST['moderation_reasons'] ) )
+			: array();
 		$result = $this->service->moderate_revision(
 			$id,
-			sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) ),
-			sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ),
+			$decision,
+			$reasons,
 			get_current_user_id(),
-			! empty( $_POST['confirm_conflict'] )
+			! empty( $_POST['confirm_conflict'] ),
+			sanitize_textarea_field( wp_unslash( $_POST['moderation_custom_reason'] ?? '' ) )
 		);
 		if ( is_wp_error( $result ) ) {
 			wp_die( esc_html( $result->get_error_message() ) );
@@ -414,7 +440,7 @@ final class Admin {
 		$status_labels = array(
 			'approved'   => __( 'Aprovada', 'adam-comunidade' ),
 			'rejected'   => __( 'Rejeitada', 'adam-comunidade' ),
-			'needs_info' => __( 'Informação pedida', 'adam-comunidade' ),
+			'needs_info' => __( 'Alterações pedidas', 'adam-comunidade' ),
 			'superseded' => __( 'Substituída', 'adam-comunidade' ),
 		);
 		if ( ! $history ) {
@@ -436,7 +462,7 @@ final class Admin {
 						<?php if ( $revision->reviewed_at ) : ?><div><dt><?php esc_html_e( 'Decidida em', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->reviewed_at ) ); ?></dd></div><?php endif; ?>
 						<?php if ( $revision->published_at ) : ?><div><dt><?php esc_html_e( 'Publicada em', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->published_at ) ); ?></dd></div><?php endif; ?>
 					</dl>
-					<?php if ( $revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Nota de moderação:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $revision->admin_note ); ?></p><?php endif; ?>
+					<?php if ( $revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Motivos da moderação:', 'adam-comunidade' ); ?></strong><br><?php echo nl2br( esc_html( (string) $revision->admin_note ) ); ?></p><?php endif; ?>
 					<p><?php echo esc_html( sprintf( _n( '%d alteração registada.', '%d alterações registadas.', count( $changes ), 'adam-comunidade' ), count( $changes ) ) ); ?></p>
 					<?php if ( $changes ) : ?>
 						<div class="adam-revision-comparison adam-revision-history-changes" role="table" aria-label="<?php esc_attr_e( 'Alterações desta revisão', 'adam-comunidade' ); ?>">

@@ -206,7 +206,7 @@ final class Portal {
 		</section>
 		<?php if ( $needs_information ) : ?>
 			<div class="adam-manager-next-action" role="status">
-				<strong><?php esc_html_e( 'A ADAM pediu informação adicional.', 'adam-comunidade' ); ?></strong>
+				<strong><?php esc_html_e( 'A ADAM pediu alterações.', 'adam-comunidade' ); ?></strong>
 				<p><?php echo esc_html( sprintf( _n( 'Abra o registo assinalado e atualize a proposta.', 'Abra os %d registos assinalados e atualize as propostas.', $needs_information, 'adam-comunidade' ), $needs_information ) ); ?></p>
 			</div>
 		<?php endif; ?>
@@ -229,12 +229,12 @@ final class Portal {
 							$is_own_revision = (int) $active_revision->manager_id === (int) $manager->id;
 							$status_labels = array(
 								'pending'    => __( 'A aguardar revisão', 'adam-comunidade' ),
-								'needs_info' => __( 'Informação adicional necessária', 'adam-comunidade' ),
+								'needs_info' => __( 'Alterações necessárias', 'adam-comunidade' ),
 								'processing' => __( 'Em análise neste momento', 'adam-comunidade' ),
 							);
 							?>
 							<p><span class="adam-manager-revision-status adam-manager-revision-status--<?php echo esc_attr( (string) $active_revision->status ); ?>"><?php echo esc_html( $status_labels[ $active_revision->status ] ?? __( 'Em revisão', 'adam-comunidade' ) ); ?></span></p>
-							<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Nota da ADAM:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $active_revision->admin_note ); ?></p><?php endif; ?>
+							<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Alterações pedidas pela ADAM:', 'adam-comunidade' ); ?></strong><br><?php echo nl2br( esc_html( (string) $active_revision->admin_note ) ); ?></p><?php endif; ?>
 							<p><?php echo esc_html( $is_own_revision ? __( 'Pode atualizar a proposta enquanto esta não estiver em análise.', 'adam-comunidade' ) : __( 'Outro Gestor já enviou alterações para esta organização.', 'adam-comunidade' ) ); ?></p>
 							<?php if ( $is_own_revision && 'processing' !== $active_revision->status ) : ?><a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar proposta pendente', 'adam-comunidade' ); ?></a><?php endif; ?>
 						<?php else : ?>
@@ -352,7 +352,7 @@ final class Portal {
 				<div class="adam-manager-pending-banner" role="status">
 					<strong><?php esc_html_e( 'Está a editar a proposta pendente.', 'adam-comunidade' ); ?></strong>
 					<p><?php esc_html_e( 'Ao voltar a enviar, esta versão substitui a proposta anterior no trabalho pendente. A versão anterior permanece no histórico administrativo.', 'adam-comunidade' ); ?></p>
-					<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Informação pedida pela ADAM:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $active_revision->admin_note ); ?></p><?php endif; ?>
+					<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Alterações pedidas pela ADAM:', 'adam-comunidade' ); ?></strong><br><?php echo nl2br( esc_html( (string) $active_revision->admin_note ) ); ?></p><?php endif; ?>
 				</div>
 			<?php endif; ?>
 			<div class="adam-form-grid">

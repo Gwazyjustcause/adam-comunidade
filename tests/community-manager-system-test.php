@@ -22,6 +22,7 @@ $cleanup = (string) file_get_contents( $root . '/includes/managers/class-cleanup
 $loader  = (string) file_get_contents( $root . '/includes/class-loader.php' );
 $emails  = (string) file_get_contents( $root . '/includes/experience/class-email-service.php' );
 $approval = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
+$moderation_component = (string) file_get_contents( $root . '/includes/experience/class-moderation-component.php' );
 $field_schema = (string) file_get_contents( $root . '/includes/fields/class-schema.php' );
 $field_page = (string) file_get_contents( $root . '/templates/fields/single.php' );
 
@@ -41,7 +42,7 @@ $assert( str_contains( $portal, "unset( \$input['cover_id'], \$input['logo_id'],
 $assert( str_contains( $service, "array( 'team', 'field', 'partner', 'institution' )" ), 'Assignments are not ready for future Community entity types.' );
 $assert( str_contains( $service, "'status'     => 'pending'" ), 'Manager edits must create pending revisions.' );
 $assert( str_contains( $service, 'Policy::decode_lists' ) && str_contains( $policy, 'function decode_lists' ), 'Stored JSON lists are not normalized before revision validation.' );
-$assert( str_contains( $service, "'approve' => 'approved'" ) && str_contains( $admin, "value=\"info\"" ) && str_contains( $admin, "value=\"reject\"" ), 'Revision moderation decisions are incomplete.' );
+$assert( str_contains( $service, "'approve' => 'approved'" ) && str_contains( $service, "'changes' => 'needs_info'" ) && str_contains( $admin, 'Moderation_Component::render' ) && str_contains( $moderation_component, "value=\"%s\"" ), 'Revision moderation decisions are incomplete.' );
 $assert( str_contains( $admin, 'adam_resend_manager_invitation' ), 'Administrators cannot resend invitations.' );
 $assert( str_contains( $portal, 'Upload_Component::render' ), 'Manager images must reuse the ADAM Upload component.' );
 $assert( str_contains( $approval, "'manager_invite_url' => \$manager_invite_url" ), 'Field approval email does not receive the manager invitation.' );

@@ -194,7 +194,10 @@
 			const message = ( submitter && submitter.dataset.adamConfirm ) || form.dataset.adamConfirm || '';
 			const strategy = form.querySelector( '[name="assignment_action"]' );
 			const target = form.querySelector( '[name="target_manager_id"]' );
-			const decision = submitter && submitter.name === 'decision' ? submitter.value : '';
+			const decisionField = form.querySelector( '[name="decision"]' );
+			const decision = submitter && submitter.name === 'decision'
+				? submitter.value
+				: ( decisionField?.value || '' );
 			const note = form.querySelector( '[name="admin_note"]' );
 			const conflict = form.querySelector( '[name="confirm_conflict"]' );
 			const entityPicker = form.querySelector( '[data-adam-entity-picker]' );

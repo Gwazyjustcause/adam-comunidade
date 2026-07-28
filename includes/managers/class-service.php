@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Experience\Email_Service;
+use ADAM\Comunidade\Experience\Moderation_Reasons;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
@@ -806,18 +807,31 @@ final class Service {
 		return $revision_id;
 	}
 
-	public function moderate_revision( int $revision_id, string $decision, string $note, int $reviewer_id, bool $force_conflict = false ): bool|\WP_Error {
+	/**
+	 * Applies a structured moderation decision to a manager revision.
+	 *
+	 * @param string[] $reason_ids Configured reason identifiers.
+	 */
+	public function moderate_revision( int $revision_id, string $decision, array $reason_ids, int $reviewer_id, bool $force_conflict = false, string $custom_reason = '' ): bool|\WP_Error {
 		global $wpdb;
+		// Preserve compatibility with the legacy internal decision name while
+		// exposing the same "changes" action used by every moderation screen.
+		$decision = 'info' === $decision ? 'changes' : $decision;
 		$revision = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::revisions_table() . ' WHERE id = %d', $revision_id ) );
 		if ( ! $revision || ! in_array( $revision->status, array( 'pending', 'needs_info' ), true ) ) {
 			return new \WP_Error( 'revision_unavailable', __( 'A revisão já não está disponível.', 'adam-comunidade' ) );
 		}
-		$status = array( 'approve' => 'approved', 'reject' => 'rejected', 'info' => 'needs_info' )[ $decision ] ?? '';
+		$status = array( 'approve' => 'approved', 'reject' => 'rejected', 'changes' => 'needs_info' )[ $decision ] ?? '';
 		if ( ! $status ) {
 			return new \WP_Error( 'invalid_decision', __( 'A decisão selecionada não é válida.', 'adam-comunidade' ) );
 		}
-		if ( in_array( $decision, array( 'reject', 'info' ), true ) && '' === trim( $note ) ) {
-			return new \WP_Error( 'note_required', __( 'Indique ao Gestor o motivo da decisão ou a informação necessária.', 'adam-comunidade' ) );
+		$note = '';
+		if ( in_array( $decision, array( 'reject', 'changes' ), true ) ) {
+			$reasons = Moderation_Reasons::resolve( $decision, $reason_ids, $custom_reason );
+			if ( is_wp_error( $reasons ) ) {
+				return $reasons;
+			}
+			$note = Moderation_Reasons::summary( $reasons );
 		}
 		$now = current_time( 'mysql', true );
 		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared

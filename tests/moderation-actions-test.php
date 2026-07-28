@@ -14,20 +14,25 @@ $assert = static function ( bool $condition, string $message ): void {
 };
 
 $portal   = $read( 'includes/experience/class-portal.php' );
+$component = $read( 'includes/experience/class-moderation-component.php' );
 $reasons  = $read( 'includes/experience/class-moderation-reasons.php' );
 $settings = $read( 'includes/class-settings.php' );
 $email    = $read( 'includes/experience/class-email-service.php' );
 $admin_js = $read( 'assets/js/admin.js' );
+$manager_admin = $read( 'includes/managers/class-admin.php' );
+$manager_service = $read( 'includes/managers/class-service.php' );
 
 $assert( ! str_contains( $portal, "name=\"admin_note\"" ) && ! str_contains( $portal, 'Notas internas' ), 'The legacy free-text note is still visible on submission approvals.' );
+$assert( ! str_contains( $manager_admin, "name=\"admin_note\"" ) && ! str_contains( $manager_admin, 'Nota para o Gestor' ), 'The legacy free-text note is still visible on manager revision approvals.' );
 foreach ( array( 'Aprovar e publicar', 'Pedir alterações', 'Rejeitar' ) as $action ) {
 	$assert( str_contains( $portal, $action ), 'Missing moderation action: ' . $action );
 }
 $assert(
-	str_contains( $portal, 'render_moderation_dialog' )
-	&& str_contains( $portal, 'moderation_reasons[]' )
-	&& str_contains( $portal, 'data-adam-custom-reason' ),
-	'Changes and rejection do not use the focused structured-reason dialogs.'
+	str_contains( $portal, 'Moderation_Component::render' )
+	&& str_contains( $manager_admin, 'Moderation_Component::render' )
+	&& str_contains( $component, 'moderation_reasons[]' )
+	&& str_contains( $component, 'data-adam-custom-reason' ),
+	'All moderation screens do not use the same focused structured-reason component.'
 );
 $assert(
 	str_contains( $settings, 'render_moderation_reasons' )
@@ -43,6 +48,12 @@ $assert(
 	&& str_contains( $reasons, "'enabled'" )
 	&& str_contains( $reasons, "'allows_custom'" ),
 	'The reusable reason registry is incomplete.'
+);
+$assert(
+	str_contains( $portal, 'Moderation_Reasons::resolve' )
+	&& str_contains( $manager_service, 'Moderation_Reasons::resolve' )
+	&& str_contains( $manager_service, "'changes' => 'needs_info'" ),
+	'Submission and revision decisions do not share server-side reason validation.'
 );
 $assert(
 	str_contains( $email, "'field_changes_requested'" )

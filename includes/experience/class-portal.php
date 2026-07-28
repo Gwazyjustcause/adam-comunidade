@@ -794,80 +794,29 @@ final class Portal {
 						</aside>
 					</div>
 
-					<div class="adam-approval-actions">
-						<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-							<?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?>
-							<input type="hidden" name="action" value="adam_moderate_submission">
-							<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
-							<input type="hidden" name="decision" value="approve">
-							<button class="button button-primary" type="submit"><?php esc_html_e( 'Aprovar e publicar', 'adam-comunidade' ); ?></button>
-						</form>
-						<button class="button" type="button" data-adam-open-moderation="<?php echo esc_attr( 'changes-' . $row->id ); ?>"><?php esc_html_e( 'Pedir alterações', 'adam-comunidade' ); ?></button>
-						<button class="button button-link-delete" type="button" data-adam-open-moderation="<?php echo esc_attr( 'reject-' . $row->id ); ?>"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button>
-						<?php $this->render_moderation_dialog( $row, 'changes' ); ?>
-						<?php $this->render_moderation_dialog( $row, 'reject' ); ?>
-					</div>
+					<?php
+					Moderation_Component::render(
+						array(
+							'context'      => 'submission',
+							'identifier'   => (int) $row->id,
+							'nonce_action' => 'adam_moderate_' . $row->id,
+							'nonce_name'   => 'adam_nonce',
+							'hidden'       => array(
+								'action'        => 'adam_moderate_submission',
+								'submission_id' => (int) $row->id,
+							),
+							'approve_label' => __( 'Aprovar e publicar', 'adam-comunidade' ),
+							'changes_title' => __( 'Pedir alterações', 'adam-comunidade' ),
+							'changes_intro' => __( 'Selecione tudo o que o autor deve corrigir antes de uma nova análise.', 'adam-comunidade' ),
+							'reject_title'  => __( 'Rejeitar submissão', 'adam-comunidade' ),
+							'reject_intro'  => __( 'Selecione os motivos que tornam esta submissão inelegível para publicação.', 'adam-comunidade' ),
+						)
+					);
+					?>
 				</article>
 			<?php endforeach; ?>
 			<?php do_action( 'adam_comunidade_moderation_after_submissions' ); ?>
 		</div>
-		<?php
-	}
-
-	/**
-	 * Renders a focused reason picker for one non-publishing decision.
-	 */
-	private function render_moderation_dialog( object $row, string $decision ): void {
-		$is_reject = 'reject' === $decision;
-		$dialog_id = $decision . '-' . absint( $row->id );
-		$groups    = Moderation_Reasons::grouped( $decision );
-		?>
-		<dialog class="adam-moderation-dialog" data-adam-moderation-dialog="<?php echo esc_attr( $dialog_id ); ?>" aria-labelledby="<?php echo esc_attr( $dialog_id . '-title' ); ?>">
-			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-				<?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?>
-				<input type="hidden" name="action" value="adam_moderate_submission">
-				<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
-				<input type="hidden" name="decision" value="<?php echo esc_attr( $decision ); ?>">
-				<header>
-					<div>
-						<span class="adam-card__eyebrow"><?php esc_html_e( 'Decisão de moderação', 'adam-comunidade' ); ?></span>
-						<h2 id="<?php echo esc_attr( $dialog_id . '-title' ); ?>"><?php echo esc_html( $is_reject ? __( 'Rejeitar submissão', 'adam-comunidade' ) : __( 'Pedir alterações', 'adam-comunidade' ) ); ?></h2>
-						<p><?php echo esc_html( $is_reject ? __( 'Selecione os motivos que tornam esta submissão inelegível para publicação.', 'adam-comunidade' ) : __( 'Selecione tudo o que o autor deve corrigir antes de uma nova análise.', 'adam-comunidade' ) ); ?></p>
-					</div>
-					<button type="button" class="adam-moderation-dialog__close" data-adam-close-moderation aria-label="<?php esc_attr_e( 'Fechar', 'adam-comunidade' ); ?>">×</button>
-				</header>
-				<div class="adam-moderation-dialog__body">
-					<?php if ( $groups ) : ?>
-						<?php foreach ( $groups as $category => $reasons ) : ?>
-							<fieldset>
-								<legend><?php echo esc_html( $category ); ?></legend>
-								<div class="adam-moderation-reason-list">
-									<?php foreach ( $reasons as $reason ) : ?>
-										<label>
-											<input type="checkbox" name="moderation_reasons[]" value="<?php echo esc_attr( (string) $reason['id'] ); ?>" <?php echo ! empty( $reason['allows_custom'] ) ? 'data-adam-custom-reason' : ''; ?>>
-											<span><?php echo esc_html( (string) $reason['label'] ); ?></span>
-										</label>
-									<?php endforeach; ?>
-								</div>
-							</fieldset>
-						<?php endforeach; ?>
-						<label class="adam-moderation-custom" data-adam-moderation-custom hidden>
-							<span><?php esc_html_e( 'Informação adicional (opcional)', 'adam-comunidade' ); ?></span>
-							<textarea name="moderation_custom_reason" rows="3" maxlength="1000" placeholder="<?php esc_attr_e( 'Explique brevemente o outro motivo.', 'adam-comunidade' ); ?>"></textarea>
-						</label>
-					<?php else : ?>
-						<div class="adam-notice adam-notice--warning"><p><?php esc_html_e( 'Não existem motivos ativos para esta decisão. Configure-os em Definições antes de continuar.', 'adam-comunidade' ); ?></p></div>
-					<?php endif; ?>
-					<p class="adam-form-feedback adam-form-feedback--error" data-adam-moderation-feedback role="alert" tabindex="-1" hidden></p>
-				</div>
-				<footer>
-					<button type="button" class="button" data-adam-close-moderation><?php esc_html_e( 'Cancelar', 'adam-comunidade' ); ?></button>
-					<?php if ( $groups ) : ?>
-						<button type="submit" class="<?php echo esc_attr( $is_reject ? 'button adam-button--danger' : 'button button-primary' ); ?>"><?php echo esc_html( $is_reject ? __( 'Confirmar rejeição', 'adam-comunidade' ) : __( 'Enviar pedido de alterações', 'adam-comunidade' ) ); ?></button>
-					<?php endif; ?>
-				</footer>
-			</form>
-		</dialog>
 		<?php
 	}
 

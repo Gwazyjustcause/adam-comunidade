@@ -22,6 +22,7 @@ $public_js  = (string) file_get_contents( $root . '/assets/js/public.js' );
 $fields     = (string) file_get_contents( $root . '/includes/fields/class-repository.php' );
 $directory  = (string) file_get_contents( $root . '/includes/directory/class-repository.php' );
 $experience = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
+$moderation_component = (string) file_get_contents( $root . '/includes/experience/class-moderation-component.php' );
 
 foreach ( array( 'base_payload longtext', 'active_key varchar', 'published_at datetime', 'UNIQUE KEY active_entity' ) as $contract ) {
 	$assert( str_contains( $schema, $contract ), 'Missing revision audit schema contract: ' . $contract );
@@ -44,7 +45,7 @@ $assert( str_contains( $service, "'reviewed_by'" ) && str_contains( $service, "'
 $assert( str_contains( $policy, 'adam_comunidade_manager_revision_entity_types' ) && str_contains( $service, 'adam_comunidade_manager_revision_validate' ) && str_contains( $service, 'adam_comunidade_apply_manager_revision' ), 'Future Community entities cannot reuse the moderation workflow.' );
 
 $assert( str_contains( $portal, 'active_revisions_for_manager' ) && str_contains( $portal, 'Editar proposta pendente' ), 'Managers cannot understand or continue a pending proposal.' );
-$assert( str_contains( $portal, 'Informação pedida pela ADAM:' ) && str_contains( $portal, 'O registo público mantém-se inalterado' ), 'Manager moderation status is not explained clearly.' );
+$assert( str_contains( $portal, 'Alterações pedidas pela ADAM:' ) && str_contains( $portal, 'O registo público mantém-se inalterado' ), 'Manager moderation status is not explained clearly.' );
 $assert( str_contains( $portal, 'remove_cover' ) && str_contains( $portal, 'remove_logo' ) && str_contains( $portal, 'keep_gallery_ids[]' ), 'Image removals are not preserved in proposals.' );
 $assert( str_contains( $public_js, '[data-adam-current-gallery]' ) && str_contains( $public_js, 'dragstart' ) && str_contains( $public_js, 'ArrowLeft' ), 'Proposed image ordering is not accessible or draggable.' );
 
@@ -52,7 +53,7 @@ $assert( str_contains( $admin, 'adam-revision-comparison' ) && str_contains( $ad
 $assert( str_contains( $admin, 'adam-revision-conflict-comparison' ) && str_contains( $admin, 'Publicado agora' ) && str_contains( $admin, 'Proposta do Gestor' ), 'Administrators cannot inspect the current published value before forcing a conflicting proposal.' );
 $assert( str_contains( $admin, 'render_revision_value' ) && str_contains( $admin, 'wp_get_attachment_image' ), 'Image proposals are not rendered for moderation.' );
 $assert( str_contains( $admin, 'render_revision_history' ) && str_contains( $admin, 'Histórico de moderação' ) && str_contains( $admin, 'adam-revision-history-changes' ) && str_contains( $admin, 'Decidida em' ), 'Moderation history is not available to administrators with its decisions and values.' );
-$assert( str_contains( $admin, 'data-adam-confirm' ) && str_contains( $admin_js, 'adamConfirm' ) && str_contains( $admin_js, 'confirm_conflict' ), 'High-impact moderation actions are not confirmed.' );
+$assert( str_contains( $admin, 'Moderation_Component::render' ) && str_contains( $moderation_component, 'data-adam-moderation-dialog' ) && str_contains( $admin_js, 'confirm_conflict' ), 'Revision moderation does not use the shared focused action workflow or preserve conflict protection.' );
 $assert( str_contains( $experience, 'adam_comunidade_moderation_pending_count' ), 'Manager revisions are missing from the unified approval count.' );
 
 $assert( str_contains( $fields, 'public function sync_gallery' ) && str_contains( $fields, 'public function sync_amenities' ) && str_contains( $fields, 'return false;' ), 'Field relationship updates cannot report transactional failures.' );
