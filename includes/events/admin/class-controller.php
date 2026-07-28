@@ -199,7 +199,9 @@ final class Controller {
 			foreach ( array_filter( array_map( 'trim', $lines ) ) as $index => $name ) {
 				$items[] = array( 'id' => $index + 1, 'name' => $name, 'slug' => sanitize_title( $name ) );
 			}
-			$this->repository->save_taxonomy( $type, $items );
+			if ( ! $this->repository->save_taxonomy( $type, $items ) ) {
+				wp_die( esc_html__( 'Não foi possível guardar as categorias e localizações dos eventos.', 'adam-comunidade' ) );
+			}
 		}
 		wp_safe_redirect( Admin_Router::page_url( 'event-vocabularies', array( 'updated' => 1 ) ) );
 		exit;

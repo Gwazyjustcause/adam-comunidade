@@ -16,7 +16,7 @@ final class Schema {
 	public const VERSION = '6.1.0';
 
 	/**
-	 * Creates or upgrades Phase 4 tables.
+	 * Creates or upgrades directory tables.
 	 *
 	 * @return void
 	 */

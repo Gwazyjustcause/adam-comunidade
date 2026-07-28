@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Fields;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
+
 /**
  * Encapsulates field, gallery, amenity, and team relationship queries.
  */
@@ -175,7 +177,7 @@ final class Repository {
 				'orderby'       => 'updated_at',
 				'order'         => 'DESC',
 				'page'          => 1,
-				'per_page'      => 20,
+				'per_page'      => Config::DEFAULT_PAGE_SIZE,
 			)
 		);
 		$cache_key = 'fields_' . md5( wp_json_encode( $args ) );
@@ -258,7 +260,7 @@ final class Repository {
 			? $args['orderby']
 			: 'updated_at';
 		$order     = 'ASC' === strtoupper( (string) $args['order'] ) ? 'ASC' : 'DESC';
-		$per_page  = max( 1, min( 100, absint( $args['per_page'] ) ) );
+		$per_page  = max( 1, min( Config::MAX_PAGE_SIZE, absint( $args['per_page'] ) ) );
 		$page      = max( 1, absint( $args['page'] ) );
 		$offset    = ( $page - 1 ) * $per_page;
 		$where_sql = implode( ' AND ', $where );
@@ -295,7 +297,7 @@ final class Repository {
 		);
 		if ( ! is_admin() ) {
 			$this->prime_amenities( array_map( static fn( object $item ): int => (int) $item->id, $result['items'] ) );
-			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', 300 );
+			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', Config::cache_ttl( 'fields_archive' ) );
 		}
 		return $result;
 	}

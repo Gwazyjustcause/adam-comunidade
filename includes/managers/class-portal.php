@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Fields\Options as Field_Options;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
@@ -16,6 +17,7 @@ use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Teams\Options as Team_Options;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
+use ADAM\Comunidade\Uploads\Handler as Upload_Handler;
 
 /**
  * Provides a dedicated, non-WordPress login and management interface.
@@ -23,8 +25,10 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
 final class Portal {
 	private const ROUTES_VERSION = '1.2.0';
 	private static ?self $instance = null;
+	private Upload_Handler $uploads;
 
-	public function __construct( private Auth $auth, private Service $service ) {
+	public function __construct( private Auth $auth, private Service $service, ?Upload_Handler $uploads = null ) {
+		$this->uploads = $uploads ?? new Upload_Handler();
 		self::$instance = $this;
 	}
 
@@ -313,6 +317,9 @@ final class Portal {
 		$current_gallery_ids = isset( $pending_payload['gallery_ids'] )
 			? array_map( 'absint', (array) $pending_payload['gallery_ids'] )
 			: ( isset( $pending_payload['gallery'] ) ? array_map( 'absint', (array) $pending_payload['gallery'] ) : $this->gallery_ids( $type, $record ) );
+		$image_policy   = Config::upload_policy( 'manager_image' );
+		$gallery_policy = Config::upload_policy( 'manager_gallery' );
+		$image_accept   = implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $image_policy['extensions'] ) );
 		?>
 		<form class="adam-card adam-manager-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_revision">
@@ -354,11 +361,11 @@ final class Portal {
 				<input type="hidden" name="gallery_reviewed" value="1">
 				<?php if ( ! empty( $record->cover_id ) && wp_attachment_is_image( (int) $record->cover_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Capa incluída na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->cover_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_cover" value="1"> <?php esc_html_e( 'Propor remoção da capa', 'adam-comunidade' ); ?></label></div><?php endif; ?>
 				<label><?php esc_html_e( 'Nova imagem de capa (opcional)', 'adam-comunidade' ); ?></label>
-				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?>
+				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => $image_accept, 'max_size_mb' => $image_policy['max_size_mb'] ) ); ?>
 				<?php if ( 'field' !== $type && ! empty( $record->logo_id ) && wp_attachment_is_image( (int) $record->logo_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Logótipo incluído na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->logo_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_logo" value="1"> <?php esc_html_e( 'Propor remoção do logótipo', 'adam-comunidade' ); ?></label></div><?php endif; ?>
-				<?php if ( 'field' !== $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?><?php endif; ?>
+				<?php if ( 'field' !== $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => $image_accept, 'max_size_mb' => $image_policy['max_size_mb'] ) ); ?><?php endif; ?>
 				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
-				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => 'image/jpeg,image/png,image/webp', 'multiple' => true, 'max' => 20, 'max_size_mb' => 10 ) ); ?>
+				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $gallery_policy['extensions'] ) ), 'multiple' => true, 'max' => $gallery_policy['max_files'], 'max_size_mb' => $gallery_policy['max_size_mb'] ) ); ?>
 			</div>
 			<p class="adam-manager-review-note"><?php esc_html_e( 'Ao enviar, o registo público não é alterado de imediato. A ADAM irá rever esta proposta.', 'adam-comunidade' ); ?></p>
 			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar alterações para revisão', 'adam-comunidade' ); ?></button>
@@ -414,8 +421,9 @@ final class Portal {
 		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$key   = 'adam_manager_login_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		$attempts = absint( get_transient( $key ) );
-		if ( $attempts >= 8 || ! $this->auth->login( $email, (string) wp_unslash( $_POST['password'] ?? '' ) ) ) {
-			set_transient( $key, $attempts + 1, 15 * MINUTE_IN_SECONDS );
+		$security = Config::manager_security();
+		if ( $attempts >= $security['login_attempt_limit'] || ! $this->auth->login( $email, (string) wp_unslash( $_POST['password'] ?? '' ) ) ) {
+			set_transient( $key, $attempts + 1, $security['login_lockout_ttl'] );
 			$this->redirect_login_status( 'login-failed' );
 		}
 		delete_transient( $key );
@@ -442,9 +450,10 @@ final class Portal {
 		check_admin_referer( 'adam_manager_request_reset' );
 		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$key = 'adam_manager_reset_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
-		if ( absint( get_transient( $key ) ) < 3 ) {
+		$security = Config::manager_security();
+		if ( absint( get_transient( $key ) ) < $security['reset_request_limit'] ) {
 			$this->service->request_password_reset( $email );
-			set_transient( $key, absint( get_transient( $key ) ) + 1, HOUR_IN_SECONDS );
+			set_transient( $key, absint( get_transient( $key ) ) + 1, $security['reset_rate_window'] );
 		}
 		wp_safe_redirect( add_query_arg( 'estado', 'reset-requested', self::recovery_url() ) );
 		exit;
@@ -504,20 +513,27 @@ final class Portal {
 			$input['logo_id'] = 0;
 		}
 		$uploaded = array();
-		$cover = $this->upload_one( 'manager_cover' );
+		$image_policy = Config::upload_policy( 'manager_image' );
+		$cover = $this->uploads->upload_one( 'manager_cover', $image_policy['extensions'], $image_policy['max_size_mb'] );
 		if ( is_wp_error( $cover ) ) { wp_die( esc_html( $cover->get_error_message() ) ); }
 		if ( $cover ) { $input['cover_id'] = $cover; $uploaded[] = $cover; }
 		if ( 'field' !== $type ) {
-			$logo = $this->upload_one( 'manager_logo' );
+			$logo = $this->uploads->upload_one( 'manager_logo', $image_policy['extensions'], $image_policy['max_size_mb'] );
 			if ( is_wp_error( $logo ) ) {
-				$this->delete_uploaded( $uploaded );
+				$this->uploads->delete( $uploaded );
 				wp_die( esc_html( $logo->get_error_message() ) );
 			}
 			if ( $logo ) { $input['logo_id'] = $logo; $uploaded[] = $logo; }
 		}
-		$gallery = $this->upload_many( 'manager_gallery', 20 );
+		$gallery_policy = Config::upload_policy( 'manager_gallery' );
+		$gallery = $this->uploads->upload_many(
+			'manager_gallery',
+			$gallery_policy['extensions'],
+			$gallery_policy['max_files'],
+			$gallery_policy['max_size_mb']
+		);
 		if ( is_wp_error( $gallery ) ) {
-			$this->delete_uploaded( $uploaded );
+			$this->uploads->delete( $uploaded );
 			wp_die( esc_html( $gallery->get_error_message() ) );
 		}
 		$uploaded = array_merge( $uploaded, $gallery );
@@ -531,7 +547,11 @@ final class Portal {
 				array_filter( array_map( 'absint', (array) wp_unslash( $_POST['keep_gallery_ids'] ?? array() ) ) )
 			)
 		);
-		$next_gallery_ids = array_slice( array_values( array_unique( array_merge( $kept_gallery_ids, $gallery ) ) ), 0, 20 );
+		$next_gallery_ids = array_slice(
+			array_values( array_unique( array_merge( $kept_gallery_ids, $gallery ) ) ),
+			0,
+			$gallery_policy['max_files']
+		);
 		$relations = array();
 		if ( isset( $_POST['gallery_reviewed'] ) ) {
 			if ( 'team' === $type ) { $input['gallery'] = $next_gallery_ids; } else { $relations['gallery_ids'] = $next_gallery_ids; }
@@ -541,75 +561,10 @@ final class Portal {
 		}
 		$result = $this->service->submit_revision( (int) $manager->id, $type, $id, $input, $relations );
 		if ( is_wp_error( $result ) ) {
-			$this->delete_uploaded( $uploaded );
+			$this->uploads->delete( $uploaded );
 			wp_die( esc_html( $result->get_error_message() ) );
 		}
 		$this->redirect_status( 'revision-sent' );
-	}
-
-	private function upload_one( string $name ): int|\WP_Error {
-		$file = $_FILES[ $name ] ?? null;
-		if ( ! is_array( $file ) || empty( $file['name'] ) ) {
-			return 0;
-		}
-		if ( absint( $file['size'] ?? 0 ) > 10 * MB_IN_BYTES ) {
-			return new \WP_Error( 'large_upload', __( 'A imagem excede o limite de 10 MB.', 'adam-comunidade' ) );
-		}
-		$extension = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
-		if ( ! in_array( $extension, array( 'jpg', 'jpeg', 'png', 'webp' ), true ) ) {
-			return new \WP_Error( 'invalid_upload', __( 'O tipo de imagem não é permitido.', 'adam-comunidade' ) );
-		}
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		$id = media_handle_upload( $name, 0 );
-		return is_wp_error( $id ) ? $id : absint( $id );
-	}
-
-	private function upload_many( string $name, int $limit ): array|\WP_Error {
-		$original = $_FILES[ $name ] ?? null;
-		if ( ! is_array( $original ) || empty( $original['name'] ) || ! is_array( $original['name'] ) ) {
-			return array();
-		}
-		foreach ( array( 'type', 'tmp_name', 'error', 'size' ) as $property ) {
-			if ( ! isset( $original[ $property ] ) || ! is_array( $original[ $property ] ) ) {
-				return new \WP_Error( 'invalid_upload', __( 'Os dados do envio de imagens não são válidos.', 'adam-comunidade' ) );
-			}
-		}
-		if ( count( array_filter( $original['name'] ) ) > $limit ) {
-			return new \WP_Error( 'too_many', sprintf( __( 'Pode enviar no máximo %d fotografias.', 'adam-comunidade' ), $limit ) );
-		}
-		$ids = array();
-		foreach ( array_keys( $original['name'] ) as $index ) {
-			if ( empty( $original['name'][ $index ] ) ) { continue; }
-			$_FILES[ $name ] = array(
-				'name'     => (string) ( $original['name'][ $index ] ?? '' ),
-				'type'     => (string) ( $original['type'][ $index ] ?? '' ),
-				'tmp_name' => (string) ( $original['tmp_name'][ $index ] ?? '' ),
-				'error'    => absint( $original['error'][ $index ] ?? UPLOAD_ERR_NO_FILE ),
-				'size'     => absint( $original['size'][ $index ] ?? 0 ),
-			);
-			$id = $this->upload_one( $name );
-			if ( is_wp_error( $id ) ) {
-				$_FILES[ $name ] = $original;
-				foreach ( $ids as $uploaded_id ) { wp_delete_attachment( $uploaded_id, true ); }
-				return $id;
-			}
-			if ( $id ) { $ids[] = $id; }
-		}
-		$_FILES[ $name ] = $original;
-		return $ids;
-	}
-
-	/**
-	 * Removes media created by an unsuccessful revision request.
-	 *
-	 * @param int[] $attachment_ids Attachment IDs.
-	 */
-	private function delete_uploaded( array $attachment_ids ): void {
-		foreach ( array_unique( array_filter( array_map( 'absint', $attachment_ids ) ) ) as $attachment_id ) {
-			wp_delete_attachment( $attachment_id, true );
-		}
 	}
 
 	private function gallery_ids( string $type, object $record ): array {

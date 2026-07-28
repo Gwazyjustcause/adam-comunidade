@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Experience\Email_Service;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
@@ -22,8 +23,6 @@ use ADAM\Comunidade\Logger;
  * Coordinates invitations, assignments and moderated revisions.
  */
 final class Service {
-	public const INVITE_TTL = 14 * DAY_IN_SECONDS;
-
 	public function __construct( private ?Email_Service $emails = null ) {
 		$this->emails = $emails ?? new Email_Service();
 	}
@@ -37,7 +36,7 @@ final class Service {
 		global $wpdb;
 		$email       = sanitize_email( $email );
 		$entity_type = sanitize_key( $entity_type );
-		if ( ! is_email( $email ) || ! in_array( $entity_type, $this->supported_entity_types(), true ) || $entity_id < 1 ) {
+		if ( ! is_email( $email ) || ! in_array( $entity_type, Policy::entity_types(), true ) || $entity_id < 1 ) {
 			return new \WP_Error( 'invalid_invitation', __( 'Não foi possível criar o convite de Gestor.', 'adam-comunidade' ) );
 		}
 
@@ -88,6 +87,7 @@ final class Service {
 			Logger::error( 'community_manager_assignment_failed', array( 'manager_id' => $manager_id, 'entity_type' => $entity_type, 'entity_id' => $entity_id ) );
 			return new \WP_Error( 'assignment_failed', __( 'Não foi possível atribuir o registo ao Gestor.', 'adam-comunidade' ) );
 		}
+		do_action( 'adam_comunidade_manager_assigned', $manager_id, $entity_type, $entity_id );
 		if ( $manager && 'active' === $manager->status ) {
 			return Portal::url();
 		}
@@ -103,7 +103,7 @@ final class Service {
 				'entity_type'=> $entity_type,
 				'entity_id'  => $entity_id,
 				'token_hash' => hash( 'sha256', $raw ),
-				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + self::INVITE_TTL ),
+				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + Config::manager_security()['invitation_ttl'] ),
 				'created_at' => $now,
 			)
 		);
@@ -127,7 +127,9 @@ final class Service {
 			Logger::error( 'community_manager_invitation_supersede_failed', array( 'manager_id' => $manager_id ) );
 			return new \WP_Error( 'invitation_failed', __( 'Não foi possível concluir o convite de Gestor.', 'adam-comunidade' ) );
 		}
-		return Portal::activation_url( $raw );
+		$activation_url = Portal::activation_url( $raw );
+		do_action( 'adam_comunidade_manager_invited', $manager_id, $entity_type, $entity_id, $invitation_id );
+		return $activation_url;
 	}
 
 	public function activate( string $token, string $password ): int|\WP_Error {
@@ -230,7 +232,7 @@ final class Service {
 				'entity_type'=> 'manager',
 				'entity_id'  => (int) $manager->id,
 				'token_hash' => hash( 'sha256', $raw ),
-				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + HOUR_IN_SECONDS ),
+				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + Config::manager_security()['password_reset_ttl'] ),
 				'created_at' => $now,
 			)
 		);
@@ -344,10 +346,10 @@ final class Service {
 	 *
 	 * @return true|\WP_Error
 	 */
-	public function assign_existing( int $manager_id, string $type, int $entity_id ): true|\WP_Error {
+	public function assign_existing( int $manager_id, string $type, int $entity_id, bool $notify = true ): true|\WP_Error {
 		global $wpdb;
 		$type = sanitize_key( $type );
-		if ( $manager_id < 1 || $entity_id < 1 || ! in_array( $type, $this->supported_entity_types(), true ) || ! $this->record( $type, $entity_id ) ) {
+		if ( $manager_id < 1 || $entity_id < 1 || ! in_array( $type, Policy::entity_types(), true ) || ! $this->record( $type, $entity_id ) ) {
 			return new \WP_Error( 'invalid_assignment', __( 'A atribuição selecionada não é válida.', 'adam-comunidade' ) );
 		}
 		$status = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) );
@@ -370,6 +372,9 @@ final class Service {
 		if ( false === $result ) {
 			Logger::error( 'community_manager_assignment_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $entity_id ) );
 			return new \WP_Error( 'assignment_failed', __( 'Não foi possível guardar a atribuição.', 'adam-comunidade' ) );
+		}
+		if ( $notify ) {
+			do_action( 'adam_comunidade_manager_assigned', $manager_id, $type, $entity_id );
 		}
 		return true;
 	}
@@ -434,7 +439,7 @@ final class Service {
 			$active = $this->assignments( $manager_id );
 			if ( 'transfer' === $assignment_action ) {
 				foreach ( $active as $assignment ) {
-					$result = $this->assign_existing( $target_manager_id, (string) $assignment->entity_type, (int) $assignment->entity_id );
+					$result = $this->assign_existing( $target_manager_id, (string) $assignment->entity_type, (int) $assignment->entity_id, false );
 					if ( is_wp_error( $result ) ) {
 						throw new \RuntimeException( 'assignment_transfer_failed' );
 					}
@@ -456,12 +461,18 @@ final class Service {
 			if ( false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				throw new \RuntimeException( 'manager_delete_commit_failed' );
 			}
-			return true;
 		} catch ( \Throwable $throwable ) {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			Logger::error( 'community_manager_delete_failed', array( 'manager_id' => $manager_id, 'operation' => sanitize_key( $throwable->getMessage() ) ) );
 			return new \WP_Error( 'manager_delete_failed', __( 'Não foi possível eliminar o Gestor. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
 		}
+		if ( 'transfer' === $assignment_action ) {
+			foreach ( $active as $assignment ) {
+				do_action( 'adam_comunidade_manager_assigned', $target_manager_id, (string) $assignment->entity_type, (int) $assignment->entity_id );
+			}
+		}
+		do_action( 'adam_comunidade_manager_deleted', $manager_id, $assignment_action, $target_manager_id );
+		return true;
 	}
 
 	public function can_manage( int $manager_id, string $type, int $id ): bool {
@@ -702,7 +713,7 @@ final class Service {
 			return new \WP_Error( 'revision_processing', __( 'Esta revisão está a ser analisada neste momento. Aguarde até a decisão estar concluída.', 'adam-comunidade' ) );
 		}
 		$baseline = $active_revision ? $this->revision_baseline( $active_revision ) : $this->snapshot( $type, $current );
-		$merged = $this->decode_lists( $type, array_merge( (array) $current, $input ) );
+		$merged = Policy::decode_lists( $type, array_merge( (array) $current, $input ) );
 		if ( 'team' === $type ) {
 			$data = ( new Team_Validator( new Team_Repository() ) )->validate( $merged, $id );
 		} elseif ( 'field' === $type ) {
@@ -719,7 +730,7 @@ final class Service {
 			return $data;
 		}
 
-		$allowed = $this->allowed_fields( $type );
+		$allowed = Policy::editable_fields( $type );
 		$payload = array_intersect_key( $data, array_flip( $allowed ) );
 		foreach ( $relations as $key => $value ) {
 			if ( in_array( $key, array( 'amenity_ids', 'gallery_ids' ), true ) ) {
@@ -791,6 +802,7 @@ final class Service {
 			Logger::error( 'community_manager_revision_commit_failed', array( 'revision_id' => $revision_id ) );
 			return new \WP_Error( 'revision_failed', __( 'Não foi possível guardar as alterações para revisão.', 'adam-comunidade' ) );
 		}
+		do_action( 'adam_comunidade_manager_revision_submitted', $revision_id, $manager_id, $type, $id );
 		return $revision_id;
 	}
 
@@ -866,6 +878,13 @@ final class Service {
 				)
 			);
 		}
+		do_action( 'adam_comunidade_manager_revision_moderated', $revision_id, $status, $reviewer_id, $revision );
+		if ( 'approved' === $status ) {
+			do_action( 'adam_comunidade_manager_revision_approved', $revision_id, $revision, $reviewer_id );
+			do_action( 'adam_comunidade_organisation_saved', (string) $revision->entity_type, (int) $revision->entity_id, $this->revision_payload( $revision ), 'manager_revision' );
+		} elseif ( 'rejected' === $status ) {
+			do_action( 'adam_comunidade_manager_revision_rejected', $revision_id, $revision, $reviewer_id, $note );
+		}
 		return true;
 	}
 
@@ -887,7 +906,7 @@ final class Service {
 		}
 		$relations = array_intersect_key( $payload, array_flip( array( 'amenity_ids', 'gallery_ids' ) ) );
 		unset( $payload['amenity_ids'], $payload['gallery_ids'] );
-		$input = $this->decode_lists( $type, array_merge( (array) $current, $payload ) );
+		$input = Policy::decode_lists( $type, array_merge( (array) $current, $payload ) );
 		if ( 'team' === $type ) {
 			$repo = new Team_Repository();
 			$data = ( new Team_Validator( $repo ) )->validate( $input, $id );
@@ -960,8 +979,8 @@ final class Service {
 	 * @return array<string,mixed>
 	 */
 	private function snapshot( string $type, object $record ): array {
-		$data = $this->decode_lists( $type, (array) $record );
-		$data = array_intersect_key( $data, array_flip( $this->allowed_fields( $type ) ) );
+		$data = Policy::decode_lists( $type, (array) $record );
+		$data = array_intersect_key( $data, array_flip( Policy::editable_fields( $type ) ) );
 		if ( 'field' === $type ) {
 			$repo = new Field_Repository();
 			$data['amenity_ids'] = $repo->amenity_ids( (int) $record->id );
@@ -985,7 +1004,7 @@ final class Service {
 	 * @return array<string,mixed>
 	 */
 	private function normalize_revision_payload( string $type, array $payload ): array {
-		$payload = $this->decode_lists( $type, $payload );
+		$payload = Policy::decode_lists( $type, $payload );
 		foreach ( array( 'gallery', 'gallery_ids', 'amenity_ids' ) as $key ) {
 			if ( array_key_exists( $key, $payload ) ) {
 				$payload[ $key ] = array_values( array_unique( array_filter( array_map( 'absint', (array) $payload[ $key ] ) ) ) );
@@ -1051,41 +1070,4 @@ final class Service {
 		}
 	}
 
-	private function allowed_fields( string $type ): array {
-		$common = array( 'name', 'cover_id', 'short_description', 'full_description', 'district', 'municipality', 'address', 'latitude', 'longitude', 'maps_url', 'website', 'facebook', 'instagram', 'email', 'phone', 'playing_styles' );
-		if ( 'team' === $type ) {
-			$fields = array_merge( $common, array( 'short_name', 'logo_id', 'gallery', 'team_colour', 'discord', 'youtube', 'tiktok', 'founded', 'members', 'recruitment_status', 'recruitment_min_age', 'recruitment_experience', 'recruitment_equipment', 'recruitment_training', 'equipment_tags' ) );
-		} elseif ( 'field' === $type ) {
-			$fields = array_merge( $common, array( 'availability', 'rules', 'opening_hours', 'max_players', 'min_players', 'recommended_players' ) );
-		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
-			$fields = array( 'name', 'logo_id', 'cover_id', 'short_description', 'full_description', 'website', 'facebook', 'instagram', 'email', 'phone', 'address', 'district', 'latitude', 'longitude', 'category', 'benefits', 'member_benefits', 'country', 'popular_products' );
-		} else {
-			$fields = array();
-		}
-		$fields = apply_filters( 'adam_comunidade_manager_revision_fields', $fields, $type );
-		return array_values( array_unique( array_map( 'sanitize_key', is_array( $fields ) ? $fields : array() ) ) );
-	}
-
-	/**
-	 * Allows Notícias and Eventos adapters to join the same workflow later.
-	 *
-	 * @return string[]
-	 */
-	private function supported_entity_types(): array {
-		$types = apply_filters( 'adam_comunidade_manager_revision_entity_types', array( 'team', 'field', 'partner', 'institution' ) );
-		return array_values( array_unique( array_map( 'sanitize_key', is_array( $types ) ? $types : array() ) ) );
-	}
-
-	private function decode_lists( string $type, array $input ): array {
-		$keys = 'team' === $type
-			? array( 'gallery', 'playing_styles', 'equipment_tags' )
-			: array( 'playing_styles' );
-		foreach ( $keys as $key ) {
-			if ( isset( $input[ $key ] ) && is_string( $input[ $key ] ) ) {
-				$decoded = json_decode( $input[ $key ], true );
-				$input[ $key ] = is_array( $decoded ) ? $decoded : array();
-			}
-		}
-		return $input;
-	}
 }

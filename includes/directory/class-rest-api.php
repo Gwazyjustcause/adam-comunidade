@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Directory;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\Router as Field_Router;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
@@ -41,7 +42,7 @@ final class Rest_API {
 					'permission_callback' => '__return_true',
 					'args'                => array(
 						'page'     => array( 'type' => 'integer', 'minimum' => 1, 'default' => 1, 'sanitize_callback' => 'absint' ),
-						'per_page' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20, 'sanitize_callback' => 'absint' ),
+						'per_page' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => Config::MAX_PAGE_SIZE, 'default' => Config::DEFAULT_PAGE_SIZE, 'sanitize_callback' => 'absint' ),
 						'search'   => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
 					),
 				)

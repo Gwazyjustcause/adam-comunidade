@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5 database schema.
+ * Community experience database schema.
  *
  * @package ADAM_Comunidade
  */

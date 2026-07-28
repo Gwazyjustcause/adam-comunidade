@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Logger;
 
 /**
@@ -42,8 +43,9 @@ final class Auth {
 		if ( ! $row ) {
 			return null;
 		}
+		$security  = Config::manager_security();
 		$last_seen = strtotime( (string) $row->manager_session_last_seen );
-		if ( false === $last_seen || $last_seen < time() - 5 * MINUTE_IN_SECONDS ) {
+		if ( false === $last_seen || $last_seen < time() - $security['session_touch_interval'] ) {
 			$wpdb->update(
 				Schema::sessions_table(),
 				array( 'last_seen_at' => $now ),
@@ -111,12 +113,13 @@ final class Auth {
 			return false;
 		}
 		$now = current_time( 'mysql', true );
+		$security = Config::manager_security();
 		$inserted = $wpdb->insert(
 			Schema::sessions_table(),
 			array(
 				'manager_id'  => $manager_id,
 				'token_hash'  => hash( 'sha256', $raw ),
-				'expires_at'  => gmdate( 'Y-m-d H:i:s', time() + 14 * DAY_IN_SECONDS ),
+				'expires_at'  => gmdate( 'Y-m-d H:i:s', time() + $security['session_ttl'] ),
 				'last_seen_at'=> $now,
 				'created_at'  => $now,
 			)
@@ -126,7 +129,7 @@ final class Auth {
 			return false;
 		}
 		$this->session_token = $raw;
-		if ( ! $this->set_cookie( $raw, time() + 14 * DAY_IN_SECONDS ) ) {
+		if ( ! $this->set_cookie( $raw, time() + $security['session_ttl'] ) ) {
 			$wpdb->delete( Schema::sessions_table(), array( 'token_hash' => hash( 'sha256', $raw ) ) );
 			$this->session_token = '';
 			return false;
@@ -138,7 +141,7 @@ final class Auth {
 				$manager_id
 			)
 		);
-		foreach ( array_slice( array_map( 'intval', is_array( $session_ids ) ? $session_ids : array() ), 5 ) as $session_id ) {
+		foreach ( array_slice( array_map( 'intval', is_array( $session_ids ) ? $session_ids : array() ), $security['max_sessions_per_manager'] ) as $session_id ) {
 			$wpdb->delete( Schema::sessions_table(), array( 'id' => $session_id ) );
 		}
 		return true;

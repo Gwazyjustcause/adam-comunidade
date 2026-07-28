@@ -1,5 +1,8 @@
 # ADAM Comunidade Developer Guide
 
+The normative architecture, ownership boundaries, security model and domain
+hook lifecycle are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ADAM Comunidade 6.x is organised as independently bootable modules. External
 plugins can add a module through `adam_comunidade_register_modules` and can
 disable one through `adam_comunidade_module_enabled`.
@@ -11,7 +14,8 @@ Version 2 is available at both the WordPress REST namespace and friendly URLs:
 - `/wp-json/adam-comunidade/v2/teams` or `/api/v2/teams`
 - `/api/v2/fields`
 - `/api/v2/partners`
-- `/api/v2/brands`
+- `/api/v2/brands` (deprecated compatibility alias for Partners with the
+  `brand` category)
 - `/api/v2/institutions`
 - `/api/v2/news`
 - `/api/v2/search`
@@ -35,8 +39,7 @@ The ADAM Bot should query these endpoints instead of copying directory data.
 - `[adam_latest_news number="6"]`
 - `[adam_newest_teams]`, `[adam_random_team]`, `[adam_featured_field]`
 - `[adam_nearby_fields]`, `[adam_popular_team]`, `[adam_random_brand]`
-- Phase 4 spotlight shortcodes remain supported.
-- `[adam_rich_media type="team" id="123"]`
+  (`adam_random_brand` is a deprecated compatibility alias)
 
 Equivalent dynamic Gutenberg blocks are registered for community sections,
 spotlights, maps, live statistics, and latest news.
@@ -65,22 +68,32 @@ Important actions:
 - `adam_comunidade_field_saved`
 - `adam_comunidade_directory_entry_saved`
 - `adam_comunidade_news_saved`
-- `adam_comunidade_home_builder_saved`
-- `adam_comunidade_import_completed`
 - `adam_comunidade_reset_cache`
 - `adam_comunidade_submission_received`
 - `adam_comunidade_submission_moderated`
-- `adam_comunidade_calendar_entry_published`
+- `adam_comunidade_organisation_saved`
+- `adam_comunidade_manager_assigned`
+- `adam_comunidade_manager_invited`
+- `adam_comunidade_manager_deleted`
+- `adam_comunidade_manager_revision_submitted`
+- `adam_comunidade_manager_revision_moderated`
+- `adam_comunidade_manager_revision_approved`
+- `adam_comunidade_manager_revision_rejected`
+- `adam_comunidade_event_created`
+- `adam_comunidade_event_updated`
+- `adam_comunidade_event_saved`
+- `adam_comunidade_event_published`
+- `adam_comunidade_event_deleted`
 - `adam_comunidade_register_platform`
 - `adam_comunidade_registry_added`
 - `adam_comunidade_integrations_ready`
-- `adam_comunidade_health_repaired`
-- `adam_comunidade_import_batch_completed`
-- `adam_comunidade_import_batch_rolled_back`
 
 Important filters:
 
 - `adam_comunidade_module_enabled`
+- `adam_comunidade_cache_ttl`
+- `adam_comunidade_upload_policy`
+- `adam_comunidade_manager_security_policy`
 - `adam_comunidade_directory_types`
 - `adam_comunidade_search_results`
 - `adam_comunidade_regions`
@@ -89,10 +102,13 @@ Important filters:
 - `adam_comunidade_template_path`
 - `adam_comunidade_image_output_formats`
 - `adam_comunidade_profile_completeness`
-- `adam_comunidade_calendar_types`
-- `adam_comunidade_rich_media_types`
 - `adam_comunidade_recruitment_statuses`
 - `adam_comunidade_field_availability_statuses`
+- `adam_comunidade_events_store`
+- `adam_comunidade_events_register_attendee`
+- `adam_comunidade_events_attendance_status`
+- `adam_comunidade_events_registration_permission`
+- `adam_comunidade_events_attendance_permission`
 
 ## Contribution and ownership workflow
 
@@ -146,13 +162,12 @@ Read definitions with
 `ADAM\Comunidade\Experience\Registry::all( 'map_layers' )`. Registry names are
 open-ended and filtered through `adam_comunidade_registry_{registry}`.
 
-## Calendar and rich media
+## Events and calendar
 
-`/calendario` exposes published announcements, open days, recruitment dates,
-and training sessions. Add event types with `adam_comunidade_calendar_types`.
-The rich-media registry supports 360 images, YouTube, Instagram, virtual tours,
-and downloads, and may be extended through
-`adam_comunidade_rich_media_types`.
+The calendar is a view of the canonical Events archive:
+`/eventos/?view=calendar`. Event content is accessed through
+`adam_comunidade_events()`. Member registration and attendance remain owned by
+ADAM Members and connect through the documented Events filters.
 
 ## Optional integrations
 

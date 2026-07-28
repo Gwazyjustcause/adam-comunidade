@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Router as Directory_Router;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
@@ -53,7 +54,7 @@ final class Discovery {
 				);
 				return apply_filters( 'adam_comunidade_search_results', $groups, $term, $filters );
 			},
-			180
+			Config::cache_ttl( 'universal_search', 180 )
 		);
 		return $results;
 	}
@@ -83,7 +84,7 @@ final class Discovery {
 					'active_district' => $district ?: $this->most_active_district(),
 				);
 			},
-			300
+			Config::cache_ttl( 'community_statistics' )
 		);
 	}
 
@@ -93,7 +94,7 @@ final class Discovery {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function map_records( array $filters = array() ): array {
-		$groups  = $this->search( '', $filters, 100 );
+		$groups  = $this->search( '', $filters, Config::MAX_PAGE_SIZE );
 		$records = array();
 		foreach ( array( 'teams', 'fields', 'partners', 'institutions' ) as $group ) {
 			foreach ( $groups[ $group ] as $record ) {

@@ -341,6 +341,7 @@ final class Controller {
 		 * @param array<string,mixed> $data     Validated field data.
 		 */
 		do_action( 'adam_comunidade_field_saved', (int) $saved_id, $result );
+		do_action( 'adam_comunidade_organisation_saved', 'field', (int) $saved_id, $result, 'admin' );
 
 		Logger::info(
 			$field_id ? 'Field updated' : 'Field created',

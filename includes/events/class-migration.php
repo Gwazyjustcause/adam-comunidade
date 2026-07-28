@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Events;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Logger;
+
 /**
  * Imports ADAM Sócios event content without deleting rollback data.
  */
@@ -63,19 +65,23 @@ final class Migration {
 					}
 					$item['location_id'] = $location_ids[ $location_key ];
 				}
-				$repository->save( $item, $id );
+				$saved = $repository->save( $item, $id );
+				if ( is_wp_error( $saved ) ) {
+					Logger::error( 'community_event_migration_failed', array( 'legacy_event_id' => $id ) );
+					return;
+				}
 				$current[ $id ] = $item;
 				++$imported;
 			}
 		}
-		if ( $locations ) {
-			$repository->save_taxonomy( 'locations', $locations );
+		if ( $locations && ! $repository->save_taxonomy( 'locations', $locations ) ) {
+			Logger::error( 'community_event_migration_failed', array( 'operation' => 'locations' ) );
+			return;
 		}
-		update_option(
-			Repository::OPTION_NEXT_ID,
-			max( absint( get_option( Repository::OPTION_NEXT_ID, 1 ) ), absint( get_option( self::LEGACY_NEXT_ID, 1 ) ) ),
-			false
-		);
+		if ( ! $repository->ensure_next_id( absint( get_option( self::LEGACY_NEXT_ID, 1 ) ) ) ) {
+			Logger::error( 'community_event_migration_failed', array( 'operation' => 'next_id' ) );
+			return;
+		}
 		update_option( self::VERSION_OPTION, self::VERSION, false );
 		update_option(
 			'adam_comunidade_events_migration_report',

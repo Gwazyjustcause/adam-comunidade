@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Events;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Logger;
+
 /**
  * Owns the single canonical Events store.
  */
@@ -17,75 +19,72 @@ final class Repository {
 	public const OPTION_NEXT_ID = 'adam_comunidade_event_next_id';
 	public const OPTION_CATEGORIES = 'adam_comunidade_event_categories';
 	public const OPTION_LOCATIONS = 'adam_comunidade_event_locations';
+	private Store_Interface $store;
+	/** @var array<int,array<string,mixed>>|null */
+	private ?array $events_cache = null;
+
+	public function __construct( ?Store_Interface $store = null ) {
+		$default = $store ?? new Option_Store();
+		$filtered = apply_filters( 'adam_comunidade_events_store', $default );
+		$this->store = $filtered instanceof Store_Interface ? $filtered : $default;
+	}
 
 	/** @return array<int,array<string,mixed>> */
 	public function raw(): array {
-		$value = get_option( self::OPTION_EVENTS, array() );
-		return is_array( $value ) ? $value : array();
+		if ( null === $this->events_cache ) {
+			$this->events_cache = $this->store->events();
+		}
+		return $this->events_cache;
 	}
 
 	public function find( int $id ): ?Event {
-		$events = $this->raw();
-		return isset( $events[ $id ] ) && is_array( $events[ $id ] ) ? new Event( $events[ $id ] ) : null;
+		$event = $this->store->find_event( $id );
+		return $event ? new Event( $event ) : null;
 	}
 
 	public function find_by_slug( string $slug ): ?Event {
-		$slug = sanitize_title( $slug );
-		foreach ( $this->raw() as $item ) {
-			if ( is_array( $item ) && sanitize_title( (string) ( $item['slug'] ?? '' ) ) === $slug ) {
-				return new Event( $item );
-			}
-		}
-		return null;
+		$event = $this->store->find_event_by_slug( sanitize_title( $slug ) );
+		return $event ? new Event( $event ) : null;
 	}
 
 	/** @param array<string,mixed> $filters @return Event[] */
 	public function query( array $filters = array() ): array {
-		$status = sanitize_key( (string) ( $filters['status'] ?? '' ) );
-		$search = strtolower( sanitize_text_field( (string) ( $filters['search'] ?? '' ) ) );
-		$upcoming = ! empty( $filters['upcoming'] );
-		$events = array();
-		foreach ( $this->raw() as $item ) {
-			if ( ! is_array( $item ) ) {
-				continue;
-			}
-			$event = new Event( $item );
-			if ( $status && $event->status() !== $status ) {
-				continue;
-			}
-			if ( $upcoming && $event->starts_at_timestamp() < current_time( 'timestamp' ) ) {
-				continue;
-			}
-			if ( $search && ! str_contains( strtolower( implode( ' ', array( $event->title(), $event->short_description(), $event->location() ) ) ), $search ) ) {
-				continue;
-			}
-			$events[] = $event;
-		}
-		usort( $events, static fn( Event $a, Event $b ): int => $a->starts_at_timestamp() <=> $b->starts_at_timestamp() );
-		return $events;
+		return array_map(
+			static fn( array $event ): Event => new Event( $event ),
+			$this->store->query_events( $filters )
+		);
 	}
 
 	/** @param array<string,mixed> $data */
-	public function save( array $data, int $id = 0 ): Event {
-		$events = $this->raw();
+	public function save( array $data, int $id = 0 ): Event|\WP_Error {
 		if ( ! $id ) {
-			$id = max( 1, absint( get_option( self::OPTION_NEXT_ID, 1 ) ) );
+			$id = $this->store->next_id();
 		}
-		$existing = isset( $events[ $id ] ) && is_array( $events[ $id ] ) ? $events[ $id ] : array();
+		$existing = $this->store->find_event( $id ) ?? array();
 		$item = array_merge( $existing, $data, array( 'id' => $id ) );
-		$events[ $id ] = $item;
-		update_option( self::OPTION_EVENTS, $events, false );
-		update_option( self::OPTION_NEXT_ID, max( $id + 1, absint( get_option( self::OPTION_NEXT_ID, 1 ) ) ), false );
-		do_action( empty( $existing ) ? 'adam_comunidade_event_created' : 'adam_comunidade_event_updated', new Event( $item ) );
-		return new Event( $item );
+		if ( ! $this->store->save_next_id( max( $id + 1, $this->store->next_id() ) ) || ! $this->store->save_event( $item ) ) {
+			Logger::error( 'community_event_save_failed', array( 'event_id' => $id ) );
+			return new \WP_Error( 'adam_event_save_failed', __( 'Não foi possível guardar o evento.', 'adam-comunidade' ) );
+		}
+		$this->events_cache = null;
+		$event = new Event( $item );
+		do_action( empty( $existing ) ? 'adam_comunidade_event_created' : 'adam_comunidade_event_updated', $event );
+		do_action( 'adam_comunidade_event_saved', $event, $existing );
+		if ( Event::STATUS_PUBLISHED === $event->status() && Event::STATUS_PUBLISHED !== (string) ( $existing['status'] ?? '' ) ) {
+			do_action( 'adam_comunidade_event_published', $event );
+		}
+		return $event;
 	}
 
 	public function delete( int $id ): void {
-		$events = $this->raw();
-		if ( isset( $events[ $id ] ) ) {
-			$event = new Event( $events[ $id ] );
-			unset( $events[ $id ] );
-			update_option( self::OPTION_EVENTS, $events, false );
+		$item = $this->store->find_event( $id );
+		if ( $item ) {
+			$event = new Event( $item );
+			if ( ! $this->store->delete_event( $id ) ) {
+				Logger::error( 'community_event_delete_failed', array( 'event_id' => $id ) );
+				return;
+			}
+			$this->events_cache = null;
 			do_action( 'adam_comunidade_event_deleted', $event );
 		}
 	}
@@ -102,21 +101,17 @@ final class Repository {
 
 	/** @return array<int,array<string,mixed>> */
 	public function categories(): array {
-		$value = get_option( self::OPTION_CATEGORIES, array() );
-		return is_array( $value ) ? array_values( $value ) : array();
+		return array_values( $this->store->taxonomy( 'categories' ) );
 	}
 
 	/** @return array<int,array<string,mixed>> */
 	public function locations(): array {
-		$value = get_option( self::OPTION_LOCATIONS, array() );
-		return is_array( $value ) ? array_values( $value ) : array();
+		return array_values( $this->store->taxonomy( 'locations' ) );
 	}
 
 	/** @param array<int,array<string,mixed>> $items */
-	public function save_taxonomy( string $type, array $items ): void {
-		$option = 'locations' === $type ? self::OPTION_LOCATIONS : self::OPTION_CATEGORIES;
-		$existing = get_option( $option, array() );
-		$existing = is_array( $existing ) ? $existing : array();
+	public function save_taxonomy( string $type, array $items ): bool {
+		$existing = $this->store->taxonomy( $type );
 		$existing_ids = array();
 		$next_id = 1;
 		foreach ( $existing as $item ) {
@@ -146,15 +141,21 @@ final class Repository {
 				'map_link' => 'locations' === $type ? esc_url_raw( (string) ( $item['map_link'] ?? '' ) ) : '',
 			);
 		}
-		update_option( $option, $clean, false );
+		if ( ! $this->store->save_taxonomy( $type, $clean ) ) {
+			Logger::error( 'community_event_taxonomy_save_failed', array( 'taxonomy' => sanitize_key( $type ) ) );
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Preserves an imported ID sequence through the active store.
+	 */
+	public function ensure_next_id( int $next_id ): bool {
+		return $this->store->save_next_id( max( $this->store->next_id(), $next_id ) );
 	}
 
 	private function slug_exists( string $slug, int $ignore_id ): bool {
-		foreach ( $this->raw() as $item ) {
-			if ( is_array( $item ) && absint( $item['id'] ?? 0 ) !== $ignore_id && sanitize_title( (string) ( $item['slug'] ?? '' ) ) === $slug ) {
-				return true;
-			}
-		}
-		return false;
+		return $this->store->slug_exists( $slug, $ignore_id );
 	}
 }

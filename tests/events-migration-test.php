@@ -62,12 +62,15 @@ function attachment_url_to_postid( string $url ): int { return str_contains( $ur
 function __( string $text, string $domain = '' ): string { unset( $domain ); return $text; }
 function do_action( string $hook, mixed ...$args ): void { $GLOBALS['adam_actions'][] = array( $hook, $args ); }
 function apply_filters( string $hook, mixed $value, mixed ...$args ): mixed { unset( $hook, $args ); return $value; }
+function is_wp_error( mixed $value ): bool { return $value instanceof WP_Error; }
 
 class WP_Error {
 	public function __construct( public string $code = '', public string $message = '' ) {}
 }
 
 require dirname( __DIR__ ) . '/includes/events/class-event.php';
+require dirname( __DIR__ ) . '/includes/events/class-store-interface.php';
+require dirname( __DIR__ ) . '/includes/events/class-option-store.php';
 require dirname( __DIR__ ) . '/includes/events/class-repository.php';
 require dirname( __DIR__ ) . '/includes/events/class-migration.php';
 require dirname( __DIR__ ) . '/includes/events/class-api.php';

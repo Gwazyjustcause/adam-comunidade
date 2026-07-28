@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5 community experience module.
+ * Community experience module.
  *
  * @package ADAM_Comunidade
  */

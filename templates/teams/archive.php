@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Experience\Portal;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Placeholder_Image;
@@ -43,7 +44,7 @@ $adam_result     = $adam_repository->query(
 		'orderby'                => $adam_selected_sort[0],
 		'order'                  => $adam_selected_sort[1],
 		'page'                   => $adam_page,
-		'per_page'               => 12,
+		'per_page'               => Config::PUBLIC_PAGE_SIZE,
 		'prioritize_associated' => true,
 	)
 );

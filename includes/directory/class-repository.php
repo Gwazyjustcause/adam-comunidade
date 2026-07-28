@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Directory;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
+
 /**
  * Encapsulates organisation and media queries.
  */
@@ -139,7 +141,7 @@ final class Repository {
 				'orderby'  => 'updated_at',
 				'order'    => 'DESC',
 				'page'     => 1,
-				'per_page' => 20,
+				'per_page' => Config::DEFAULT_PAGE_SIZE,
 			)
 		);
 		$cache_key = 'directory_' . $type . '_' . md5( wp_json_encode( $args ) );
@@ -173,7 +175,7 @@ final class Repository {
 		$allowed_orderby = array( 'name', 'created_at', 'updated_at', 'priority', 'district', 'featured' );
 		$orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'updated_at';
 		$order           = 'ASC' === strtoupper( (string) $args['order'] ) ? 'ASC' : 'DESC';
-		$per_page        = max( 1, min( 100, absint( $args['per_page'] ) ) );
+		$per_page        = max( 1, min( Config::MAX_PAGE_SIZE, absint( $args['per_page'] ) ) );
 		$page            = max( 1, absint( $args['page'] ) );
 		$offset          = ( $page - 1 ) * $per_page;
 		$where_sql       = implode( ' AND ', $where );
@@ -188,7 +190,7 @@ final class Repository {
 			'pages' => (int) ceil( $total / $per_page ),
 		);
 		if ( ! is_admin() ) {
-			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', 300 );
+			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', Config::cache_ttl( 'directory_archive' ) );
 		}
 		return $result;
 	}

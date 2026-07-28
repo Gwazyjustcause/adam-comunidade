@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Router as Directory_Router;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
@@ -79,7 +80,7 @@ final class Api_V2 {
 			return new \WP_REST_Response( $stats );
 		}
 		$page = max( 1, (int) $request['page'] );
-		$per_page = max( 1, min( 100, (int) $request['per_page'] ) );
+		$per_page = max( 1, min( Config::MAX_PAGE_SIZE, (int) $request['per_page'] ) );
 		$sorts = array( 'name' => 'name', 'newest' => 'created_at', 'updated' => 'updated_at', 'largest' => 'members' );
 		$orderby = $sorts[ (string) $request['sort'] ] ?? 'name';
 		$args = array( 'status' => 'published', 'search' => (string) $request['search'], 'district' => (string) $request['district'], 'page' => $page, 'per_page' => $per_page, 'orderby' => $orderby, 'order' => 'name' === $orderby ? 'ASC' : 'DESC' );
@@ -87,7 +88,7 @@ final class Api_V2 {
 			$result = $this->teams->query( $args + array( 'municipality' => (string) $request['municipality'], 'playing_style' => (string) $request['playing_style'], 'recruitment' => (string) $request['recruitment'], 'featured' => $request['featured'] ? 1 : '' ) );
 			$data = array_map( fn( object $item ): array => $this->item( $item, 'team', Team_Router::team_url( $item ) ), $result['items'] );
 		} elseif ( 'fields' === $endpoint ) {
-			$facility_results = $this->discovery->search( '', $filters, 100 )['fields'];
+			$facility_results = $this->discovery->search( '', $filters, Config::MAX_PAGE_SIZE )['fields'];
 			if ( $request['facility'] ) {
 				$page_items = array_slice( $facility_results, ( $page - 1 ) * $per_page, $per_page );
 				$data = $page_items;
@@ -133,14 +134,21 @@ final class Api_V2 {
 		$response = new \WP_REST_Response( $data );
 		$response->header( 'X-WP-Total', (string) $result['total'] );
 		$response->header( 'X-WP-TotalPages', (string) $result['pages'] );
-		$response->header( 'Cache-Control', 'public, max-age=120, stale-while-revalidate=300' );
+		$response->header(
+			'Cache-Control',
+			sprintf(
+				'public, max-age=%d, stale-while-revalidate=%d',
+				Config::cache_ttl( 'api_v2', 120 ),
+				Config::cache_ttl( 'api_v2_stale', 300 )
+			)
+		);
 		return $response;
 	}
 
 	private function args(): array {
 		return array(
 			'page' => array( 'type' => 'integer', 'default' => 1, 'minimum' => 1, 'sanitize_callback' => 'absint' ),
-			'per_page' => array( 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100, 'sanitize_callback' => 'absint' ),
+			'per_page' => array( 'type' => 'integer', 'default' => Config::DEFAULT_PAGE_SIZE, 'minimum' => 1, 'maximum' => Config::MAX_PAGE_SIZE, 'sanitize_callback' => 'absint' ),
 			'search' => array( 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ),
 			'district' => array( 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ),
 			'municipality' => array( 'type' => 'string', 'default' => '', 'sanitize_callback' => 'sanitize_text_field' ),

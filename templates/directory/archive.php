@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Router;
 use ADAM\Comunidade\Directory\Types;
@@ -26,7 +27,7 @@ $sort       = sanitize_key( (string) filter_input( INPUT_GET, 'sort' ) ) ?: 'alp
 $page       = max( 1, absint( filter_input( INPUT_GET, 'pagina', FILTER_VALIDATE_INT ) ?: 1 ) );
 $sorts      = array( 'alphabetical' => array( 'name', 'ASC' ), 'newest' => array( 'created_at', 'DESC' ), 'priority' => array( 'priority', 'DESC' ) );
 $selected_sort = $sorts[ $sort ] ?? $sorts['alphabetical'];
-$result     = $repository->query( $type, array( 'status' => 'published', 'search' => $search, 'district' => $district, 'category' => $category, 'featured' => $featured, 'orderby' => $selected_sort[0], 'order' => $selected_sort[1], 'page' => $page, 'per_page' => 12 ) );
+$result     = $repository->query( $type, array( 'status' => 'published', 'search' => $search, 'district' => $district, 'category' => $category, 'featured' => $featured, 'orderby' => $selected_sort[0], 'order' => $selected_sort[1], 'page' => $page, 'per_page' => Config::PUBLIC_PAGE_SIZE ) );
 $directory_title = get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ?: (string) $definition['plural'];
 
 get_header();

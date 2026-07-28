@@ -14,6 +14,7 @@ $assert = static function ( bool $condition, string $message ): void {
 
 $schema     = (string) file_get_contents( $root . '/includes/managers/class-schema.php' );
 $service    = (string) file_get_contents( $root . '/includes/managers/class-service.php' );
+$policy     = (string) file_get_contents( $root . '/includes/managers/class-policy.php' );
 $portal     = (string) file_get_contents( $root . '/includes/managers/class-portal.php' );
 $admin      = (string) file_get_contents( $root . '/includes/managers/class-admin.php' );
 $admin_js   = (string) file_get_contents( $root . '/assets/js/admin.js' );
@@ -40,7 +41,7 @@ $assert( str_contains( $service, "'published_version_changed'" ) && str_contains
 $assert( str_contains( $service, 'function lock_revision_entity' ) && str_contains( $service, "FOR UPDATE" ), 'The published entity can change while a moderation decision is being applied.' );
 $assert( str_contains( $service, "'published_at' => 'approved' === \$status ? \$now : null" ), 'Publication time is not recorded in the audit trail.' );
 $assert( str_contains( $service, "'reviewed_by'" ) && str_contains( $service, "'reviewed_at'" ) && str_contains( $service, "'admin_note'" ), 'Moderation accountability fields are not recorded.' );
-$assert( str_contains( $service, 'adam_comunidade_manager_revision_entity_types' ) && str_contains( $service, 'adam_comunidade_manager_revision_validate' ) && str_contains( $service, 'adam_comunidade_apply_manager_revision' ), 'Future Community entities cannot reuse the moderation workflow.' );
+$assert( str_contains( $policy, 'adam_comunidade_manager_revision_entity_types' ) && str_contains( $service, 'adam_comunidade_manager_revision_validate' ) && str_contains( $service, 'adam_comunidade_apply_manager_revision' ), 'Future Community entities cannot reuse the moderation workflow.' );
 
 $assert( str_contains( $portal, 'active_revisions_for_manager' ) && str_contains( $portal, 'Editar proposta pendente' ), 'Managers cannot understand or continue a pending proposal.' );
 $assert( str_contains( $portal, 'Informação pedida pela ADAM:' ) && str_contains( $portal, 'O registo público mantém-se inalterado' ), 'Manager moderation status is not explained clearly.' );

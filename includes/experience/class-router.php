@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 5 public routes and AJAX discovery.
+ * Public routes and AJAX discovery.
  *
  * @package ADAM_Comunidade
  */

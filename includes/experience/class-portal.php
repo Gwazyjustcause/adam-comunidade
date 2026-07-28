@@ -27,6 +27,7 @@ use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
+use ADAM\Comunidade\Uploads\Handler as Upload_Handler;
 
 /**
  * Keeps community contributions outside wp-admin and behind moderation.
@@ -34,6 +35,7 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
 final class Portal {
 	private static ?Forms_Manager $forms = null;
 	private static ?Email_Service $emails = null;
+	private Upload_Handler $uploads;
 	private const ROUTES_VERSION = '1.1.0';
 
 	private const TYPES = array(
@@ -43,9 +45,10 @@ final class Portal {
 		'institution' => 'instituicao',
 	);
 
-	public function __construct( Forms_Manager $forms, ?Email_Service $emails = null ) {
+	public function __construct( Forms_Manager $forms, ?Email_Service $emails = null, ?Upload_Handler $uploads = null ) {
 		self::$forms = $forms;
 		self::$emails = $emails ?? new Email_Service();
+		$this->uploads = $uploads ?? new Upload_Handler();
 	}
 
 	public function register(): void {
@@ -576,59 +579,14 @@ final class Portal {
 	 * @param array<string,mixed> $field Field configuration.
 	 */
 	private function validate_form_upload( string $key, array $field ): true|\WP_Error {
-		$names = $_FILES[ $key ]['name'] ?? array();
-		$sizes = $_FILES[ $key ]['size'] ?? array();
-		$codes = $_FILES[ $key ]['error'] ?? array();
-		$names = is_array( $names ) ? $names : array( $names );
-		$sizes = is_array( $sizes ) ? $sizes : array( $sizes );
-		$codes = is_array( $codes ) ? $codes : array( $codes );
-		$files = array();
-
-		foreach ( $names as $index => $name ) {
-			if ( '' === (string) $name || UPLOAD_ERR_NO_FILE === (int) ( $codes[ $index ] ?? UPLOAD_ERR_NO_FILE ) ) {
-				continue;
-			}
-			$files[] = array(
-				'name'  => (string) $name,
-				'size'  => absint( $sizes[ $index ] ?? 0 ),
-				'error' => (int) ( $codes[ $index ] ?? UPLOAD_ERR_OK ),
-			);
-		}
-
-		if ( ! $files ) {
-			return ! empty( $field['required'] )
-				? new \WP_Error( 'upload_required', sprintf( __( 'É obrigatório anexar: %s.', 'adam-comunidade' ), $field['label'] ) )
-				: true;
-		}
-
-		$limit = max( 1, absint( $field['max_files'] ) );
-		if ( count( $files ) > $limit ) {
-			return new \WP_Error( 'too_many_uploads', sprintf( __( 'Pode selecionar no máximo %d fotografias.', 'adam-comunidade' ), $limit ) );
-		}
-
-		$extensions = array_values(
-			array_filter(
-				array_map(
-					static fn( string $extension ): string => ltrim( strtolower( trim( $extension ) ), '.' ),
-					explode( ',', (string) $field['accept'] )
-				)
-			)
+		return $this->uploads->validate(
+			$key,
+			Upload_Handler::extensions( (string) ( $field['accept'] ?? '' ) ),
+			max( 1, absint( $field['max_files'] ?? 1 ) ),
+			max( 1, absint( $field['max_size_mb'] ?? 10 ) ),
+			! empty( $field['required'] ),
+			(string) ( $field['label'] ?? __( 'ficheiro', 'adam-comunidade' ) )
 		);
-		$max_size = max( 1, absint( $field['max_size_mb'] ) ) * MB_IN_BYTES;
-		foreach ( $files as $file ) {
-			if ( UPLOAD_ERR_OK !== $file['error'] ) {
-				return new \WP_Error( 'upload_failed', __( 'Não foi possível receber um dos ficheiros. Selecione-o novamente.', 'adam-comunidade' ) );
-			}
-			$extension = strtolower( (string) pathinfo( sanitize_file_name( wp_unslash( $file['name'] ) ), PATHINFO_EXTENSION ) );
-			if ( ! in_array( $extension, $extensions, true ) ) {
-				return new \WP_Error( 'invalid_upload_type', __( 'O tipo de ficheiro enviado não é permitido.', 'adam-comunidade' ) );
-			}
-			if ( $file['size'] > $max_size ) {
-				return new \WP_Error( 'upload_too_large', sprintf( __( 'Cada ficheiro pode ter no máximo %d MB.', 'adam-comunidade' ), max( 1, absint( $field['max_size_mb'] ) ) ) );
-			}
-		}
-
-		return true;
 	}
 
 	/**
@@ -698,9 +656,7 @@ final class Portal {
 	 * @param int[] $ids Attachment IDs.
 	 */
 	private function delete_uploaded_attachments( array $ids ): void {
-		foreach ( array_filter( array_map( 'absint', $ids ) ) as $id ) {
-			wp_delete_attachment( $id, true );
-		}
+		$this->uploads->delete( $ids );
 	}
 
 	/**
@@ -711,28 +667,24 @@ final class Portal {
 	 * @return int|int[]|\WP_Error
 	 */
 	private function process_form_upload( string $key, array $field ): int|array|\WP_Error {
-		$extensions = array_values(
-			array_filter(
-				array_map(
-					static fn( string $extension ): string => ltrim( strtolower( trim( $extension ) ), '.' ),
-					explode( ',', (string) $field['accept'] )
-				),
-				static fn( string $extension ): bool => (bool) preg_match( '/^[a-z0-9]+$/', $extension )
-			)
-		);
-		if ( empty( $extensions ) ) {
-			$extensions = array( 'pdf', 'jpg', 'jpeg', 'png' );
-		}
+		$extensions = Upload_Handler::extensions( (string) ( $field['accept'] ?? '' ) );
 		if ( absint( $field['max_files'] ) > 1 ) {
-			$files = $this->upload_photos( $key, absint( $field['max_files'] ), $extensions, absint( $field['max_size_mb'] ) );
-			if ( is_wp_error( $files ) ) {
-				return $files;
-			}
-			return ! empty( $field['required'] ) && ! $files
-				? new \WP_Error( 'upload_required', sprintf( __( 'É obrigatório anexar: %s.', 'adam-comunidade' ), $field['label'] ) )
-				: $files;
+			return $this->uploads->upload_many(
+				$key,
+				$extensions,
+				absint( $field['max_files'] ),
+				absint( $field['max_size_mb'] ),
+				! empty( $field['required'] ),
+				(string) ( $field['label'] ?? '' )
+			);
 		}
-		return $this->upload_file( $key, $extensions, ! empty( $field['required'] ), absint( $field['max_size_mb'] ) );
+		return $this->uploads->upload_one(
+			$key,
+			$extensions,
+			absint( $field['max_size_mb'] ),
+			! empty( $field['required'] ),
+			(string) ( $field['label'] ?? '' )
+		);
 	}
 
 	public function owner_edit(): void {
@@ -941,6 +893,9 @@ final class Portal {
 			);
 		}
 		do_action( 'adam_comunidade_submission_moderated', $id, $status, $object_id );
+		if ( 'approve' === $decision && in_array( (string) $row->object_type, array_keys( self::TYPES ), true ) ) {
+			do_action( 'adam_comunidade_organisation_saved', (string) $row->object_type, $object_id, json_decode( (string) $row->payload, true ) ?: array(), 'public_submission' );
+		}
 		wp_safe_redirect( Admin_Router::page_url( 'moderation' ) );
 		exit;
 	}
@@ -1021,87 +976,6 @@ final class Portal {
 			}
 		}
 		return $result_id;
-	}
-
-	/**
-	 * Stores one public upload in the Media Library.
-	 *
-	 * @param string   $field_name File input name.
-	 * @param string[] $extensions Allowed extensions.
-	 * @param bool     $required Whether the file is mandatory.
-	 * @return int|\WP_Error
-	 */
-	private function upload_file( string $field_name, array $extensions, bool $required = false, int $max_size_mb = 10 ): int|\WP_Error {
-		if (
-			empty( $_FILES[ $field_name ]['name'] )
-			|| ! is_string( $_FILES[ $field_name ]['name'] )
-		) {
-			return $required
-				? new \WP_Error( 'authorization_required', __( 'É obrigatório apresentar um comprovativo de autorização legal.', 'adam-comunidade' ) )
-				: 0;
-		}
-
-		$extension = strtolower( (string) pathinfo( sanitize_file_name( wp_unslash( $_FILES[ $field_name ]['name'] ) ), PATHINFO_EXTENSION ) );
-		if ( ! in_array( $extension, $extensions, true ) ) {
-			return new \WP_Error( 'invalid_upload_type', __( 'O tipo de ficheiro enviado não é permitido.', 'adam-comunidade' ) );
-		}
-		if ( absint( $_FILES[ $field_name ]['size'] ?? 0 ) > max( 1, $max_size_mb ) * MB_IN_BYTES ) {
-			return new \WP_Error( 'upload_too_large', sprintf( __( 'O ficheiro excede o limite de %d MB.', 'adam-comunidade' ), max( 1, $max_size_mb ) ) );
-		}
-
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		$attachment_id = media_handle_upload( $field_name, 0 );
-
-		return is_wp_error( $attachment_id ) ? $attachment_id : absint( $attachment_id );
-	}
-
-	/**
-	 * Stores a bounded set of public field photographs.
-	 *
-	 * @param string $field_name Multiple file input name.
-	 * @param int    $limit Maximum files.
-	 * @return int[]|\WP_Error
-	 */
-	private function upload_photos( string $field_name, int $limit, array $extensions = array( 'jpg', 'jpeg', 'png', 'webp' ), int $max_size_mb = 10 ): array|\WP_Error {
-		if ( empty( $_FILES[ $field_name ]['name'] ) || ! is_array( $_FILES[ $field_name ]['name'] ) ) {
-			return array();
-		}
-
-		$original = $_FILES[ $field_name ];
-		$ids      = array();
-		if ( count( array_filter( $original['name'] ) ) > $limit ) {
-			return new \WP_Error( 'too_many_uploads', sprintf( __( 'Pode anexar no máximo %d ficheiros neste campo.', 'adam-comunidade' ), $limit ) );
-		}
-		$count    = min( $limit, count( $original['name'] ) );
-
-		for ( $index = 0; $index < $count; ++$index ) {
-			if ( UPLOAD_ERR_NO_FILE === (int) $original['error'][ $index ] ) {
-				continue;
-			}
-			$_FILES[ $field_name ] = array(
-				'name'     => $original['name'][ $index ],
-				'type'     => $original['type'][ $index ],
-				'tmp_name' => $original['tmp_name'][ $index ],
-				'error'    => $original['error'][ $index ],
-				'size'     => $original['size'][ $index ],
-			);
-			$attachment_id = $this->upload_file( $field_name, $extensions, false, $max_size_mb );
-			if ( is_wp_error( $attachment_id ) ) {
-				$_FILES[ $field_name ] = $original;
-				foreach ( $ids as $uploaded_id ) {
-					wp_delete_attachment( $uploaded_id, true );
-				}
-				return $attachment_id;
-			}
-			if ( $attachment_id ) {
-				$ids[] = $attachment_id;
-			}
-		}
-		$_FILES[ $field_name ] = $original;
-
-		return $ids;
 	}
 
 	private function insert_submission( string $submission_type, string $object_type, int $object_id, array $payload, string $email, string $verification ): int {

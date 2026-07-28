@@ -15,6 +15,7 @@ $assert = static function ( bool $condition, string $message ): void {
 $schema  = (string) file_get_contents( $root . '/includes/managers/class-schema.php' );
 $auth    = (string) file_get_contents( $root . '/includes/managers/class-auth.php' );
 $service = (string) file_get_contents( $root . '/includes/managers/class-service.php' );
+$policy = (string) file_get_contents( $root . '/includes/managers/class-policy.php' );
 $portal  = (string) file_get_contents( $root . '/includes/managers/class-portal.php' );
 $admin   = (string) file_get_contents( $root . '/includes/managers/class-admin.php' );
 $cleanup = (string) file_get_contents( $root . '/includes/managers/class-cleanup.php' );
@@ -39,7 +40,7 @@ $assert( str_contains( $portal, 'verify_csrf' ), 'Authenticated manager mutation
 $assert( str_contains( $portal, "unset( \$input['cover_id'], \$input['logo_id'], \$input['gallery'] )" ), 'Posted attachment IDs can bypass manager upload validation.' );
 $assert( str_contains( $service, "array( 'team', 'field', 'partner', 'institution' )" ), 'Assignments are not ready for future Community entity types.' );
 $assert( str_contains( $service, "'status'     => 'pending'" ), 'Manager edits must create pending revisions.' );
-$assert( str_contains( $service, 'function decode_lists' ), 'Stored JSON lists are not normalized before revision validation.' );
+$assert( str_contains( $service, 'Policy::decode_lists' ) && str_contains( $policy, 'function decode_lists' ), 'Stored JSON lists are not normalized before revision validation.' );
 $assert( str_contains( $service, "'approve' => 'approved'" ) && str_contains( $admin, "value=\"info\"" ) && str_contains( $admin, "value=\"reject\"" ), 'Revision moderation decisions are incomplete.' );
 $assert( str_contains( $admin, 'adam_resend_manager_invitation' ), 'Administrators cannot resend invitations.' );
 $assert( str_contains( $portal, 'Upload_Component::render' ), 'Manager images must reuse the ADAM Upload component.' );

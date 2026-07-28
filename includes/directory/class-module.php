@@ -1,6 +1,6 @@
 <?php
 /**
- * Phase 4 directory module.
+ * Shared directory module.
  *
  * @package ADAM_Comunidade
  */

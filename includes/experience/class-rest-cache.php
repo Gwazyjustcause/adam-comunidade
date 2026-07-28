@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
+
 /**
  * Caches successful public API v2 GET responses with versioned keys.
  */
@@ -38,7 +40,7 @@ final class Rest_Cache {
 			set_transient(
 				$this->key( $request ),
 				array( 'data' => $response->get_data(), 'status' => $response->get_status(), 'headers' => $response->get_headers() ),
-				120
+				Config::cache_ttl( 'api_v2', 120 )
 			);
 			$response->header( 'X-ADAM-Cache', 'MISS' );
 		}

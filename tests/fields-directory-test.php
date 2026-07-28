@@ -19,6 +19,7 @@ $validator  = (string) file_get_contents( $root . '/includes/fields/class-valida
 $archive    = (string) file_get_contents( $root . '/templates/fields/archive.php' );
 $card       = (string) file_get_contents( $root . '/templates/fields/card.php' );
 $portal     = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
+$uploads    = (string) file_get_contents( $root . '/includes/uploads/class-handler.php' );
 $forms      = (string) file_get_contents( $root . '/includes/forms/class-manager.php' );
 $editor     = (string) file_get_contents( $root . '/admin/views/fields/editor.php' );
 
@@ -50,6 +51,6 @@ $assert( str_contains( $forms, "'field_photos'" ), 'Field form schema must accep
 $assert( str_contains( $portal, 'process_form_upload' ), 'Public uploads must be driven by the shared form schema.' );
 $assert( str_contains( $portal, "status' => 'pending'" ), 'Public submissions must enter Pending Review.' );
 $assert( str_contains( $portal, 'Pré-visualizar' ), 'Moderation must expose the legal document.' );
-$assert( str_contains( $portal, 'media_handle_upload' ), 'Uploads must use the WordPress Media API.' );
+$assert( str_contains( $portal, 'Upload_Handler' ) && str_contains( $uploads, 'media_handle_upload' ), 'Uploads must use the shared WordPress Media handler.' );
 
 echo "Fields directory tests passed.\n";

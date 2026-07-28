@@ -21,7 +21,7 @@ use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 
 /**
- * Coordinates all Phase 4 directory screens.
+ * Coordinates shared directory administration screens.
  */
 final class Controller {
 	public function __construct(
@@ -144,6 +144,7 @@ final class Controller {
 		$this->relationships->sync( $type, (int) $saved_id, 'supports', 'team', (array) ( $relations['team'] ?? array() ) );
 		$this->relationships->sync( $type, (int) $saved_id, 'supports', 'field', (array) ( $relations['field'] ?? array() ) );
 		do_action( 'adam_comunidade_directory_entry_saved', $type, (int) $saved_id, $data );
+		do_action( 'adam_comunidade_organisation_saved', $type, (int) $saved_id, $data, 'admin' );
 		Logger::info( ucfirst( $type ) . ( $entry_id ? ' updated' : ' created' ), array( 'entry_id' => $saved_id ) );
 		Helpers::add_admin_notice( __( 'O registo foi guardado com sucesso.', 'adam-comunidade' ), 'success' );
 		$this->redirect_editor( $type, (int) $saved_id );

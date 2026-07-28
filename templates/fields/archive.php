@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Fields\Amenity_Repository;
 use ADAM\Comunidade\Fields\Hero_Carousel;
 use ADAM\Comunidade\Fields\Options;
@@ -49,7 +50,7 @@ $result                = $repository->query(
 		'orderby'                => $selected_sort[0],
 		'order'                  => $selected_sort[1],
 		'page'                   => $query_page,
-		'per_page'               => 12,
+		'per_page'               => Config::PUBLIC_PAGE_SIZE,
 	)
 );
 $statistics            = $repository->public_statistics();

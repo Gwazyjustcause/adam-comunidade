@@ -306,6 +306,7 @@ final class Controller {
 			array( 'team_id' => $saved_id, 'user_id' => get_current_user_id() )
 		);
 		do_action( 'adam_comunidade_team_saved', (int) $saved_id, $result );
+		do_action( 'adam_comunidade_organisation_saved', 'team', (int) $saved_id, $result, 'admin' );
 		Helpers::add_admin_notice( __( 'A equipa foi guardada com sucesso.', 'adam-comunidade' ), 'success' );
 		$this->redirect_editor( (int) $saved_id );
 	}

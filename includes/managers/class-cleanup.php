@@ -9,6 +9,7 @@ namespace ADAM\Comunidade\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
 use ADAM\Comunidade\Logger;
 
 /**
@@ -27,11 +28,12 @@ final class Cleanup {
 	public function run(): void {
 		global $wpdb;
 
+		$security     = Config::manager_security();
 		$now          = current_time( 'mysql', true );
-		$history_cut  = gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS );
-		$reset_cut    = gmdate( 'Y-m-d H:i:s', time() - 7 * DAY_IN_SECONDS );
-		$manager_cut  = gmdate( 'Y-m-d H:i:s', time() - 180 * DAY_IN_SECONDS );
-		$stale_review = gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS );
+		$history_cut  = gmdate( 'Y-m-d H:i:s', time() - $security['invitation_history_ttl'] );
+		$reset_cut    = gmdate( 'Y-m-d H:i:s', time() - $security['password_reset_history_ttl'] );
+		$manager_cut  = gmdate( 'Y-m-d H:i:s', time() - $security['unclaimed_manager_ttl'] );
+		$stale_review = gmdate( 'Y-m-d H:i:s', time() - $security['processing_recovery_ttl'] );
 		$managers     = Schema::managers_table();
 		$assignments  = Schema::assignments_table();
 		$invitations  = Schema::invitations_table();

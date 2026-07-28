@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Experience;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Config;
+
 /**
  * Keeps expensive discovery responses fast and centrally invalidatable.
  */
@@ -23,7 +25,8 @@ final class Cache {
 		add_action( 'adam_comunidade_reset_cache', array( $this, 'flush' ) );
 	}
 
-	public static function remember( string $key, callable $callback, int $ttl = 300 ): mixed {
+	public static function remember( string $key, callable $callback, int $ttl = 0 ): mixed {
+		$ttl   = $ttl > 0 ? $ttl : Config::cache_ttl( 'experience' );
 		$key   = self::key( $key );
 		$value = wp_cache_get( $key, self::GROUP );
 		if ( false !== $value ) {
