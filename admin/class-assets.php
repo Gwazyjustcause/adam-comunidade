@@ -61,6 +61,7 @@ final class Assets {
 				'cancel'           => __( 'Cancelar', 'adam-comunidade' ),
 				'transferRequired' => __( 'Selecione o Gestor que irá receber as organizações.', 'adam-comunidade' ),
 				'noteRequired'     => __( 'Indique ao Gestor o motivo da decisão ou a informação necessária.', 'adam-comunidade' ),
+				'moderationReasonRequired' => __( 'Selecione pelo menos um motivo para comunicar esta decisão.', 'adam-comunidade' ),
 				'conflictRequired' => __( 'Confirme que reviu o conflito com a versão publicada.', 'adam-comunidade' ),
 				'entityRequired'   => __( 'Selecione pelo menos uma organização.', 'adam-comunidade' ),
 				'selectedOne'      => __( '1 organização selecionada', 'adam-comunidade' ),

@@ -90,6 +90,25 @@
 		}
 	}
 
+	function updateModerationCustomField( dialog ) {
+		const custom = dialog.querySelector( '[data-adam-moderation-custom]' );
+		const feedbackNotice = dialog.querySelector( '[data-adam-moderation-feedback]' );
+		if ( feedbackNotice && dialog.querySelector( 'input[name="moderation_reasons[]"]:checked' ) ) {
+			feedbackNotice.hidden = true;
+		}
+		if ( ! custom ) {
+			return;
+		}
+		const visible = Boolean( dialog.querySelector( '[data-adam-custom-reason]:checked' ) );
+		custom.hidden = ! visible;
+		if ( ! visible ) {
+			const field = custom.querySelector( 'textarea' );
+			if ( field ) {
+				field.value = '';
+			}
+		}
+	}
+
 	$( function () {
 		if ( $.fn.wpColorPicker ) {
 			$( '.adam-comunidade-colour' ).wpColorPicker();
@@ -105,6 +124,68 @@
 			picker.addEventListener( 'change', () => updateEntityPicker( picker ) );
 		} );
 
+		$( document ).on( 'click', '[data-adam-add-reason]', function () {
+			const manager = this.closest( '[data-adam-reason-manager]' );
+			const template = manager?.querySelector( '[data-adam-reason-template]' );
+			const rows = manager?.querySelector( '[data-adam-reason-rows]' );
+			if ( ! template || ! rows ) {
+				return;
+			}
+			const index = 'new_' + Date.now() + '_' + rows.children.length;
+			const holder = document.createElement( 'div' );
+			holder.innerHTML = template.innerHTML.replaceAll( '__INDEX__', index ).trim();
+			const row = holder.firstElementChild;
+			if ( row ) {
+				rows.appendChild( row );
+				row.querySelector( 'input[type="text"]' )?.focus();
+			}
+		} );
+
+		$( document ).on( 'click', '[data-adam-remove-reason]', function () {
+			this.closest( '[data-adam-reason-row]' )?.remove();
+		} );
+
+		$( document ).on( 'click', '[data-adam-move-reason]', function () {
+			const row = this.closest( '[data-adam-reason-row]' );
+			if ( ! row ) {
+				return;
+			}
+			if ( 'up' === this.dataset.adamMoveReason && row.previousElementSibling ) {
+				row.parentElement.insertBefore( row, row.previousElementSibling );
+			}
+			if ( 'down' === this.dataset.adamMoveReason && row.nextElementSibling ) {
+				row.parentElement.insertBefore( row.nextElementSibling, row );
+			}
+			this.focus();
+		} );
+
+		$( document ).on( 'click', '[data-adam-open-moderation]', function () {
+			const dialog = document.querySelector( '[data-adam-moderation-dialog="' + CSS.escape( this.dataset.adamOpenModeration || '' ) + '"]' );
+			if ( dialog?.showModal ) {
+				dialog.showModal();
+				dialog.querySelector( 'input[type="checkbox"]' )?.focus();
+			}
+		} );
+
+		$( document ).on( 'click', '[data-adam-close-moderation]', function () {
+			this.closest( '[data-adam-moderation-dialog]' )?.close();
+		} );
+
+		$( document ).on( 'change', '[data-adam-moderation-dialog] input[type="checkbox"]', function () {
+			updateModerationCustomField( this.closest( '[data-adam-moderation-dialog]' ) );
+		} );
+
+		document.querySelectorAll( '[data-adam-moderation-dialog]' ).forEach( ( dialog ) => {
+			dialog.addEventListener( 'click', ( event ) => {
+				if ( event.target === dialog ) {
+					dialog.close();
+				}
+			} );
+			dialog.addEventListener( 'close', () => {
+				dialog.querySelector( '[data-adam-moderation-feedback]' )?.setAttribute( 'hidden', '' );
+			} );
+		} );
+
 		$( document ).on( 'submit', '.adam-comunidade-admin form', function ( event ) {
 			const form = this;
 			const submitter = event.originalEvent && event.originalEvent.submitter
@@ -117,6 +198,7 @@
 			const note = form.querySelector( '[name="admin_note"]' );
 			const conflict = form.querySelector( '[name="confirm_conflict"]' );
 			const entityPicker = form.querySelector( '[data-adam-entity-picker]' );
+			const moderationDialog = form.closest( '[data-adam-moderation-dialog]' );
 
 			form.querySelectorAll( '[aria-invalid="true"]' ).forEach( ( field ) => field.removeAttribute( 'aria-invalid' ) );
 			form.querySelector( '[data-adam-form-feedback]' )?.remove();
@@ -140,6 +222,16 @@
 				event.preventDefault();
 				const search = entityPicker.querySelector( '[data-adam-entity-search]' );
 				feedback( form, labels.entityRequired || '', search );
+				return;
+			}
+			if ( moderationDialog && ! form.querySelector( 'input[name="moderation_reasons[]"]:checked' ) ) {
+				event.preventDefault();
+				const notice = form.querySelector( '[data-adam-moderation-feedback]' );
+				if ( notice ) {
+					notice.textContent = labels.moderationReasonRequired || '';
+					notice.hidden = false;
+					notice.focus();
+				}
 				return;
 			}
 			if ( message && ! form.dataset.adamConfirmed ) {

@@ -10,6 +10,13 @@ namespace ADAM\Comunidade;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
+use ADAM\Comunidade\Experience\Moderation_Reasons;
+
+// Keep Settings usable in activation and standalone maintenance contexts where
+// the plugin autoloader has not been registered yet.
+if ( ! class_exists( Moderation_Reasons::class ) ) {
+	require_once __DIR__ . '/experience/class-moderation-reasons.php';
+}
 
 /**
  * Registers and validates plugin settings.
@@ -96,6 +103,26 @@ final class Settings {
 			array( 'key' => 'accent_colour' )
 		);
 
+		add_settings_section(
+			'adam_comunidade_moderation',
+			__( 'Moderação', 'adam-comunidade' ),
+			array( $this, 'render_moderation_intro' ),
+			'adam-comunidade-settings'
+		);
+		$this->add_field(
+			Moderation_Reasons::CHANGES_KEY,
+			__( 'Pedir alterações', 'adam-comunidade' ),
+			'render_moderation_reasons',
+			'adam_comunidade_moderation',
+			array( 'decision' => 'changes' )
+		);
+		$this->add_field(
+			Moderation_Reasons::REJECT_KEY,
+			__( 'Rejeitar', 'adam-comunidade' ),
+			'render_moderation_reasons',
+			'adam_comunidade_moderation',
+			array( 'decision' => 'reject' )
+		);
 	}
 
 	/**
@@ -129,7 +156,7 @@ final class Settings {
 	 * Sanitizes the settings collection.
 	 *
 	 * @param mixed $input Untrusted settings input.
-	 * @return array<string,string|int>
+	 * @return array<string,mixed>
 	 */
 	public function sanitize( mixed $input ): array {
 		$input    = is_array( $input ) ? $input : array();
@@ -144,6 +171,8 @@ final class Settings {
 			'accent_colour'        => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
 			'contact_email'        => sanitize_email( (string) ( $input['contact_email'] ?? '' ) ),
 			'email_from_name'      => sanitize_text_field( (string) ( $input['email_from_name'] ?? $defaults['email_from_name'] ) ),
+			Moderation_Reasons::CHANGES_KEY => Moderation_Reasons::sanitize( $input[ Moderation_Reasons::CHANGES_KEY ] ?? array() ),
+			Moderation_Reasons::REJECT_KEY => Moderation_Reasons::sanitize( $input[ Moderation_Reasons::REJECT_KEY ] ?? array() ),
 			'community_page_id'    => absint( $current['community_page_id'] ),
 			'teams_page_id'        => absint( $current['teams_page_id'] ),
 			'fields_page_id'       => absint( $current['fields_page_id'] ),
@@ -230,6 +259,81 @@ final class Settings {
 	}
 
 	/**
+	 * Introduces the shared moderation feedback configuration.
+	 */
+	public function render_moderation_intro(): void {
+		echo '<p>' . esc_html__( 'Estas listas alimentam diretamente as decisões nas Aprovações e o feedback enviado por email. Pode ordenar, editar, desativar ou remover cada motivo.', 'adam-comunidade' ) . '</p>';
+	}
+
+	/**
+	 * Renders one sortable editable moderation-reason collection.
+	 *
+	 * @param array<string,string> $args Field arguments.
+	 */
+	public function render_moderation_reasons( array $args ): void {
+		$decision = 'reject' === ( $args['decision'] ?? '' ) ? 'reject' : 'changes';
+		$key      = 'reject' === $decision ? Moderation_Reasons::REJECT_KEY : Moderation_Reasons::CHANGES_KEY;
+		$reasons  = Moderation_Reasons::configured( $decision, false );
+		?>
+		<div class="adam-reason-manager" data-adam-reason-manager data-setting-key="<?php echo esc_attr( $key ); ?>">
+			<div class="adam-reason-manager__head" aria-hidden="true">
+				<span><?php esc_html_e( 'Ordem', 'adam-comunidade' ); ?></span>
+				<span><?php esc_html_e( 'Categoria', 'adam-comunidade' ); ?></span>
+				<span><?php esc_html_e( 'Motivo', 'adam-comunidade' ); ?></span>
+				<span><?php esc_html_e( 'Opções', 'adam-comunidade' ); ?></span>
+			</div>
+			<div class="adam-reason-manager__rows" data-adam-reason-rows>
+				<?php foreach ( $reasons as $index => $reason ) : ?>
+					<?php $this->render_moderation_reason_row( $key, (string) $index, $reason ); ?>
+				<?php endforeach; ?>
+			</div>
+			<template data-adam-reason-template>
+				<?php
+				$this->render_moderation_reason_row(
+					$key,
+					'__INDEX__',
+					array( 'id' => '', 'category' => '', 'label' => '', 'enabled' => 1, 'allows_custom' => 0 )
+				);
+				?>
+			</template>
+			<button type="button" class="button" data-adam-add-reason><?php esc_html_e( 'Adicionar motivo', 'adam-comunidade' ); ?></button>
+			<p class="description"><?php esc_html_e( 'A opção “Campo adicional” revela uma pequena caixa de texto quando este motivo é selecionado.', 'adam-comunidade' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders one editable reason row.
+	 *
+	 * @param array<string,mixed> $reason Reason data.
+	 */
+	private function render_moderation_reason_row( string $key, string $index, array $reason ): void {
+		$base = self::OPTION_NAME . '[' . $key . '][' . $index . ']';
+		?>
+		<div class="adam-reason-row" data-adam-reason-row>
+			<input type="hidden" name="<?php echo esc_attr( $base . '[id]' ); ?>" value="<?php echo esc_attr( (string) ( $reason['id'] ?? '' ) ); ?>">
+			<div class="adam-reason-row__order">
+				<button type="button" class="button-link" data-adam-move-reason="up" aria-label="<?php esc_attr_e( 'Mover motivo para cima', 'adam-comunidade' ); ?>">↑</button>
+				<button type="button" class="button-link" data-adam-move-reason="down" aria-label="<?php esc_attr_e( 'Mover motivo para baixo', 'adam-comunidade' ); ?>">↓</button>
+			</div>
+			<label>
+				<span class="screen-reader-text"><?php esc_html_e( 'Categoria', 'adam-comunidade' ); ?></span>
+				<input type="text" name="<?php echo esc_attr( $base . '[category]' ); ?>" value="<?php echo esc_attr( (string) ( $reason['category'] ?? '' ) ); ?>" required>
+			</label>
+			<label>
+				<span class="screen-reader-text"><?php esc_html_e( 'Motivo', 'adam-comunidade' ); ?></span>
+				<input type="text" name="<?php echo esc_attr( $base . '[label]' ); ?>" value="<?php echo esc_attr( (string) ( $reason['label'] ?? '' ) ); ?>" required>
+			</label>
+			<div class="adam-reason-row__options">
+				<label><input type="hidden" name="<?php echo esc_attr( $base . '[enabled]' ); ?>" value="0"><input type="checkbox" name="<?php echo esc_attr( $base . '[enabled]' ); ?>" value="1" <?php checked( ! empty( $reason['enabled'] ) ); ?>> <?php esc_html_e( 'Ativo', 'adam-comunidade' ); ?></label>
+				<label><input type="hidden" name="<?php echo esc_attr( $base . '[allows_custom]' ); ?>" value="0"><input type="checkbox" name="<?php echo esc_attr( $base . '[allows_custom]' ); ?>" value="1" <?php checked( ! empty( $reason['allows_custom'] ) ); ?>> <?php esc_html_e( 'Campo adicional', 'adam-comunidade' ); ?></label>
+				<button type="button" class="button-link-delete" data-adam-remove-reason><?php esc_html_e( 'Remover', 'adam-comunidade' ); ?></button>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Renders the database version field.
 	 *
 	 * @return void
@@ -291,10 +395,11 @@ final class Settings {
 	/**
 	 * Default settings.
 	 *
-	 * @return array<string,string|int>
+	 * @return array<string,mixed>
 	 */
 	public static function defaults(): array {
-		return array(
+		return array_merge(
+			array(
 			'debug_mode'           => 0,
 			'enable_logs'          => 0,
 			'primary_colour'       => '#315c25',
@@ -312,6 +417,8 @@ final class Settings {
 			'manager_activation_page_id' => 0,
 			'manager_recovery_page_id' => 0,
 			'brands_page_id'       => 0,
+			),
+			Moderation_Reasons::defaults()
 		);
 	}
 }

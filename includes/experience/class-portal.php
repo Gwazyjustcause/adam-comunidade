@@ -794,21 +794,80 @@ final class Portal {
 						</aside>
 					</div>
 
-					<form class="adam-approval-actions" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-						<?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?>
-						<input type="hidden" name="action" value="adam_moderate_submission">
-						<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
-						<label><?php esc_html_e( 'Notas internas', 'adam-comunidade' ); ?><textarea name="admin_note" rows="3" placeholder="<?php esc_attr_e( 'Registe observações apenas visíveis para a administração.', 'adam-comunidade' ); ?>"><?php echo esc_textarea( $row->admin_note ); ?></textarea></label>
-						<div>
-							<button class="button button-primary" name="decision" value="approve" data-adam-confirm="<?php esc_attr_e( 'Aprovar esta submissão e publicar imediatamente o conteúdo?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Aprovar e publicar', 'adam-comunidade' ); ?></button>
-							<button class="button" name="decision" value="changes" data-adam-confirm="<?php esc_attr_e( 'Pedir alterações ao autor da submissão?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Pedir alterações', 'adam-comunidade' ); ?></button>
-							<button class="button button-link-delete" name="decision" value="reject" data-adam-confirm="<?php esc_attr_e( 'Rejeitar esta submissão? O conteúdo não será publicado.', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button>
-						</div>
-					</form>
+					<div class="adam-approval-actions">
+						<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+							<?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?>
+							<input type="hidden" name="action" value="adam_moderate_submission">
+							<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
+							<input type="hidden" name="decision" value="approve">
+							<button class="button button-primary" type="submit"><?php esc_html_e( 'Aprovar e publicar', 'adam-comunidade' ); ?></button>
+						</form>
+						<button class="button" type="button" data-adam-open-moderation="<?php echo esc_attr( 'changes-' . $row->id ); ?>"><?php esc_html_e( 'Pedir alterações', 'adam-comunidade' ); ?></button>
+						<button class="button button-link-delete" type="button" data-adam-open-moderation="<?php echo esc_attr( 'reject-' . $row->id ); ?>"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button>
+						<?php $this->render_moderation_dialog( $row, 'changes' ); ?>
+						<?php $this->render_moderation_dialog( $row, 'reject' ); ?>
+					</div>
 				</article>
 			<?php endforeach; ?>
 			<?php do_action( 'adam_comunidade_moderation_after_submissions' ); ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders a focused reason picker for one non-publishing decision.
+	 */
+	private function render_moderation_dialog( object $row, string $decision ): void {
+		$is_reject = 'reject' === $decision;
+		$dialog_id = $decision . '-' . absint( $row->id );
+		$groups    = Moderation_Reasons::grouped( $decision );
+		?>
+		<dialog class="adam-moderation-dialog" data-adam-moderation-dialog="<?php echo esc_attr( $dialog_id ); ?>" aria-labelledby="<?php echo esc_attr( $dialog_id . '-title' ); ?>">
+			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+				<?php wp_nonce_field( 'adam_moderate_' . $row->id, 'adam_nonce' ); ?>
+				<input type="hidden" name="action" value="adam_moderate_submission">
+				<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
+				<input type="hidden" name="decision" value="<?php echo esc_attr( $decision ); ?>">
+				<header>
+					<div>
+						<span class="adam-card__eyebrow"><?php esc_html_e( 'Decisão de moderação', 'adam-comunidade' ); ?></span>
+						<h2 id="<?php echo esc_attr( $dialog_id . '-title' ); ?>"><?php echo esc_html( $is_reject ? __( 'Rejeitar submissão', 'adam-comunidade' ) : __( 'Pedir alterações', 'adam-comunidade' ) ); ?></h2>
+						<p><?php echo esc_html( $is_reject ? __( 'Selecione os motivos que tornam esta submissão inelegível para publicação.', 'adam-comunidade' ) : __( 'Selecione tudo o que o autor deve corrigir antes de uma nova análise.', 'adam-comunidade' ) ); ?></p>
+					</div>
+					<button type="button" class="adam-moderation-dialog__close" data-adam-close-moderation aria-label="<?php esc_attr_e( 'Fechar', 'adam-comunidade' ); ?>">×</button>
+				</header>
+				<div class="adam-moderation-dialog__body">
+					<?php if ( $groups ) : ?>
+						<?php foreach ( $groups as $category => $reasons ) : ?>
+							<fieldset>
+								<legend><?php echo esc_html( $category ); ?></legend>
+								<div class="adam-moderation-reason-list">
+									<?php foreach ( $reasons as $reason ) : ?>
+										<label>
+											<input type="checkbox" name="moderation_reasons[]" value="<?php echo esc_attr( (string) $reason['id'] ); ?>" <?php echo ! empty( $reason['allows_custom'] ) ? 'data-adam-custom-reason' : ''; ?>>
+											<span><?php echo esc_html( (string) $reason['label'] ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							</fieldset>
+						<?php endforeach; ?>
+						<label class="adam-moderation-custom" data-adam-moderation-custom hidden>
+							<span><?php esc_html_e( 'Informação adicional (opcional)', 'adam-comunidade' ); ?></span>
+							<textarea name="moderation_custom_reason" rows="3" maxlength="1000" placeholder="<?php esc_attr_e( 'Explique brevemente o outro motivo.', 'adam-comunidade' ); ?>"></textarea>
+						</label>
+					<?php else : ?>
+						<div class="adam-notice adam-notice--warning"><p><?php esc_html_e( 'Não existem motivos ativos para esta decisão. Configure-os em Definições antes de continuar.', 'adam-comunidade' ); ?></p></div>
+					<?php endif; ?>
+					<p class="adam-form-feedback adam-form-feedback--error" data-adam-moderation-feedback role="alert" tabindex="-1" hidden></p>
+				</div>
+				<footer>
+					<button type="button" class="button" data-adam-close-moderation><?php esc_html_e( 'Cancelar', 'adam-comunidade' ); ?></button>
+					<?php if ( $groups ) : ?>
+						<button type="submit" class="<?php echo esc_attr( $is_reject ? 'button adam-button--danger' : 'button button-primary' ); ?>"><?php echo esc_html( $is_reject ? __( 'Confirmar rejeição', 'adam-comunidade' ) : __( 'Enviar pedido de alterações', 'adam-comunidade' ) ); ?></button>
+					<?php endif; ?>
+				</footer>
+			</form>
+		</dialog>
 		<?php
 	}
 
@@ -822,9 +881,21 @@ final class Portal {
 		if ( ! $status ) {
 			wp_die( esc_html__( 'A decisão selecionada não é válida.', 'adam-comunidade' ) );
 		}
-		$admin_note = sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) );
-		if ( in_array( $decision, array( 'changes', 'reject' ), true ) && '' === trim( $admin_note ) ) {
-			wp_die( esc_html__( 'Indique o motivo da decisão ou a informação que deve ser corrigida.', 'adam-comunidade' ) );
+		$admin_note = '';
+		$reasons    = array();
+		if ( in_array( $decision, array( 'changes', 'reject' ), true ) ) {
+			$posted_reasons = isset( $_POST['moderation_reasons'] ) && is_array( $_POST['moderation_reasons'] )
+				? array_map( 'strval', wp_unslash( $_POST['moderation_reasons'] ) )
+				: array();
+			$reasons = Moderation_Reasons::resolve(
+				$decision,
+				$posted_reasons,
+				sanitize_textarea_field( wp_unslash( $_POST['moderation_custom_reason'] ?? '' ) )
+			);
+			if ( is_wp_error( $reasons ) ) {
+				wp_die( esc_html( $reasons->get_error_message() ) );
+			}
+			$admin_note = Moderation_Reasons::summary( $reasons );
 		}
 		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			wp_die( esc_html__( 'Não foi possível iniciar a decisão de moderação.', 'adam-comunidade' ) );
@@ -860,11 +931,16 @@ final class Portal {
 				$manager_invite_url = $manager_invite;
 			}
 		}
-		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
+		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'changes', 'reject' ), true ) ) {
 			$email_payload = json_decode( (string) $row->payload, true ) ?: array();
 			$field         = 'approve' === $decision ? ( new Field_Repository() )->find( $object_id ) : null;
+			$template_key  = array(
+				'approve' => 'field_approved',
+				'changes' => 'field_changes_requested',
+				'reject'  => 'field_rejected',
+			)[ $decision ];
 			self::emails()->send(
-				'approve' === $decision ? 'field_approved' : 'field_rejected',
+				$template_key,
 				(string) $row->contact_email,
 				array(
 					'field_name' => (string) ( $email_payload['name'] ?? '' ),
@@ -873,15 +949,20 @@ final class Portal {
 					'admin_note' => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
 				)
 			);
-		} elseif ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'partner', 'institution' ), true ) && in_array( $decision, array( 'approve', 'reject' ), true ) ) {
+		} elseif ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'partner', 'institution' ), true ) && in_array( $decision, array( 'approve', 'changes', 'reject' ), true ) ) {
 			$email_payload = json_decode( (string) $row->payload, true ) ?: array();
 			$record = 'approve' === $decision ? self::record( (string) $row->object_type, $object_id ) : null;
 			$entity_url = '';
 			if ( $record ) {
 				$entity_url = 'team' === $row->object_type ? Team_Router::team_url( $record ) : Directory_Router::entry_url( $record );
 			}
+			$template_key = array(
+				'approve' => 'community_approved',
+				'changes' => 'community_changes_requested',
+				'reject'  => 'community_rejected',
+			)[ $decision ];
 			self::emails()->send(
-				'approve' === $decision ? 'community_approved' : 'community_rejected',
+				$template_key,
 				(string) $row->contact_email,
 				array(
 					'entity_name'        => (string) ( $email_payload['name'] ?? '' ),

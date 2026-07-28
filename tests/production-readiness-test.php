@@ -56,9 +56,10 @@ foreach ( array( "'START TRANSACTION'", 'FOR UPDATE', "'ROLLBACK'", "'COMMIT'" )
 	$assert( str_contains( $approval, $transaction_contract ), 'Submission moderation is not atomic: ' . $transaction_contract );
 }
 $assert(
-	str_contains( $approval, "in_array( \$decision, array( 'changes', 'reject' ), true )" )
-	&& str_contains( $approval, "'' === trim( \$admin_note )" ),
-	'Moderation decisions that need an explanation do not require one.'
+	str_contains( $approval, 'Moderation_Reasons::resolve' )
+	&& str_contains( $approval, 'Moderation_Reasons::summary' )
+	&& str_contains( $approval, "'moderation_reasons'" ),
+	'Moderation decisions are not validated against configured structured reasons.'
 );
 $assert(
 	str_contains( $approval, 'sync_gallery' )

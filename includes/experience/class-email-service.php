@@ -361,9 +361,13 @@ final class Email_Service {
 		$replacements = array();
 		foreach ( $context as $key => $value ) {
 			$value = $this->string_value( $value );
-			$replacements[ '{{' . $key . '}}' ] = str_ends_with( $key, '_url' ) || 'adam_email' === $key
-				? esc_url( 'adam_email' === $key ? 'mailto:' . $value : $value )
-				: esc_html( $value );
+			if ( 'admin_note' === $key ) {
+				$replacements[ '{{' . $key . '}}' ] = nl2br( esc_html( $value ), false );
+			} else {
+				$replacements[ '{{' . $key . '}}' ] = str_ends_with( $key, '_url' ) || 'adam_email' === $key
+					? esc_url( 'adam_email' === $key ? 'mailto:' . $value : $value )
+					: esc_html( $value );
+			}
 		}
 		// The email placeholder is used both as visible text and as a mailto URL.
 		$replacements['{{adam_email}}'] = esc_html( $context['adam_email'] ?? '' );
@@ -559,12 +563,19 @@ final class Email_Service {
 				'heading' => __( 'A organização foi aprovada', 'adam-comunidade' ),
 				'body'    => __( '<p>Parabéns! A submissão de {{entity_type}} <strong>{{entity_name}}</strong> foi aprovada e já está visível no Diretório ADAM.</p><p><a href="{{entity_url}}">Ver organização no Diretório</a></p><h2>Faça a gestão da sua organização</h2><p>Como Gestor da Comunidade, pode atualizar a informação sempre que for necessário. As alterações são revistas pela ADAM antes da publicação, ajudando a manter o Diretório correto e atualizado.</p><p>A conta de Gestor da Comunidade é independente da conta de Sócio ADAM. Se vier a tornar-se Sócio, as duas contas permanecem separadas.</p><p><a href="{{manager_invite_url}}">Criar Palavra-passe</a></p><p>Este endereço é pessoal, de utilização única e expira ao fim de {{invitation_expiry}}.</p>', 'adam-comunidade' ),
 			),
+			'community_changes_requested' => array(
+				'label'   => __( 'Alterações pedidas numa submissão da Comunidade', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Precisamos de alterações à sua submissão', 'adam-comunidade' ),
+				'heading' => __( 'Alterações necessárias', 'adam-comunidade' ),
+				'body'    => __( '<p>Revimos a submissão de {{entity_type}} <strong>{{entity_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+			),
 			'community_rejected' => array(
 				'label'   => __( 'Submissão da Comunidade rejeitada', 'adam-comunidade' ),
 				'enabled' => true,
 				'subject' => __( 'Atualização sobre a sua submissão', 'adam-comunidade' ),
 				'heading' => __( 'Submissão não aprovada', 'adam-comunidade' ),
-				'body'    => __( '<p>Concluímos a análise da submissão de {{entity_type}} <strong>{{entity_name}}</strong>. Nesta fase, não foi possível aprová-la.</p><h2>Informação da revisão</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+				'body'    => __( '<p>Concluímos a análise da submissão de {{entity_type}} <strong>{{entity_name}}</strong> e esta não foi aceite para publicação.</p><h2>Motivos da rejeição</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
 			),
 			'manager_invitation' => array(
 				'label'   => __( 'Convite de Gestor da Comunidade', 'adam-comunidade' ),
@@ -637,12 +648,19 @@ final class Email_Service {
 				'heading' => __( 'O campo foi aprovado', 'adam-comunidade' ),
 				'body'    => __( '<p>Parabéns! O campo <strong>{{field_name}}</strong> foi aprovado e já está visível no Diretório ADAM.</p><p><a href="{{field_url}}">Ver Campo no Diretório</a></p><h2>Faça a gestão do seu campo</h2><p>Como Gestor da Comunidade, pode atualizar a informação sempre que for necessário. As alterações são revistas pela ADAM antes da publicação, ajudando a manter o Diretório correto e atualizado.</p><p>A conta de Gestor da Comunidade é independente da conta de Sócio ADAM. Se vier a tornar-se Sócio, as duas contas permanecem separadas.</p><p><a href="{{manager_invite_url}}">Criar Palavra-passe</a></p><p>Este endereço é pessoal, de utilização única e expira ao fim de {{invitation_expiry}}.</p>', 'adam-comunidade' ),
 			),
+			'field_changes_requested' => array(
+				'label'   => __( 'Alterações pedidas numa submissão de campo', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Precisamos de alterações à submissão do seu campo', 'adam-comunidade' ),
+				'heading' => __( 'Alterações necessárias', 'adam-comunidade' ),
+				'body'    => __( '<p>Revimos a submissão do campo <strong>{{field_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+			),
 			'field_rejected' => array(
 				'label'   => __( 'Campo rejeitado', 'adam-comunidade' ),
 				'enabled' => true,
 				'subject' => __( 'Atualização da submissão do seu campo', 'adam-comunidade' ),
 				'heading' => __( 'Atualização da submissão', 'adam-comunidade' ),
-				'body'    => __( '<p>Concluímos a análise da submissão do campo <strong>{{field_name}}</strong>. Nesta fase, não foi possível aprová-la.</p><h2>Informação da revisão</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}. Poderá apresentar uma nova submissão depois de corrigir a informação indicada.</p>', 'adam-comunidade' ),
+				'body'    => __( '<p>Concluímos a análise da submissão do campo <strong>{{field_name}}</strong> e esta não foi aceite para publicação.</p><h2>Motivos da rejeição</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
 			),
 		);
 	}

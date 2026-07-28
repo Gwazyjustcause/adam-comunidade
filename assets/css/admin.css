@@ -374,6 +374,72 @@
 	min-height: 36px;
 }
 
+.adam-reason-manager {
+	max-width: 780px;
+}
+
+.adam-reason-manager__head,
+.adam-reason-row {
+	align-items: center;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: 58px minmax(130px, .75fr) minmax(220px, 1.5fr) minmax(190px, 1fr);
+}
+
+.adam-reason-manager__head {
+	color: var(--adam-text-muted);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	padding: 0 10px 7px;
+	text-transform: uppercase;
+}
+
+.adam-reason-manager__rows {
+	border: 1px solid var(--adam-border);
+	border-radius: 8px;
+	margin-bottom: 12px;
+	overflow: hidden;
+}
+
+.adam-reason-row {
+	background: #fff;
+	border-top: 1px solid var(--adam-border);
+	padding: 10px;
+}
+
+.adam-reason-row:first-child {
+	border-top: 0;
+}
+
+.adam-reason-row input[type="text"] {
+	width: 100%;
+}
+
+.adam-reason-row__order,
+.adam-reason-row__options {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.adam-reason-row__order .button-link {
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	color: var(--adam-text);
+	height: 28px;
+	line-height: 24px;
+	text-align: center;
+	text-decoration: none;
+	width: 24px;
+}
+
+.adam-reason-row__options label {
+	font-size: 12px;
+	white-space: nowrap;
+}
+
 .adam-cache-card {
 	align-self: start;
 }
@@ -386,6 +452,14 @@
 	.adam-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.adam-settings-layout { grid-template-columns: 1fr; }
 	.adam-dashboard-columns { grid-template-columns: 1fr; }
+	.adam-reason-manager__head { display: none; }
+	.adam-reason-row {
+		grid-template-columns: 54px 1fr;
+	}
+	.adam-reason-row > label,
+	.adam-reason-row__options {
+		grid-column: 2;
+	}
 }
 
 @media (max-width: 600px) {
@@ -489,19 +563,165 @@
 }
 
 .adam-approval-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
 	padding-top: 18px;
 	border-top: 1px solid #e2e4e7;
 }
 
-.adam-approval-actions > label {
-	display: grid;
-	gap: 6px;
-	margin-bottom: 12px;
-	font-weight: 600;
+.adam-approval-actions form {
+	margin: 0;
 }
 
-.adam-approval-actions textarea {
+.adam-button--danger.button {
+	border-color: var(--adam-danger);
+	color: var(--adam-danger);
+}
+
+.adam-button--danger.button:hover,
+.adam-button--danger.button:focus {
+	background: var(--adam-danger);
+	border-color: var(--adam-danger);
+	color: #fff;
+}
+
+.adam-moderation-dialog {
+	border: 0;
+	border-radius: 14px;
+	box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+	max-height: min(760px, calc(100vh - 40px));
+	max-width: min(620px, calc(100vw - 32px));
+	overflow: hidden;
+	padding: 0;
 	width: 100%;
+}
+
+.adam-moderation-dialog::backdrop {
+	backdrop-filter: blur(2px);
+	background: rgba(15, 23, 42, .56);
+}
+
+.adam-moderation-dialog > form {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	max-height: min(760px, calc(100vh - 40px));
+}
+
+.adam-moderation-dialog header,
+.adam-moderation-dialog footer {
+	align-items: flex-start;
+	background: #fff;
+	display: flex;
+	gap: 18px;
+	justify-content: space-between;
+	padding: 22px 24px;
+}
+
+.adam-moderation-dialog header {
+	border-bottom: 1px solid var(--adam-border);
+}
+
+.adam-moderation-dialog header h2 {
+	margin: 0 0 6px;
+}
+
+.adam-moderation-dialog header p {
+	color: var(--adam-text-muted);
+	margin: 0;
+}
+
+.adam-moderation-dialog__close {
+	background: transparent;
+	border: 0;
+	border-radius: 50%;
+	color: var(--adam-text-muted);
+	cursor: pointer;
+	font-size: 25px;
+	height: 34px;
+	line-height: 30px;
+	padding: 0;
+	width: 34px;
+}
+
+.adam-moderation-dialog__close:hover,
+.adam-moderation-dialog__close:focus {
+	background: var(--adam-surface-subtle);
+	color: var(--adam-text);
+}
+
+.adam-moderation-dialog__body {
+	background: var(--adam-surface-subtle);
+	overflow: auto;
+	padding: 20px 24px;
+}
+
+.adam-moderation-dialog fieldset {
+	border: 0;
+	margin: 0 0 18px;
+	padding: 0;
+}
+
+.adam-moderation-dialog legend {
+	font-size: 13px;
+	font-weight: 700;
+	margin-bottom: 8px;
+}
+
+.adam-moderation-reason-list {
+	display: grid;
+	gap: 7px;
+}
+
+.adam-moderation-reason-list label {
+	align-items: flex-start;
+	background: #fff;
+	border: 1px solid var(--adam-border);
+	border-radius: 7px;
+	cursor: pointer;
+	display: flex;
+	gap: 10px;
+	padding: 11px 12px;
+}
+
+.adam-moderation-reason-list label:hover,
+.adam-moderation-reason-list label:has(input:checked) {
+	border-color: #97c44b;
+}
+
+.adam-moderation-reason-list label:has(input:checked) {
+	background: #f3f8e9;
+}
+
+.adam-moderation-reason-list input {
+	margin-top: 2px;
+}
+
+.adam-moderation-custom {
+	display: grid;
+	font-weight: 600;
+	gap: 7px;
+}
+
+.adam-moderation-custom[hidden] {
+	display: none;
+}
+
+.adam-moderation-custom textarea {
+	font-weight: 400;
+	width: 100%;
+}
+
+.adam-moderation-dialog footer {
+	align-items: center;
+	border-top: 1px solid var(--adam-border);
+	justify-content: flex-end;
+}
+
+.adam-moderation-dialog .adam-form-feedback {
+	margin-top: 14px;
 }
 
 .adam-manager-revision-list {
