@@ -509,6 +509,31 @@
 	gap: 18px;
 }
 
+.adam-manager-stats {
+	display: grid;
+	gap: 14px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.adam-manager-stats .adam-card {
+	display: grid;
+	gap: 4px;
+	margin: 0;
+}
+
+.adam-manager-stats strong {
+	color: #315c25;
+	font-size: 30px;
+	line-height: 1;
+}
+
+.adam-manager-stats span,
+.adam-manager-admin-card header p,
+.adam-manager-create small,
+.adam-manager-empty {
+	color: #646970;
+}
+
 .adam-managers-admin .adam-admin-filters,
 .adam-managers-admin .adam-form-grid {
 	align-items: end;
@@ -520,6 +545,21 @@
 .adam-managers-admin label {
 	display: grid;
 	gap: 6px;
+}
+
+.adam-manager-entity-picker {
+	grid-column: span 2;
+}
+
+.adam-manager-entity-picker select {
+	min-height: 190px;
+	width: 100%;
+}
+
+.adam-manager-assignment-list {
+	max-height: 620px;
+	overflow: auto;
+	overscroll-behavior: contain;
 }
 
 .adam-manager-admin-card .adam-card__header {
@@ -546,6 +586,25 @@
 	margin: 3px 0 0;
 }
 
+.adam-manager-account-actions {
+	border-bottom: 1px solid #e2e4e7;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 18px;
+	padding-bottom: 18px;
+}
+
+.adam-manager-account-actions form {
+	margin: 0;
+}
+
+.adam-status-pill--disabled,
+.adam-status-pill--deleted {
+	background: #f0f0f1;
+	color: #50575e;
+}
+
 .adam-manager-assignment {
 	align-items: center;
 	border-top: 1px solid #e2e4e7;
@@ -567,6 +626,66 @@
 	margin: 0;
 }
 
+.adam-manager-delete {
+	border-top: 1px solid #e2e4e7;
+	margin-top: 18px;
+	padding-top: 16px;
+}
+
+.adam-manager-delete summary {
+	color: #b32d2e;
+	cursor: pointer;
+	font-weight: 700;
+}
+
+.adam-manager-delete form {
+	align-items: end;
+	background: #fcf0f1;
+	border: 1px solid #facfd2;
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) auto;
+	margin-top: 12px;
+	padding: 14px;
+}
+
+.adam-manager-delete-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.adam-manager-pagination {
+	display: flex;
+	gap: 4px;
+	justify-content: center;
+}
+
+.adam-manager-pagination .page-numbers {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 7px 11px;
+	text-decoration: none;
+}
+
+.adam-manager-pagination .current {
+	background: #315c25;
+	border-color: #315c25;
+	color: #fff;
+}
+
+.adam-managers-admin :is(button, input, select, summary, a):focus-visible {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #315c25;
+	outline: 0;
+}
+
+.adam-managers-admin form[aria-busy="true"] {
+	opacity: .7;
+}
+
 @media (max-width: 900px) {
 	.adam-approval-card__header,
 	.adam-approval-card__layout,
@@ -582,5 +701,34 @@
 	.adam-manager-assignment {
 		align-items: stretch;
 		grid-template-columns: 1fr;
+	}
+
+	.adam-manager-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.adam-manager-delete form {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 520px) {
+	.adam-manager-stats {
+		grid-template-columns: 1fr;
+	}
+
+	.adam-manager-entity-picker {
+		grid-column: auto;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	.adam-managers-admin .adam-manager-delete form {
+		background: #301b1d;
+		border-color: #6d3035;
+	}
+
+	.adam-managers-admin .adam-manager-stats strong {
+		color: #b7dc59;
 	}
 }

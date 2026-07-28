@@ -59,6 +59,14 @@ final class Service {
 		if ( $manager && 'disabled' === $manager->status ) {
 			return new \WP_Error( 'manager_disabled', __( 'Esta conta de Gestor está desativada.', 'adam-comunidade' ) );
 		}
+		if ( $manager && 'deleted' === $manager->status ) {
+			$wpdb->update(
+				Schema::managers_table(),
+				array( 'status' => 'invited', 'updated_at' => $now ),
+				array( 'id' => (int) $manager->id )
+			);
+			$manager->status = 'invited';
+		}
 		if ( ! $manager_id ) {
 			Logger::error( 'community_manager_create_failed' );
 			return new \WP_Error( 'manager_create_failed', __( 'Não foi possível criar a conta de Gestor.', 'adam-comunidade' ) );
@@ -192,19 +200,19 @@ final class Service {
 	/**
 	 * Creates a password-reset message without revealing whether an account exists.
 	 */
-	public function request_password_reset( string $email ): void {
+	public function request_password_reset( string $email ): bool {
 		global $wpdb;
 		$email   = sanitize_email( $email );
 		$manager = is_email( $email )
 			? $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE email = %s AND status = %s', $email, 'active' ) )
 			: null;
 		if ( ! $manager ) {
-			return;
+			return false;
 		}
 		$now = current_time( 'mysql', true );
 		$raw = $this->new_token();
 		if ( is_wp_error( $raw ) ) {
-			return;
+			return false;
 		}
 		$inserted = $wpdb->insert(
 			Schema::invitations_table(),
@@ -231,9 +239,9 @@ final class Service {
 			if ( false === $superseded ) {
 				$wpdb->delete( Schema::invitations_table(), array( 'id' => $reset_id ) );
 				Logger::error( 'community_manager_password_reset_supersede_failed', array( 'manager_id' => (int) $manager->id ) );
-				return;
+				return false;
 			}
-			$this->emails->send(
+			return $this->emails->send(
 				'manager_password_reset',
 				$email,
 				array( 'manager_reset_url' => Portal::recovery_url( $raw ) )
@@ -241,6 +249,7 @@ final class Service {
 		} else {
 			Logger::error( 'community_manager_password_reset_insert_failed', array( 'manager_id' => (int) $manager->id ) );
 		}
+		return false;
 	}
 
 	public function reset_password( string $token, string $password ): bool|\WP_Error {
@@ -312,6 +321,131 @@ final class Service {
 				'active'
 			)
 		) ?: array();
+	}
+
+	/**
+	 * Assigns an existing manager without issuing another activation token.
+	 *
+	 * @return true|\WP_Error
+	 */
+	public function assign_existing( int $manager_id, string $type, int $entity_id ): true|\WP_Error {
+		global $wpdb;
+		$type = sanitize_key( $type );
+		if ( $manager_id < 1 || $entity_id < 1 || ! in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) || ! $this->record( $type, $entity_id ) ) {
+			return new \WP_Error( 'invalid_assignment', __( 'A atribuição selecionada não é válida.', 'adam-comunidade' ) );
+		}
+		$status = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) );
+		if ( ! in_array( $status, array( 'invited', 'active' ), true ) ) {
+			return new \WP_Error( 'manager_unavailable', __( 'O Gestor selecionado não pode receber atribuições.', 'adam-comunidade' ) );
+		}
+		$now = current_time( 'mysql', true );
+		$result = $wpdb->query(
+			$wpdb->prepare(
+				'INSERT INTO ' . Schema::assignments_table() . ' (manager_id,entity_type,entity_id,status,created_at,updated_at) VALUES (%d,%s,%d,%s,%s,%s)'
+				. ' ON DUPLICATE KEY UPDATE status=VALUES(status),updated_at=VALUES(updated_at)',
+				$manager_id,
+				$type,
+				$entity_id,
+				'active',
+				$now,
+				$now
+			)
+		);
+		if ( false === $result ) {
+			Logger::error( 'community_manager_assignment_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $entity_id ) );
+			return new \WP_Error( 'assignment_failed', __( 'Não foi possível guardar a atribuição.', 'adam-comunidade' ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Cancels every open activation token for one assignment.
+	 *
+	 * @return true|\WP_Error
+	 */
+	public function cancel_invitation( int $assignment_id ): true|\WP_Error {
+		global $wpdb;
+		$assignment = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::assignments_table() . ' WHERE id=%d AND status=%s', $assignment_id, 'active' ) );
+		if ( ! $assignment ) {
+			return new \WP_Error( 'assignment_not_found', __( 'A atribuição já não está disponível.', 'adam-comunidade' ) );
+		}
+		$now = current_time( 'mysql', true );
+		$result = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE " . Schema::invitations_table() . " SET used_at=%s WHERE manager_id=%d AND purpose='invitation' AND entity_type=%s AND entity_id=%d AND used_at IS NULL",
+				$now,
+				(int) $assignment->manager_id,
+				(string) $assignment->entity_type,
+				(int) $assignment->entity_id
+			)
+		);
+		if ( false === $result ) {
+			Logger::error( 'community_manager_invitation_cancel_failed', array( 'assignment_id' => $assignment_id ) );
+			return new \WP_Error( 'invitation_cancel_failed', __( 'Não foi possível cancelar o convite.', 'adam-comunidade' ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Soft-deletes a manager and either releases or transfers active assignments.
+	 *
+	 * @return true|\WP_Error
+	 */
+	public function delete_manager( int $manager_id, string $assignment_action, int $target_manager_id = 0 ): true|\WP_Error {
+		global $wpdb;
+		$manager = $wpdb->get_row( $wpdb->prepare( 'SELECT id,status FROM ' . Schema::managers_table() . ' WHERE id=%d AND status<>%s', $manager_id, 'deleted' ) );
+		if ( ! $manager ) {
+			return new \WP_Error( 'manager_not_found', __( 'O Gestor já não está disponível.', 'adam-comunidade' ) );
+		}
+		if ( ! in_array( $assignment_action, array( 'release', 'transfer' ), true ) ) {
+			return new \WP_Error( 'invalid_delete_action', __( 'Selecione o que deve acontecer às organizações atribuídas.', 'adam-comunidade' ) );
+		}
+		if ( 'transfer' === $assignment_action ) {
+			$target_status = $target_manager_id && $target_manager_id !== $manager_id
+				? (string) $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM ' . Schema::managers_table() . ' WHERE id=%d', $target_manager_id ) )
+				: '';
+			if ( ! in_array( $target_status, array( 'invited', 'active' ), true ) ) {
+				return new \WP_Error( 'invalid_transfer_target', __( 'Selecione um Gestor de destino válido.', 'adam-comunidade' ) );
+			}
+		}
+
+		$now = current_time( 'mysql', true );
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			Logger::error( 'community_manager_delete_failed', array( 'manager_id' => $manager_id, 'operation' => 'transaction_start_failed' ) );
+			return new \WP_Error( 'manager_delete_failed', __( 'Não foi possível eliminar o Gestor. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
+		}
+		try {
+			$active = $this->assignments( $manager_id );
+			if ( 'transfer' === $assignment_action ) {
+				foreach ( $active as $assignment ) {
+					$result = $this->assign_existing( $target_manager_id, (string) $assignment->entity_type, (int) $assignment->entity_id );
+					if ( is_wp_error( $result ) ) {
+						throw new \RuntimeException( 'assignment_transfer_failed' );
+					}
+				}
+			}
+			$assignment_status = 'transfer' === $assignment_action ? 'transferred' : 'removed';
+			if ( false === $wpdb->update( Schema::assignments_table(), array( 'status' => $assignment_status, 'updated_at' => $now ), array( 'manager_id' => $manager_id, 'status' => 'active' ) ) ) {
+				throw new \RuntimeException( 'assignment_release_failed' );
+			}
+			if ( false === $wpdb->update( Schema::managers_table(), array( 'status' => 'deleted', 'password_hash' => '', 'updated_at' => $now ), array( 'id' => $manager_id ) ) ) {
+				throw new \RuntimeException( 'manager_soft_delete_failed' );
+			}
+			if ( false === $wpdb->delete( Schema::sessions_table(), array( 'manager_id' => $manager_id ) ) ) {
+				throw new \RuntimeException( 'session_revoke_failed' );
+			}
+			if ( false === $wpdb->query( $wpdb->prepare( 'UPDATE ' . Schema::invitations_table() . ' SET used_at=%s WHERE manager_id=%d AND used_at IS NULL', $now, $manager_id ) ) ) {
+				throw new \RuntimeException( 'token_revoke_failed' );
+			}
+			if ( false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				throw new \RuntimeException( 'manager_delete_commit_failed' );
+			}
+			return true;
+		} catch ( \Throwable $throwable ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			Logger::error( 'community_manager_delete_failed', array( 'manager_id' => $manager_id, 'operation' => sanitize_key( $throwable->getMessage() ) ) );
+			return new \WP_Error( 'manager_delete_failed', __( 'Não foi possível eliminar o Gestor. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
+		}
 	}
 
 	public function can_manage( int $manager_id, string $type, int $id ): bool {

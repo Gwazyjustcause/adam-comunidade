@@ -38,30 +38,51 @@ final class Admin {
 		add_action( 'admin_post_adam_manager_admin_remove_assignment', array( $this, 'remove_assignment' ) );
 		add_action( 'admin_post_adam_manager_admin_assign', array( $this, 'assign' ) );
 		add_action( 'admin_post_adam_manager_admin_transfer', array( $this, 'transfer' ) );
+		add_action( 'admin_post_adam_manager_admin_cancel_invitation', array( $this, 'cancel_invitation' ) );
+		add_action( 'admin_post_adam_manager_admin_reset_password', array( $this, 'reset_password' ) );
+		add_action( 'admin_post_adam_manager_admin_delete', array( $this, 'delete' ) );
 	}
 
 	public function index(): void {
 		global $wpdb;
 		$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
 		$status = sanitize_key( wp_unslash( $_GET['status'] ?? '' ) );
+		$sort   = sanitize_key( wp_unslash( $_GET['orderby'] ?? 'created_desc' ) );
+		$paged  = max( 1, absint( $_GET['paged'] ?? 1 ) );
+		$per_page = 20;
+		$orders = array(
+			'created_desc'   => 'm.created_at DESC',
+			'created_asc'    => 'm.created_at ASC',
+			'email_asc'      => 'm.email ASC',
+			'email_desc'     => 'm.email DESC',
+			'last_login_desc'=> 'm.last_login_at DESC, m.created_at DESC',
+		);
+		$order_sql = $orders[ $sort ] ?? $orders['created_desc'];
 		$where  = array( '1=1' );
 		$args   = array();
 		if ( $search ) {
 			$where[] = 'm.email LIKE %s';
 			$args[]  = '%' . $wpdb->esc_like( $search ) . '%';
 		}
-		if ( in_array( $status, array( 'invited', 'active', 'disabled' ), true ) ) {
+		if ( in_array( $status, array( 'invited', 'active', 'disabled', 'deleted' ), true ) ) {
 			$where[] = 'm.status = %s';
 			$args[]  = $status;
+		} else {
+			$where[] = 'm.status <> %s';
+			$args[]  = 'deleted';
 		}
-		$sql = 'SELECT m.* FROM ' . Schema::managers_table() . ' m WHERE ' . implode( ' AND ', $where ) . ' ORDER BY m.created_at DESC';
-		$managers = ( $args ? $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) ) : $wpdb->get_results( $sql ) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$count_sql = 'SELECT COUNT(*) FROM ' . Schema::managers_table() . ' m WHERE ' . implode( ' AND ', $where );
+		$total_managers = (int) $wpdb->get_var( $wpdb->prepare( $count_sql, ...$args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$sql = 'SELECT m.* FROM ' . Schema::managers_table()
+			. ' m WHERE ' . implode( ' AND ', $where ) . " ORDER BY {$order_sql} LIMIT %d OFFSET %d";
+		$managers = $wpdb->get_results( $wpdb->prepare( $sql, ...array_merge( $args, array( $per_page, ( $paged - 1 ) * $per_page ) ) ) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$assignments = array();
 		$manager_ids = array_map( static fn( object $manager ): int => (int) $manager->id, $managers );
 		$rows = array();
 		if ( $manager_ids ) {
 			$placeholders = implode( ',', array_fill( 0, count( $manager_ids ), '%d' ) );
-			$assignment_sql = 'SELECT a.*,i.used_at AS invitation_used_at,i.expires_at AS invitation_expires_at FROM ' . Schema::assignments_table() . ' a'
+			$assignment_sql = 'SELECT a.*,i.used_at AS invitation_used_at,i.expires_at AS invitation_expires_at,'
+				. '(SELECT COUNT(*) FROM ' . Schema::assignments_table() . " ax WHERE ax.entity_type=a.entity_type AND ax.entity_id=a.entity_id AND ax.status='active') AS assigned_manager_count FROM " . Schema::assignments_table() . ' a'
 				. ' LEFT JOIN ' . Schema::invitations_table() . " i ON i.id=(SELECT i2.id FROM " . Schema::invitations_table() . " i2 WHERE i2.manager_id=a.manager_id AND i2.purpose='invitation' AND i2.entity_type=a.entity_type AND i2.entity_id=a.entity_id ORDER BY i2.created_at DESC LIMIT 1)"
 				. " WHERE a.manager_id IN ({$placeholders}) AND a.status=%s ORDER BY a.created_at ASC";
 			$rows = $wpdb->get_results( $wpdb->prepare( $assignment_sql, ...array_merge( $manager_ids, array( 'active' ) ) ) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -77,6 +98,17 @@ final class Admin {
 		$directory     = new Directory_Repository();
 		$partner_choices = $directory->choices( 'partner' );
 		$institution_choices = $directory->choices( 'institution' );
+		$manager_choices = $wpdb->get_results(
+			"SELECT id,email,status FROM " . Schema::managers_table() . " WHERE status IN ('invited','active') ORDER BY email ASC" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		) ?: array();
+		$status_counts = array( 'invited' => 0, 'active' => 0, 'disabled' => 0 );
+		$count_rows = $wpdb->get_results(
+			"SELECT status,COUNT(*) AS total FROM " . Schema::managers_table() . " WHERE status<>'deleted' GROUP BY status" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		) ?: array();
+		foreach ( $count_rows as $count_row ) {
+			$status_counts[ (string) $count_row->status ] = (int) $count_row->total;
+		}
+		$total_pages = max( 1, (int) ceil( $total_managers / $per_page ) );
 		$email_status = get_option( 'adam_comunidade_email_last_status', array() );
 		$email_status = is_array( $email_status ) ? $email_status : array();
 		$email_templates = ( new \ADAM\Comunidade\Experience\Email_Service() )->templates();
@@ -136,16 +168,16 @@ final class Admin {
 		$id = absint( $_REQUEST['assignment_id'] ?? 0 );
 		check_admin_referer( 'adam_resend_manager_invitation_' . $id );
 		global $wpdb;
+		$sent = false;
 		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT a.*,m.email FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . ' m ON m.id=a.manager_id WHERE a.id=%d', $id ) );
 		if ( $row ) {
 			$url = $this->service->invite( (string) $row->email, (string) $row->entity_type, (int) $row->entity_id );
 			$record = $this->service->record( (string) $row->entity_type, (int) $row->entity_id );
 			if ( ! is_wp_error( $url ) ) {
-				( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', (string) $row->email, array( 'entity_name' => (string) ( $record->name ?? '' ), 'manager_invite_url' => $url ) );
+				$sent = ( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', (string) $row->email, array( 'entity_name' => (string) ( $record->name ?? '' ), 'manager_invite_url' => $url ) );
 			}
 		}
-		wp_safe_redirect( wp_get_referer() ?: Admin_Router::page_url( 'managers' ) );
-		exit;
+		$this->redirect_managers( $sent ? 'invitation-sent' : 'invitation-send-failed' );
 	}
 
 	public function status(): never {
@@ -155,12 +187,14 @@ final class Admin {
 		$status = sanitize_key( wp_unslash( $_POST['manager_status'] ?? '' ) );
 		if ( in_array( $status, array( 'active', 'disabled' ), true ) ) {
 			global $wpdb;
-			$wpdb->update( Schema::managers_table(), array( 'status' => $status, 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
-			if ( 'disabled' === $status ) {
+			$password_hash = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT password_hash FROM ' . Schema::managers_table() . ' WHERE id=%d AND status<>%s', $id, 'deleted' ) );
+			$next_status   = 'active' === $status && '' === $password_hash ? 'invited' : $status;
+			$wpdb->update( Schema::managers_table(), array( 'status' => $next_status, 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
+			if ( 'disabled' === $next_status ) {
 				$wpdb->delete( Schema::sessions_table(), array( 'manager_id' => $id ) );
 			}
 		}
-		$this->redirect_managers();
+		$this->redirect_managers( 'status-updated' );
 	}
 
 	public function remove_assignment(): never {
@@ -168,8 +202,11 @@ final class Admin {
 		$id = absint( $_POST['assignment_id'] ?? 0 );
 		check_admin_referer( 'adam_manager_remove_assignment_' . $id );
 		global $wpdb;
-		$wpdb->update( Schema::assignments_table(), array( 'status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
-		$this->redirect_managers();
+		$cancelled = $this->service->cancel_invitation( $id );
+		$removed   = is_wp_error( $cancelled )
+			? false
+			: $wpdb->update( Schema::assignments_table(), array( 'status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id, 'status' => 'active' ) );
+		$this->redirect_managers( 1 !== $removed ? 'assignment-failed' : 'assignment-removed' );
 	}
 
 	public function assign(): never {
@@ -177,34 +214,52 @@ final class Admin {
 		check_admin_referer( 'adam_manager_admin_assign' );
 		global $wpdb;
 		$manager_id = absint( $_POST['manager_id'] ?? 0 );
-		$entity     = explode( ':', sanitize_text_field( wp_unslash( $_POST['entity'] ?? '' ) ), 2 );
-		$type       = sanitize_key( $entity[0] ?? '' );
-		$entity_id  = absint( $entity[1] ?? 0 );
 		$manager    = $manager_id ? $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) ) : null;
 		$email      = $manager ? (string) $manager->email : sanitize_email( wp_unslash( $_POST['manager_email'] ?? '' ) );
-		$record = $entity_id ? $this->service->record( $type, $entity_id ) : null;
-		if ( $manager && $record && in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
-			$now = current_time( 'mysql', true );
-			$transferred = $wpdb->query(
-				$wpdb->prepare(
-					'INSERT INTO ' . Schema::assignments_table() . ' (manager_id,entity_type,entity_id,status,created_at,updated_at) VALUES (%d,%s,%d,%s,%s,%s)'
-					. ' ON DUPLICATE KEY UPDATE status=VALUES(status),updated_at=VALUES(updated_at)',
-					$manager_id,
-					$type,
-					$entity_id,
-					'active',
-					$now,
-					$now
-				)
-			);
-		} else {
-			$url = $this->service->invite( $email, $type, $entity_id );
+		$entities = isset( $_POST['entities'] ) && is_array( $_POST['entities'] ) ? wp_unslash( $_POST['entities'] ) : array();
+		$references = array();
+		foreach ( array_slice( array_unique( array_map( 'strval', $entities ) ), 0, 100 ) as $value ) {
+			$parts = explode( ':', sanitize_text_field( $value ), 2 );
+			$type  = sanitize_key( $parts[0] ?? '' );
+			$id    = absint( $parts[1] ?? 0 );
+			if ( $id && in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
+				$references[] = array( 'type' => $type, 'id' => $id );
+			}
 		}
-		if ( isset( $url ) && ! is_wp_error( $url ) ) {
-			$record = $this->service->record( $type, $entity_id );
-			( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', $email, array( 'entity_name' => (string) ( $record->name ?? '' ), 'manager_invite_url' => $url ) );
+		if ( ! $references || ( ! $manager && ! is_email( $email ) ) ) {
+			$this->redirect_managers( 'assignment-invalid' );
 		}
-		$this->redirect_managers();
+
+		$url = '';
+		$partial_failure = false;
+		$assigned_manager_id = $manager_id;
+		foreach ( $references as $index => $reference ) {
+			if ( 0 === $index && ! $manager ) {
+				$url = $this->service->invite( $email, $reference['type'], $reference['id'] );
+				if ( is_wp_error( $url ) ) {
+					$this->redirect_managers( 'assignment-failed' );
+				}
+				$assigned_manager_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE email=%s', $email ) );
+				continue;
+			}
+			$result = $this->service->assign_existing( $assigned_manager_id, $reference['type'], $reference['id'] );
+			if ( is_wp_error( $result ) ) {
+				$partial_failure = true;
+			}
+		}
+		if ( ! $manager && $url ) {
+			$record = 1 === count( $references )
+				? $this->service->record( $references[0]['type'], $references[0]['id'] )
+				: null;
+			$label = 1 === count( $references )
+				? (string) ( $record->name ?? __( 'Organização da Comunidade', 'adam-comunidade' ) )
+				: sprintf( _n( '%d organização', '%d organizações', count( $references ), 'adam-comunidade' ), count( $references ) );
+			$sent = ( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', $email, array( 'entity_name' => $label, 'manager_invite_url' => $url ) );
+			if ( ! $sent ) {
+				$this->redirect_managers( 'invitation-send-failed' );
+			}
+		}
+		$this->redirect_managers( $partial_failure ? 'assignment-partial' : 'assignment-saved' );
 	}
 
 	public function transfer(): never {
@@ -214,9 +269,13 @@ final class Admin {
 		$target_id = absint( $_POST['target_manager_id'] ?? 0 );
 		global $wpdb;
 		$assignment = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::assignments_table() . ' WHERE id=%d', $assignment_id ) );
-		$target_exists = $target_id && (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE id=%d AND status<>%s', $target_id, 'disabled' ) );
+		$target_exists = $target_id && (bool) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . Schema::managers_table() . " WHERE id=%d AND status IN ('invited','active')", $target_id ) );
 		if ( $assignment && $target_exists && $target_id !== (int) $assignment->manager_id ) {
 			$now = current_time( 'mysql', true );
+			$transaction_started = false !== $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			if ( ! $transaction_started ) {
+				$this->redirect_managers( 'assignment-failed' );
+			}
 			$transferred = $wpdb->query(
 				$wpdb->prepare(
 					'INSERT INTO ' . Schema::assignments_table() . ' (manager_id,entity_type,entity_id,status,created_at,updated_at) VALUES (%d,%s,%d,%s,%s,%s)'
@@ -230,14 +289,67 @@ final class Admin {
 				)
 			);
 			if ( false !== $transferred ) {
-				$wpdb->update( Schema::assignments_table(), array( 'status' => 'transferred', 'updated_at' => $now ), array( 'id' => $assignment_id ) );
+				$cancelled = $this->service->cancel_invitation( $assignment_id );
+				$source_updated = is_wp_error( $cancelled )
+					? false
+					: $wpdb->update( Schema::assignments_table(), array( 'status' => 'transferred', 'updated_at' => $now ), array( 'id' => $assignment_id, 'status' => 'active' ) );
+				if ( 1 === $source_updated ) {
+					$committed = $wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					if ( false === $committed ) {
+						$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+						$transferred = false;
+					}
+				} else {
+					$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					$transferred = false;
+				}
+			} else {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
-		$this->redirect_managers();
+		$this->redirect_managers( isset( $transferred ) && false !== $transferred ? 'assignment-transferred' : 'assignment-failed' );
 	}
 
-	private function redirect_managers(): never {
-		wp_safe_redirect( Admin_Router::page_url( 'managers' ) );
+	public function cancel_invitation(): never {
+		Admin_Router::authorize();
+		$id = absint( $_POST['assignment_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_cancel_invitation_' . $id );
+		$result = $this->service->cancel_invitation( $id );
+		$this->redirect_managers( is_wp_error( $result ) ? 'invitation-cancel-failed' : 'invitation-cancelled' );
+	}
+
+	public function reset_password(): never {
+		Admin_Router::authorize();
+		$id = absint( $_POST['manager_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_reset_password_' . $id );
+		global $wpdb;
+		$email = (string) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT email FROM ' . Schema::managers_table() . ' WHERE id=%d AND status=%s',
+				$id,
+				'active'
+			)
+		);
+		$sent = $email && $this->service->request_password_reset( $email );
+		$this->redirect_managers( $sent ? 'password-reset-sent' : 'password-reset-failed' );
+	}
+
+	public function delete(): never {
+		Admin_Router::authorize();
+		$id = absint( $_POST['manager_id'] ?? 0 );
+		check_admin_referer( 'adam_manager_delete_' . $id );
+		$strategy = sanitize_key( wp_unslash( $_POST['assignment_action'] ?? '' ) );
+		$target   = absint( $_POST['target_manager_id'] ?? 0 );
+		$result   = $this->service->delete_manager( $id, $strategy, $target );
+		$this->redirect_managers( is_wp_error( $result ) ? 'manager-delete-failed' : 'manager-deleted' );
+	}
+
+	private function redirect_managers( string $status = '' ): never {
+		$url = Admin_Router::page_url( 'managers' );
+		if ( $status ) {
+			$url = add_query_arg( 'gestor_estado', sanitize_key( $status ), $url );
+		}
+		wp_safe_redirect( $url );
 		exit;
 	}
 

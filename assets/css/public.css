@@ -192,6 +192,24 @@
 	max-width: 760px;
 }
 
+.adam-manager-nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	margin-top: 24px;
+}
+
+.adam-manager-nav a {
+	color: #fff;
+	font-weight: 700;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 4px;
+}
+
+.adam-manager-nav a:hover {
+	color: #b7dc59;
+}
+
 .adam-manager-eyebrow {
 	color: #6f9f24;
 	font-size: .78rem;
@@ -347,6 +365,16 @@
 	font-size: .92rem;
 }
 
+.adam-manager-portal :is(a, button, input, select, textarea):focus-visible {
+	outline: 3px solid #97c44b;
+	outline-offset: 3px;
+}
+
+.adam-manager-portal form[aria-busy="true"] {
+	opacity: .72;
+	pointer-events: none;
+}
+
 @media (max-width: 700px) {
 	.adam-manager-toolbar,
 	.adam-manager-form__heading {
@@ -356,5 +384,46 @@
 
 	.adam-manager-form .adam-form-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.adam-manager-header {
+		border-radius: 16px;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	.adam-manager-portal {
+		background:
+			radial-gradient(circle at 10% 0, rgba(151, 196, 75, .12), transparent 32rem),
+			#101710;
+		color: #eef4ec;
+	}
+
+	.adam-manager-card,
+	.adam-manager-form,
+	.adam-manager-current-media,
+	.adam-manager-choices {
+		background: #182219;
+		border-color: #3c4c3d;
+		color: #eef4ec;
+	}
+
+	.adam-manager-form input,
+	.adam-manager-form select,
+	.adam-manager-form textarea {
+		background: #101710;
+		border-color: #607161;
+		color: #fff;
+	}
+
+	.adam-manager-help,
+	.adam-manager-review-note {
+		color: #b9c5b8;
+	}
+
+	.adam-manager-notice {
+		background: #26351d;
+		border-color: #6f9f24;
+		color: #f2f8ed;
 	}
 }

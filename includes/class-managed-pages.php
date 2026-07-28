@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.4.0';
+	private const VERSION = '1.5.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -94,6 +94,12 @@ final class Managed_Pages {
 				'default_title' => __( 'Área do Gestor', 'adam-comunidade' ),
 				'default_slug'  => 'gestor',
 				'option'        => 'manager_page_id',
+			),
+			'manager_login' => array(
+				'label'         => __( 'Login do Gestor', 'adam-comunidade' ),
+				'default_title' => __( 'Login do Gestor', 'adam-comunidade' ),
+				'default_slug'  => 'login-gestor',
+				'option'        => 'manager_login_page_id',
 			),
 			'manager_activation' => array(
 				'label'         => __( 'Definir Palavra-passe do Gestor', 'adam-comunidade' ),

@@ -49,6 +49,11 @@ final class Auth {
 				array( 'last_seen_at' => $now ),
 				array( 'id' => (int) $row->manager_session_id )
 			);
+			$wpdb->update(
+				Schema::managers_table(),
+				array( 'last_activity_at' => $now, 'updated_at' => $now ),
+				array( 'id' => (int) $row->id )
+			);
 		}
 		unset( $row->manager_session_id, $row->manager_session_last_seen );
 		$this->session_token = $raw;
@@ -70,7 +75,7 @@ final class Auth {
 		}
 		$wpdb->update(
 			Schema::managers_table(),
-			array( 'last_login_at' => current_time( 'mysql', true ), 'updated_at' => current_time( 'mysql', true ) ),
+			array( 'last_login_at' => current_time( 'mysql', true ), 'last_activity_at' => current_time( 'mysql', true ), 'updated_at' => current_time( 'mysql', true ) ),
 			array( 'id' => (int) $row->id )
 		);
 		return true;

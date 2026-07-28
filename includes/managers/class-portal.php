@@ -21,7 +21,7 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
  * Provides a dedicated, non-WordPress login and management interface.
  */
 final class Portal {
-	private const ROUTES_VERSION = '1.1.0';
+	private const ROUTES_VERSION = '1.2.0';
 	private static ?self $instance = null;
 
 	public function __construct( private Auth $auth, private Service $service ) {
@@ -34,6 +34,7 @@ final class Portal {
 		add_filter( 'query_vars', array( $this, 'query_vars' ) );
 		add_filter( 'template_include', array( $this, 'template' ) );
 		add_filter( 'document_title_parts', array( $this, 'title' ) );
+		add_action( 'template_redirect', array( $this, 'access_control' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ) );
 		foreach ( array( 'login', 'activate', 'logout', 'revision', 'request_reset', 'reset' ) as $action ) {
 			add_action( 'admin_post_nopriv_adam_manager_' . $action, array( $this, 'handle_' . $action ) );
@@ -65,8 +66,14 @@ final class Portal {
 	}
 
 	public function title( array $parts ): array {
-		if ( $this->route() ) {
-			$parts['title'] = __( 'Gestor da Comunidade', 'adam-comunidade' );
+		$route = $this->route();
+		if ( $route ) {
+			$titles = array(
+				'login'    => __( 'Login do Gestor', 'adam-comunidade' ),
+				'activate' => __( 'Definir Palavra-passe', 'adam-comunidade' ),
+				'recovery' => __( 'Recuperar Palavra-passe', 'adam-comunidade' ),
+			);
+			$parts['title'] = $titles[ $route ] ?? __( 'Área do Gestor', 'adam-comunidade' );
 		}
 		return $parts;
 	}
@@ -82,6 +89,10 @@ final class Portal {
 
 	public static function url(): string {
 		return Managed_Pages::url( 'manager' );
+	}
+
+	public static function login_url(): string {
+		return Managed_Pages::url( 'manager_login' );
 	}
 
 	public static function activation_url( string $token ): string {
@@ -103,6 +114,26 @@ final class Portal {
 		}
 	}
 
+	/**
+	 * Keeps authentication pages and the private dashboard strictly separated.
+	 */
+	public function access_control(): void {
+		$route = $this->route();
+		if ( ! $route ) {
+			return;
+		}
+		$manager = $this->auth->current();
+		if ( 'login' === $route && $manager ) {
+			wp_safe_redirect( self::url() );
+			exit;
+		}
+		if ( in_array( $route, array( 'dashboard', 'edit' ), true ) && ! $manager ) {
+			wp_safe_redirect( add_query_arg( 'estado', 'session-required', self::login_url() ) );
+			exit;
+		}
+		nocache_headers();
+	}
+
 	private function render_page(): void {
 		$route = $this->route();
 		?>
@@ -112,10 +143,16 @@ final class Portal {
 					<p class="adam-manager-eyebrow"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
 					<h1><?php esc_html_e( 'Gestor da Comunidade', 'adam-comunidade' ); ?></h1>
 					<p><?php esc_html_e( 'Atualize os registos que lhe foram atribuídos. Todas as alterações são revistas pela ADAM antes da publicação.', 'adam-comunidade' ); ?></p>
+					<nav class="adam-manager-nav" aria-label="<?php esc_attr_e( 'Navegação do Gestor', 'adam-comunidade' ); ?>">
+						<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Área do Gestor', 'adam-comunidade' ); ?></a>
+						<?php if ( ! $this->auth->current() ) : ?><a href="<?php echo esc_url( self::login_url() ); ?>"><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></a><a href="<?php echo esc_url( self::recovery_url() ); ?>"><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></a><?php endif; ?>
+					</nav>
 				</header>
 				<?php $this->notice(); ?>
 				<?php
-				if ( 'activate' === $route ) {
+				if ( 'login' === $route ) {
+					$this->login_form();
+				} elseif ( 'activate' === $route ) {
 					$this->activation_form();
 				} elseif ( 'recovery' === $route ) {
 					$this->recovery_form();
@@ -133,7 +170,7 @@ final class Portal {
 	private function dashboard(): void {
 		$manager = $this->auth->current();
 		if ( ! $manager ) {
-			$this->login_form();
+			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'A sessão terminou.', 'adam-comunidade' ) . '</h2><a class="adam-community-button" href="' . esc_url( self::login_url() ) . '">' . esc_html__( 'Iniciar sessão', 'adam-comunidade' ) . '</a></div>';
 			return;
 		}
 		$assignments = $this->service->assignments( (int) $manager->id );
@@ -148,7 +185,7 @@ final class Portal {
 			</form>
 		</div>
 		<h2><?php esc_html_e( 'Os meus registos', 'adam-comunidade' ); ?></h2>
-		<?php if ( ! $assignments ) : ?>
+		<?php if ( ! $record_names ) : ?>
 			<div class="adam-community-empty"><h3><?php esc_html_e( 'Ainda não existem registos atribuídos.', 'adam-comunidade' ); ?></h3></div>
 		<?php else : ?>
 			<div class="adam-manager-list">
@@ -334,7 +371,7 @@ final class Portal {
 		$attempts = absint( get_transient( $key ) );
 		if ( $attempts >= 8 || ! $this->auth->login( $email, (string) wp_unslash( $_POST['password'] ?? '' ) ) ) {
 			set_transient( $key, $attempts + 1, 15 * MINUTE_IN_SECONDS );
-			$this->redirect_status( 'login-failed' );
+			$this->redirect_login_status( 'login-failed' );
 		}
 		delete_transient( $key );
 		$this->redirect_status( 'logged-in' );
@@ -353,7 +390,7 @@ final class Portal {
 			wp_safe_redirect( add_query_arg( 'estado', 'activation-failed', self::activation_url( $token ) ) );
 			exit;
 		}
-		$this->redirect_status( 'activated' );
+		$this->redirect_login_status( 'activated' );
 	}
 
 	public function handle_request_reset(): never {
@@ -381,7 +418,7 @@ final class Portal {
 			wp_safe_redirect( add_query_arg( 'estado', 'reset-failed', self::recovery_url( $token ) ) );
 			exit;
 		}
-		$this->redirect_status( 'password-reset' );
+		$this->redirect_login_status( 'password-reset' );
 	}
 
 	public function handle_logout(): never {
@@ -389,7 +426,7 @@ final class Portal {
 			wp_die( esc_html__( 'O pedido de segurança expirou.', 'adam-comunidade' ), 403 );
 		}
 		$this->auth->logout();
-		$this->redirect_status( 'logged-out' );
+		$this->redirect_login_status( 'logged-out' );
 	}
 
 	public function handle_revision(): never {
@@ -399,6 +436,9 @@ final class Portal {
 		}
 		$type  = sanitize_key( wp_unslash( $_POST['entity_type'] ?? '' ) );
 		$id    = absint( $_POST['entity_id'] ?? 0 );
+		if ( ! $this->service->can_manage( (int) $manager->id, $type, $id ) ) {
+			wp_die( esc_html__( 'Não tem acesso a este registo.', 'adam-comunidade' ), 403 );
+		}
 		$input = isset( $_POST['manager'] ) && is_array( $_POST['manager'] ) ? wp_unslash( $_POST['manager'] ) : array();
 		// Media IDs are accepted only from uploads processed in this request.
 		unset( $input['cover_id'], $input['logo_id'], $input['gallery'] );
@@ -526,6 +566,7 @@ final class Portal {
 	private function notice(): void {
 		$status = sanitize_key( wp_unslash( $_GET['estado'] ?? '' ) );
 		$messages = array(
+			'session-required'  => __( 'Inicie sessão para aceder à Área do Gestor.', 'adam-comunidade' ),
 			'login-failed'      => __( 'Não foi possível iniciar sessão. Verifique os dados e tente novamente.', 'adam-comunidade' ),
 			'logged-in'         => __( 'Sessão iniciada com sucesso.', 'adam-comunidade' ),
 			'logged-out'        => __( 'Sessão terminada.', 'adam-comunidade' ),
@@ -547,6 +588,11 @@ final class Portal {
 		exit;
 	}
 
+	private function redirect_login_status( string $status ): never {
+		wp_safe_redirect( add_query_arg( 'estado', $status, self::login_url() ) );
+		exit;
+	}
+
 	private function route(): string {
 		$route = sanitize_key( (string) get_query_var( 'adam_manager_route' ) );
 		if ( $route ) {
@@ -554,6 +600,9 @@ final class Portal {
 		}
 		if ( Managed_Pages::is_current( 'manager_activation' ) ) {
 			return 'activate';
+		}
+		if ( Managed_Pages::is_current( 'manager_login' ) ) {
+			return 'login';
 		}
 		if ( Managed_Pages::is_current( 'manager_recovery' ) ) {
 			return 'recovery';

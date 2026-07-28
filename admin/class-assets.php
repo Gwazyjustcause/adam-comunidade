@@ -39,15 +39,17 @@ final class Assets {
 		wp_enqueue_style( 'adam-comunidade-admin', Helpers::url( 'assets/css/admin.css' ), array(), ADAM_COMUNIDADE_VERSION );
 		Upload_Component::enqueue_assets();
 
+		$script_dependencies = array( 'jquery' );
 		if ( str_contains( $hook_suffix, 'adam-comunidade-settings' ) ) {
 			wp_enqueue_style( 'wp-color-picker' );
-			wp_enqueue_script(
-				'adam-comunidade-admin',
-				Helpers::url( 'assets/js/admin.js' ),
-				array( 'jquery', 'wp-color-picker' ),
-				ADAM_COMUNIDADE_VERSION,
-				true
-			);
+			$script_dependencies[] = 'wp-color-picker';
 		}
+		wp_enqueue_script(
+			'adam-comunidade-admin',
+			Helpers::url( 'assets/js/admin.js' ),
+			$script_dependencies,
+			ADAM_COMUNIDADE_VERSION,
+			true
+		);
 	}
 }

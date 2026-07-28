@@ -24,7 +24,7 @@ use ADAM\Comunidade\Logger;
  * application checks and the scheduled orphan cleanup.
  */
 final class Schema {
-	public const VERSION = '1.2.0';
+	public const VERSION = '1.3.0';
 
 	private const VERSION_OPTION = 'adam_comunidade_managers_db_version';
 	private const ERROR_OPTION   = 'adam_comunidade_managers_migration_error';
@@ -34,6 +34,7 @@ final class Schema {
 		'1.0.0' => 'migration_100_create_tables',
 		'1.1.0' => 'migration_110_repair_invitation_purpose',
 		'1.2.0' => 'migration_120_normalize_integrity',
+		'1.3.0' => 'migration_130_add_last_activity',
 	);
 
 	/**
@@ -134,6 +135,7 @@ final class Schema {
 			password_hash varchar(255) NOT NULL DEFAULT '',
 			status varchar(20) NOT NULL DEFAULT 'invited',
 			last_login_at datetime NULL,
+			last_activity_at datetime NULL,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			PRIMARY KEY  (id),
@@ -262,6 +264,18 @@ final class Schema {
 		return true;
 	}
 
+	private static function migration_130_add_last_activity(): true|\WP_Error {
+		global $wpdb;
+		$managers = self::managers_table();
+		if ( ! self::column_exists( $managers, 'last_activity_at' ) ) {
+			$result = $wpdb->query( "ALTER TABLE {$managers} ADD COLUMN last_activity_at datetime NULL AFTER last_login_at" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			if ( false === $result ) {
+				return new \WP_Error( 'manager_schema_add_last_activity', __( 'Não foi possível concluir a atualização da atividade dos Gestores.', 'adam-comunidade' ) );
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Verifies tables and columns used by runtime queries.
 	 *
@@ -269,7 +283,7 @@ final class Schema {
 	 */
 	private static function verify(): true|\WP_Error {
 		$required = array(
-			self::managers_table()    => array( 'id', 'email', 'password_hash', 'status', 'last_login_at', 'created_at', 'updated_at' ),
+			self::managers_table()    => array( 'id', 'email', 'password_hash', 'status', 'last_login_at', 'last_activity_at', 'created_at', 'updated_at' ),
 			self::assignments_table() => array( 'id', 'manager_id', 'entity_type', 'entity_id', 'status', 'created_at', 'updated_at' ),
 			self::invitations_table() => array( 'id', 'manager_id', 'purpose', 'entity_type', 'entity_id', 'token_hash', 'expires_at', 'used_at', 'created_at' ),
 			self::sessions_table()    => array( 'id', 'manager_id', 'token_hash', 'expires_at', 'last_seen_at', 'created_at' ),
