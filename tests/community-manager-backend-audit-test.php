@@ -30,7 +30,7 @@ $invitations_sql = substr( $schema, $invitations_sql_start, $sessions_sql_start 
 $assert( ! str_contains( $assignments_sql, 'purpose varchar' ), 'The legacy purpose column is still defined on assignments.' );
 $assert( str_contains( $invitations_sql, "purpose varchar(30) NOT NULL DEFAULT 'invitation'" ), 'Invitation purpose is not part of the canonical schema.' );
 
-foreach ( array( "'1.0.0'", "'1.1.0'", "'1.2.0'", "'1.3.0'" ) as $migration ) {
+foreach ( array( "'1.0.0'", "'1.1.0'", "'1.2.0'", "'1.3.0'", "'1.4.0'" ) as $migration ) {
 	$assert( str_contains( $schema, $migration ), 'Missing versioned manager migration: ' . $migration );
 }
 $assert( str_contains( $schema, 'self::is_current()' ), 'Schema upgrades do not inspect the physical database.' );

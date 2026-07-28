@@ -762,7 +762,8 @@ final class Portal {
 
 	public function moderation_page(): void {
 		global $wpdb;
-		$rows = $wpdb->get_results( 'SELECT * FROM ' . Schema::submissions_table() . " WHERE status IN ('pending','changes_requested') ORDER BY created_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $wpdb->get_results( 'SELECT * FROM ' . Schema::submissions_table() . " WHERE status IN ('pending','changes_requested') ORDER BY created_at ASC" ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$total_pending = (int) apply_filters( 'adam_comunidade_moderation_pending_count', count( $rows ) );
 		?>
 		<div class="wrap adam-comunidade-admin adam-approvals">
 			<header class="adam-page-header">
@@ -770,9 +771,9 @@ final class Portal {
 					<h1><?php esc_html_e( 'Aprovações', 'adam-comunidade' ); ?></h1>
 					<p><?php esc_html_e( 'Reveja a informação e os documentos antes de publicar conteúdos na Comunidade.', 'adam-comunidade' ); ?></p>
 				</div>
-				<span class="adam-approval-count"><?php echo esc_html( sprintf( _n( '%d pedido pendente', '%d pedidos pendentes', count( $rows ), 'adam-comunidade' ), count( $rows ) ) ); ?></span>
+				<span class="adam-approval-count"><?php echo esc_html( sprintf( _n( '%d pedido pendente', '%d pedidos pendentes', $total_pending, 'adam-comunidade' ), $total_pending ) ); ?></span>
 			</header>
-			<?php if ( ! $rows ) : ?>
+			<?php if ( ! $total_pending ) : ?>
 				<div class="adam-card adam-empty-state"><h2><?php esc_html_e( 'Tudo tratado', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Não existem submissões a aguardar revisão.', 'adam-comunidade' ); ?></p></div>
 			<?php endif; ?>
 			<?php foreach ( $rows as $row ) : ?>

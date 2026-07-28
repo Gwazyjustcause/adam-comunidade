@@ -23,6 +23,7 @@ final class Admin {
 
 	public function register(): void {
 		add_action( 'adam_comunidade_moderation_after_submissions', array( $this, 'render' ) );
+		add_filter( 'adam_comunidade_moderation_pending_count', array( $this, 'pending_count' ) );
 		Admin_Router::register_page(
 			'managers',
 			array(
@@ -41,6 +42,11 @@ final class Admin {
 		add_action( 'admin_post_adam_manager_admin_cancel_invitation', array( $this, 'cancel_invitation' ) );
 		add_action( 'admin_post_adam_manager_admin_reset_password', array( $this, 'reset_password' ) );
 		add_action( 'admin_post_adam_manager_admin_delete', array( $this, 'delete' ) );
+	}
+
+	public function pending_count( int $count ): int {
+		global $wpdb;
+		return $count + (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . Schema::revisions_table() . " WHERE status IN ('pending','needs_info')" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	public function index(): void {
@@ -119,31 +125,70 @@ final class Admin {
 	public function render(): void {
 		global $wpdb;
 		$revisions = $wpdb->get_results( 'SELECT r.*,m.email FROM ' . Schema::revisions_table() . ' r INNER JOIN ' . Schema::managers_table() . " m ON m.id=r.manager_id WHERE r.status IN ('pending','needs_info') ORDER BY r.submitted_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$history = $this->service->revision_history( 50 );
 		$assignments = $wpdb->get_results( 'SELECT a.*,m.email,m.status AS manager_status FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . " m ON m.id=a.manager_id WHERE a.status='active' ORDER BY a.created_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$revisions    = is_array( $revisions ) ? $revisions : array();
 		$assignments  = is_array( $assignments ) ? $assignments : array();
-		$record_names = $this->service->record_names( array_merge( $revisions, $assignments ) );
+		$record_names = $this->service->record_names( array_merge( $revisions, $history, $assignments ) );
 		?>
 		<hr>
 		<h2><?php esc_html_e( 'Alterações propostas por Gestores', 'adam-comunidade' ); ?></h2>
 		<?php if ( ! $revisions ) : ?><p><?php esc_html_e( 'Não existem alterações de Gestores a aguardar revisão.', 'adam-comunidade' ); ?></p><?php endif; ?>
-		<div class="adam-card-grid">
-			<?php foreach ( $revisions as $revision ) : $record = (object) array( 'name' => $record_names[ (string) $revision->entity_type . ':' . (int) $revision->entity_id ] ?? __( 'Registo indisponível', 'adam-comunidade' ) ); $payload = json_decode( (string) $revision->payload, true ) ?: array(); ?>
-				<article class="adam-card">
-					<span class="adam-card__eyebrow"><?php esc_html_e( 'Revisão de Gestor', 'adam-comunidade' ); ?></span>
-					<h3><?php echo esc_html( (string) ( $record->name ?? __( 'Registo indisponível', 'adam-comunidade' ) ) ); ?></h3>
-					<p><?php echo esc_html( (string) $revision->email ); ?></p>
-					<dl><?php foreach ( $payload as $key => $value ) : ?><div><dt><?php echo esc_html( $this->field_label( (string) $key ) ); ?></dt><dd><?php echo esc_html( is_array( $value ) ? implode( ', ', $value ) : wp_strip_all_tags( (string) $value ) ); ?></dd></div><?php endforeach; ?></dl>
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<div class="adam-manager-revision-list">
+			<?php foreach ( $revisions as $revision ) :
+				$record = (object) array( 'name' => $record_names[ (string) $revision->entity_type . ':' . (int) $revision->entity_id ] ?? __( 'Registo indisponível', 'adam-comunidade' ) );
+				$changes = $this->service->revision_changes( $revision );
+				$has_conflict = $this->service->revision_has_conflict( $revision );
+				$conflicts = $has_conflict ? $this->service->revision_conflicts( $revision ) : array();
+				?>
+				<article class="adam-card adam-manager-revision-card">
+					<header class="adam-manager-revision-header">
+						<div>
+							<span class="adam-card__eyebrow"><?php echo esc_html( 'needs_info' === $revision->status ? __( 'A aguardar informação', 'adam-comunidade' ) : __( 'Revisão de Gestor', 'adam-comunidade' ) ); ?></span>
+							<h3><?php echo esc_html( (string) $record->name ); ?></h3>
+							<p><?php echo esc_html( (string) $revision->email ); ?> · <?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->submitted_at ) ); ?></p>
+						</div>
+						<span class="adam-status-pill"><?php echo esc_html( sprintf( _n( '%d alteração', '%d alterações', count( $changes ), 'adam-comunidade' ), count( $changes ) ) ); ?></span>
+					</header>
+					<?php if ( $has_conflict ) : ?>
+						<div class="notice notice-warning inline"><p><strong><?php esc_html_e( 'Atenção:', 'adam-comunidade' ); ?></strong> <?php esc_html_e( 'O registo publicado foi alterado depois desta proposta. Compare cuidadosamente antes de forçar a aprovação.', 'adam-comunidade' ); ?></p></div>
+						<div class="adam-revision-conflict-comparison" role="table" aria-label="<?php esc_attr_e( 'Conflitos com alterações publicadas após a proposta', 'adam-comunidade' ); ?>">
+							<div class="adam-revision-conflict-comparison__head" role="row"><span role="columnheader"><?php esc_html_e( 'Campo', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Ao enviar', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Publicado agora', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Proposta do Gestor', 'adam-comunidade' ); ?></span></div>
+							<?php foreach ( $conflicts as $key => $conflict ) : ?>
+								<div class="adam-revision-conflict-row" role="row">
+									<div role="cell"><strong><?php echo esc_html( $this->field_label( (string) $key ) ); ?></strong></div>
+									<div role="cell" data-label="<?php esc_attr_e( 'Ao enviar', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $conflict['before'], (string) $revision->entity_type ); ?></div>
+									<div role="cell" data-label="<?php esc_attr_e( 'Publicado agora', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $conflict['current'], (string) $revision->entity_type ); ?></div>
+									<div role="cell" data-label="<?php esc_attr_e( 'Proposta do Gestor', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $conflict['proposed'], (string) $revision->entity_type ); ?></div>
+								</div>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+					<?php if ( 'needs_info' === $revision->status && $revision->admin_note ) : ?><p class="adam-revision-previous-note"><strong><?php esc_html_e( 'Informação anteriormente pedida:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $revision->admin_note ); ?></p><?php endif; ?>
+					<?php if ( ! $changes ) : ?><p><?php esc_html_e( 'Esta proposta não contém diferenças detetáveis.', 'adam-comunidade' ); ?></p><?php endif; ?>
+					<div class="adam-revision-comparison" role="table" aria-label="<?php esc_attr_e( 'Comparação das alterações propostas', 'adam-comunidade' ); ?>">
+						<div class="adam-revision-comparison__head" role="row"><span role="columnheader"><?php esc_html_e( 'Campo', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão publicada', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão proposta', 'adam-comunidade' ); ?></span></div>
+						<?php foreach ( $changes as $key => $change ) : ?>
+							<div class="adam-revision-change adam-revision-change--<?php echo esc_attr( $change['kind'] ); ?>" role="row">
+								<div class="adam-revision-change__label" role="cell"><strong><?php echo esc_html( $this->field_label( (string) $key ) ); ?></strong><small><?php echo esc_html( $this->change_label( (string) $change['kind'] ) ); ?></small></div>
+								<div role="cell" data-label="<?php esc_attr_e( 'Versão publicada', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $change['before'], (string) $revision->entity_type ); ?></div>
+								<div role="cell" data-label="<?php esc_attr_e( 'Versão proposta', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $change['after'], (string) $revision->entity_type ); ?></div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+					<form class="adam-revision-actions" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<input type="hidden" name="action" value="adam_moderate_manager_revision">
 						<input type="hidden" name="revision_id" value="<?php echo esc_attr( (string) $revision->id ); ?>">
 						<?php wp_nonce_field( 'adam_moderate_manager_revision_' . $revision->id ); ?>
 						<label><span><?php esc_html_e( 'Nota para o Gestor', 'adam-comunidade' ); ?></span><textarea name="admin_note" rows="3"><?php echo esc_textarea( (string) $revision->admin_note ); ?></textarea></label>
-						<p><button class="button button-primary" name="decision" value="approve"><?php esc_html_e( 'Aprovar alterações', 'adam-comunidade' ); ?></button> <button class="button" name="decision" value="info"><?php esc_html_e( 'Pedir informação', 'adam-comunidade' ); ?></button> <button class="button button-link-delete" name="decision" value="reject"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button></p>
+						<?php if ( $has_conflict ) : ?><label class="adam-revision-conflict-confirm"><input type="checkbox" name="confirm_conflict" value="1"> <span><?php esc_html_e( 'Revisei o conflito e pretendo substituir a versão publicada.', 'adam-comunidade' ); ?></span></label><?php endif; ?>
+						<p><button class="button button-primary" name="decision" value="approve" data-adam-confirm="<?php esc_attr_e( 'Aprovar todas estas alterações e atualizar imediatamente a página pública?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Aprovar todas as alterações', 'adam-comunidade' ); ?></button> <button class="button" name="decision" value="info" data-adam-confirm="<?php esc_attr_e( 'Pedir informação adicional ao Gestor?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Pedir informação', 'adam-comunidade' ); ?></button> <button class="button button-link-delete" name="decision" value="reject" data-adam-confirm="<?php esc_attr_e( 'Rejeitar todas estas alterações? A página pública permanecerá inalterada.', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Rejeitar todas', 'adam-comunidade' ); ?></button></p>
 					</form>
 				</article>
 			<?php endforeach; ?>
 		</div>
+		<h2><?php esc_html_e( 'Histórico de moderação', 'adam-comunidade' ); ?></h2>
+		<?php $this->render_revision_history( $history, $record_names ); ?>
 		<h2><?php esc_html_e( 'Atribuições de Gestor', 'adam-comunidade' ); ?></h2>
 		<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Registo', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Estado', 'adam-comunidade' ); ?></th><th></th></tr></thead><tbody>
 		<?php foreach ( $assignments as $assignment ) : $record = (object) array( 'name' => $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? '#' . $assignment->entity_id ); ?><tr><td><?php echo esc_html( (string) $assignment->email ); ?></td><td><?php echo esc_html( (string) $record->name ); ?></td><td><?php echo esc_html( 'active' === $assignment->manager_status ? __( 'Ativo', 'adam-comunidade' ) : __( 'Convite pendente', 'adam-comunidade' ) ); ?></td><td><a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_resend_manager_invitation', 'assignment_id' => $assignment->id ), admin_url( 'admin-post.php' ) ), 'adam_resend_manager_invitation_' . $assignment->id ) ); ?>"><?php esc_html_e( 'Reenviar convite', 'adam-comunidade' ); ?></a></td></tr><?php endforeach; ?>
@@ -155,7 +200,13 @@ final class Admin {
 		Admin_Router::authorize();
 		$id = absint( $_POST['revision_id'] ?? 0 );
 		check_admin_referer( 'adam_moderate_manager_revision_' . $id );
-		$result = $this->service->moderate_revision( $id, sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) ), sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ), get_current_user_id() );
+		$result = $this->service->moderate_revision(
+			$id,
+			sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) ),
+			sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ),
+			get_current_user_id(),
+			! empty( $_POST['confirm_conflict'] )
+		);
 		if ( is_wp_error( $result ) ) {
 			wp_die( esc_html( $result->get_error_message() ) );
 		}
@@ -353,6 +404,127 @@ final class Admin {
 		exit;
 	}
 
+	/**
+	 * Renders recent immutable moderation decisions.
+	 *
+	 * @param object[]             $history Revision rows.
+	 * @param array<string,string> $record_names Entity labels.
+	 */
+	private function render_revision_history( array $history, array $record_names ): void {
+		$status_labels = array(
+			'approved'   => __( 'Aprovada', 'adam-comunidade' ),
+			'rejected'   => __( 'Rejeitada', 'adam-comunidade' ),
+			'needs_info' => __( 'Informação pedida', 'adam-comunidade' ),
+			'superseded' => __( 'Substituída', 'adam-comunidade' ),
+		);
+		if ( ! $history ) {
+			echo '<p>' . esc_html__( 'Ainda não existe histórico de moderação.', 'adam-comunidade' ) . '</p>';
+			return;
+		}
+		?>
+		<div class="adam-revision-history">
+			<?php foreach ( $history as $revision ) :
+				$key = (string) $revision->entity_type . ':' . (int) $revision->entity_id;
+				$changes = $this->service->revision_changes( $revision );
+				?>
+				<details>
+					<summary><strong><?php echo esc_html( $record_names[ $key ] ?? __( 'Registo indisponível', 'adam-comunidade' ) ); ?></strong><span><?php echo esc_html( $status_labels[ $revision->status ] ?? (string) $revision->status ); ?></span><time><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) ( $revision->reviewed_at ?: $revision->updated_at ) ) ); ?></time></summary>
+					<dl>
+						<div><dt><?php esc_html_e( 'Criada em', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->submitted_at ) ); ?></dd></div>
+						<div><dt><?php esc_html_e( 'Gestor', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( (string) ( $revision->email ?: __( 'Conta indisponível', 'adam-comunidade' ) ) ); ?></dd></div>
+						<div><dt><?php esc_html_e( 'Administrador', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( (string) ( $revision->reviewer_name ?: __( 'Não aplicável', 'adam-comunidade' ) ) ); ?></dd></div>
+						<?php if ( $revision->reviewed_at ) : ?><div><dt><?php esc_html_e( 'Decidida em', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->reviewed_at ) ); ?></dd></div><?php endif; ?>
+						<?php if ( $revision->published_at ) : ?><div><dt><?php esc_html_e( 'Publicada em', 'adam-comunidade' ); ?></dt><dd><?php echo esc_html( mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (string) $revision->published_at ) ); ?></dd></div><?php endif; ?>
+					</dl>
+					<?php if ( $revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Nota de moderação:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $revision->admin_note ); ?></p><?php endif; ?>
+					<p><?php echo esc_html( sprintf( _n( '%d alteração registada.', '%d alterações registadas.', count( $changes ), 'adam-comunidade' ), count( $changes ) ) ); ?></p>
+					<?php if ( $changes ) : ?>
+						<div class="adam-revision-comparison adam-revision-history-changes" role="table" aria-label="<?php esc_attr_e( 'Alterações desta revisão', 'adam-comunidade' ); ?>">
+							<div class="adam-revision-comparison__head" role="row"><span role="columnheader"><?php esc_html_e( 'Campo', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão anterior', 'adam-comunidade' ); ?></span><span role="columnheader"><?php esc_html_e( 'Versão proposta', 'adam-comunidade' ); ?></span></div>
+							<?php foreach ( $changes as $key => $change ) : ?>
+								<div class="adam-revision-change adam-revision-change--<?php echo esc_attr( $change['kind'] ); ?>" role="row">
+									<div class="adam-revision-change__label" role="cell"><strong><?php echo esc_html( $this->field_label( (string) $key ) ); ?></strong><small><?php echo esc_html( $this->change_label( (string) $change['kind'] ) ); ?></small></div>
+									<div role="cell" data-label="<?php esc_attr_e( 'Versão anterior', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $change['before'], (string) $revision->entity_type ); ?></div>
+									<div role="cell" data-label="<?php esc_attr_e( 'Versão proposta', 'adam-comunidade' ); ?>"><?php $this->render_revision_value( (string) $key, $change['after'], (string) $revision->entity_type ); ?></div>
+								</div>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</details>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	private function change_label( string $kind ): string {
+		return array(
+			'added'   => __( 'Adicionado', 'adam-comunidade' ),
+			'removed' => __( 'Removido', 'adam-comunidade' ),
+			'changed' => __( 'Alterado', 'adam-comunidade' ),
+		)[ $kind ] ?? __( 'Alterado', 'adam-comunidade' );
+	}
+
+	/**
+	 * Renders text, lists and image changes without exposing raw markup.
+	 */
+	private function render_revision_value( string $key, mixed $value, string $entity_type ): void {
+		if ( in_array( $key, array( 'cover_id', 'logo_id' ), true ) ) {
+			$id = absint( $value );
+			if ( $id && wp_attachment_is_image( $id ) ) {
+				echo '<a class="adam-revision-image" href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener">' . wp_get_attachment_image( $id, 'medium' ) . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				return;
+			}
+			echo '<em>' . esc_html__( 'Sem imagem', 'adam-comunidade' ) . '</em>';
+			return;
+		}
+		if ( in_array( $key, array( 'gallery', 'gallery_ids' ), true ) ) {
+			$ids = array_values( array_filter( array_map( 'absint', (array) $value ), 'wp_attachment_is_image' ) );
+			if ( ! $ids ) {
+				echo '<em>' . esc_html__( 'Sem fotografias', 'adam-comunidade' ) . '</em>';
+				return;
+			}
+			echo '<div class="adam-revision-gallery">';
+			foreach ( $ids as $position => $id ) {
+				echo '<a href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener"><span>' . esc_html( (string) ( $position + 1 ) ) . '</span>' . wp_get_attachment_image( $id, 'thumbnail' ) . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
+			echo '</div>';
+			return;
+		}
+		if ( 'playing_styles' === $key ) {
+			$labels = 'field' === $entity_type ? \ADAM\Comunidade\Fields\Options::playing_styles() : ( 'team' === $entity_type ? \ADAM\Comunidade\Teams\Options::playing_styles() : array() );
+			$value = array_map( static fn( string $item ): string => (string) ( $labels[ $item ] ?? $item ), (array) $value );
+		} elseif ( 'amenity_ids' === $key ) {
+			global $wpdb;
+			$ids = array_filter( array_map( 'absint', (array) $value ) );
+			if ( $ids ) {
+				$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+				$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT id,label FROM ' . \ADAM\Comunidade\Fields\Schema::amenities_table() . " WHERE id IN ({$placeholders})", ...$ids ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$labels = array();
+				foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+					$labels[ (int) $row->id ] = (string) $row->label;
+				}
+				$value = array_map( static fn( int $id ): string => $labels[ $id ] ?? '#' . $id, $ids );
+			}
+		}
+		if ( is_array( $value ) ) {
+			echo $value ? esc_html( implode( ', ', array_map( 'strval', $value ) ) ) : '<em>' . esc_html__( 'Vazio', 'adam-comunidade' ) . '</em>';
+			return;
+		}
+		if ( null === $value || '' === trim( wp_strip_all_tags( (string) $value ) ) ) {
+			echo '<em>' . esc_html__( 'Vazio', 'adam-comunidade' ) . '</em>';
+			return;
+		}
+		if ( in_array( $key, array( 'full_description', 'rules', 'benefits', 'member_benefits' ), true ) ) {
+			echo '<div class="adam-revision-long-text">' . wp_kses_post( (string) $value ) . '</div>';
+			return;
+		}
+		if ( in_array( $key, array( 'website', 'facebook', 'instagram', 'discord', 'youtube', 'tiktok', 'maps_url' ), true ) ) {
+			echo '<a href="' . esc_url( (string) $value ) . '" target="_blank" rel="noopener">' . esc_html( (string) $value ) . '</a>';
+			return;
+		}
+		echo nl2br( esc_html( (string) $value ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
 	private function field_label( string $key ): string {
 		$labels = array(
 			'name'                   => __( 'Nome', 'adam-comunidade' ),
@@ -366,7 +538,15 @@ final class Admin {
 			'district'               => __( 'Distrito', 'adam-comunidade' ),
 			'municipality'           => __( 'Concelho', 'adam-comunidade' ),
 			'address'                => __( 'Morada', 'adam-comunidade' ),
+			'latitude'               => __( 'Latitude', 'adam-comunidade' ),
+			'longitude'              => __( 'Longitude', 'adam-comunidade' ),
+			'maps_url'               => __( 'Google Maps', 'adam-comunidade' ),
 			'website'                => __( 'Website', 'adam-comunidade' ),
+			'facebook'               => 'Facebook',
+			'instagram'              => 'Instagram',
+			'discord'                => 'Discord',
+			'youtube'                => 'YouTube',
+			'tiktok'                 => 'TikTok',
 			'email'                  => __( 'E-mail', 'adam-comunidade' ),
 			'phone'                  => __( 'Telefone', 'adam-comunidade' ),
 			'playing_styles'         => __( 'Estilos de jogo', 'adam-comunidade' ),
@@ -377,8 +557,20 @@ final class Admin {
 			'min_players'            => __( 'Mínimo de jogadores', 'adam-comunidade' ),
 			'recommended_players'    => __( 'Jogadores recomendados', 'adam-comunidade' ),
 			'recruitment_status'     => __( 'Estado do recrutamento', 'adam-comunidade' ),
+			'recruitment_min_age'    => __( 'Idade mínima', 'adam-comunidade' ),
 			'recruitment_experience' => __( 'Experiência necessária', 'adam-comunidade' ),
 			'recruitment_equipment'  => __( 'Equipamento obrigatório', 'adam-comunidade' ),
+			'recruitment_training'   => __( 'Treino necessário', 'adam-comunidade' ),
+			'equipment_tags'         => __( 'Equipamento', 'adam-comunidade' ),
+			'founded'                => __( 'Ano de fundação', 'adam-comunidade' ),
+			'members'                => __( 'Número de elementos', 'adam-comunidade' ),
+			'team_colour'            => __( 'Cor da Equipa', 'adam-comunidade' ),
+			'availability'           => __( 'Disponibilidade', 'adam-comunidade' ),
+			'category'               => __( 'Categoria', 'adam-comunidade' ),
+			'country'                => __( 'País', 'adam-comunidade' ),
+			'benefits'               => __( 'Benefícios', 'adam-comunidade' ),
+			'member_benefits'        => __( 'Benefícios para Sócios ADAM', 'adam-comunidade' ),
+			'popular_products'       => __( 'Produtos populares', 'adam-comunidade' ),
 		);
 		return $labels[ $key ] ?? __( 'Informação atualizada', 'adam-comunidade' );
 	}

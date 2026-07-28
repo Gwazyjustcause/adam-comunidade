@@ -443,12 +443,14 @@ final class Repository {
 	 *
 	 * @param int                            $field_id Field ID.
 	 * @param array<int,array{id:int,caption:string}> $items Gallery items.
-	 * @return void
+	 * @return bool
 	 */
-	public function sync_gallery( int $field_id, array $items ): void {
+	public function sync_gallery( int $field_id, array $items ): bool {
 		global $wpdb;
 
-		$wpdb->delete( Schema::galleries_table(), array( 'field_id' => $field_id ), array( '%d' ) );
+		if ( false === $wpdb->delete( Schema::galleries_table(), array( 'field_id' => $field_id ), array( '%d' ) ) ) {
+			return false;
+		}
 		$order = 0;
 
 		foreach ( $items as $item ) {
@@ -456,7 +458,7 @@ final class Repository {
 				continue;
 			}
 
-			$wpdb->insert(
+			$inserted = $wpdb->insert(
 				Schema::galleries_table(),
 				array(
 					'field_id'     => $field_id,
@@ -466,8 +468,12 @@ final class Repository {
 					'created_at'   => current_time( 'mysql', true ),
 				)
 			);
+			if ( false === $inserted ) {
+				return false;
+			}
 			++$order;
 		}
+		return true;
 	}
 
 	/**
@@ -512,19 +518,21 @@ final class Repository {
 	 *
 	 * @param int   $field_id   Field ID.
 	 * @param int[] $amenity_ids Amenity IDs.
-	 * @return void
+	 * @return bool
 	 */
-	public function sync_amenities( int $field_id, array $amenity_ids ): void {
+	public function sync_amenities( int $field_id, array $amenity_ids ): bool {
 		global $wpdb;
 
-		$wpdb->delete( Schema::field_amenities_table(), array( 'field_id' => $field_id ), array( '%d' ) );
+		if ( false === $wpdb->delete( Schema::field_amenities_table(), array( 'field_id' => $field_id ), array( '%d' ) ) ) {
+			return false;
+		}
 
 		foreach ( array_unique( array_map( 'absint', $amenity_ids ) ) as $amenity_id ) {
 			if ( ! $amenity_id ) {
 				continue;
 			}
 
-			$wpdb->insert(
+			$inserted = $wpdb->insert(
 				Schema::field_amenities_table(),
 				array(
 					'field_id'   => $field_id,
@@ -533,7 +541,11 @@ final class Repository {
 				),
 				array( '%d', '%d', '%s' )
 			);
+			if ( false === $inserted ) {
+				return false;
+			}
 		}
+		return true;
 	}
 
 	/**

@@ -6,11 +6,17 @@
 			$( '.adam-comunidade-colour' ).wpColorPicker();
 		}
 
-		$( document ).on( 'submit', '.adam-managers-admin form', function ( event ) {
+		$( document ).on( 'submit', '.adam-comunidade-admin form', function ( event ) {
 			const form = this;
-			const message = form.dataset.adamConfirm || '';
+			const submitter = event.originalEvent && event.originalEvent.submitter
+				? event.originalEvent.submitter
+				: form.querySelector( 'button[type="submit"]:focus' );
+			const message = ( submitter && submitter.dataset.adamConfirm ) || form.dataset.adamConfirm || '';
 			const strategy = form.querySelector( '[name="assignment_action"]' );
 			const target = form.querySelector( '[name="target_manager_id"]' );
+			const decision = submitter && submitter.name === 'decision' ? submitter.value : '';
+			const note = form.querySelector( '[name="admin_note"]' );
+			const conflict = form.querySelector( '[name="confirm_conflict"]' );
 
 			if ( strategy && 'transfer' === strategy.value && target && ! target.value ) {
 				event.preventDefault();
@@ -18,12 +24,24 @@
 				target.focus();
 				return;
 			}
+			if ( [ 'reject', 'info' ].includes( decision ) && note && ! note.value.trim() ) {
+				event.preventDefault();
+				window.alert( 'Indique ao Gestor o motivo da decisão ou a informação necessária.' );
+				note.focus();
+				return;
+			}
+			if ( 'approve' === decision && conflict && ! conflict.checked ) {
+				event.preventDefault();
+				window.alert( 'Confirme que reviu o conflito com a versão publicada.' );
+				conflict.focus();
+				return;
+			}
 			if ( message && ! window.confirm( message ) ) {
 				event.preventDefault();
 				return;
 			}
 			form.setAttribute( 'aria-busy', 'true' );
-			const button = form.querySelector( 'button[type="submit"]' );
+			const button = submitter || form.querySelector( 'button[type="submit"]' );
 			if ( button ) {
 				button.disabled = true;
 				button.dataset.originalLabel = button.textContent;

@@ -24,7 +24,7 @@ use ADAM\Comunidade\Logger;
  * application checks and the scheduled orphan cleanup.
  */
 final class Schema {
-	public const VERSION = '1.3.0';
+	public const VERSION = '1.4.0';
 
 	private const VERSION_OPTION = 'adam_comunidade_managers_db_version';
 	private const ERROR_OPTION   = 'adam_comunidade_managers_migration_error';
@@ -35,6 +35,7 @@ final class Schema {
 		'1.1.0' => 'migration_110_repair_invitation_purpose',
 		'1.2.0' => 'migration_120_normalize_integrity',
 		'1.3.0' => 'migration_130_add_last_activity',
+		'1.4.0' => 'migration_140_revision_audit',
 	);
 
 	/**
@@ -192,13 +193,17 @@ final class Schema {
 			entity_type varchar(40) NOT NULL,
 			entity_id bigint(20) unsigned NOT NULL,
 			payload longtext NOT NULL,
+			base_payload longtext NULL,
 			status varchar(30) NOT NULL DEFAULT 'pending',
+			active_key varchar(100) NULL,
 			admin_note text NULL,
 			reviewed_by bigint(20) unsigned NOT NULL DEFAULT 0,
 			submitted_at datetime NOT NULL,
 			reviewed_at datetime NULL,
+			published_at datetime NULL,
 			updated_at datetime NOT NULL,
 			PRIMARY KEY  (id),
+			UNIQUE KEY active_entity (active_key),
 			KEY moderation_queue (status,submitted_at),
 			KEY entity_history (entity_type,entity_id,submitted_at),
 			KEY manager_history (manager_id,status,submitted_at)
@@ -277,6 +282,64 @@ final class Schema {
 	}
 
 	/**
+	 * Adds immutable baselines, publication timestamps and one active revision
+	 * constraint per Community entity.
+	 *
+	 * @return true|\WP_Error
+	 */
+	private static function migration_140_revision_audit(): true|\WP_Error {
+		global $wpdb;
+		$table = self::revisions_table();
+
+		$columns = array(
+			'base_payload' => "ALTER TABLE {$table} ADD COLUMN base_payload longtext NULL AFTER payload",
+			'active_key'   => "ALTER TABLE {$table} ADD COLUMN active_key varchar(100) NULL AFTER status",
+			'published_at' => "ALTER TABLE {$table} ADD COLUMN published_at datetime NULL AFTER reviewed_at",
+		);
+		foreach ( $columns as $column => $sql ) {
+			if ( ! self::column_exists( $table, $column ) && false === $wpdb->query( $sql ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				return new \WP_Error( 'manager_schema_revision_audit_column', __( 'Não foi possível atualizar o histórico de revisões.', 'adam-comunidade' ), array( 'column' => $column ) );
+			}
+		}
+
+		$deduplicated = $wpdb->query(
+			"UPDATE {$table} r INNER JOIN (
+				SELECT entity_type,entity_id,MAX(id) AS keep_id
+				FROM {$table}
+				WHERE status IN ('pending','needs_info','processing')
+				GROUP BY entity_type,entity_id
+				HAVING COUNT(*) > 1
+			) d ON d.entity_type=r.entity_type AND d.entity_id=r.entity_id
+			SET r.status='superseded',r.active_key=NULL,r.updated_at=COALESCE(r.updated_at,r.submitted_at)
+			WHERE r.id<>d.keep_id AND r.status IN ('pending','needs_info','processing')" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		if ( false === $deduplicated ) {
+			return new \WP_Error( 'manager_schema_revision_deduplicate', __( 'Não foi possível normalizar as revisões pendentes.', 'adam-comunidade' ) );
+		}
+
+		$keyed = $wpdb->query(
+			"UPDATE {$table} SET active_key=CASE WHEN status IN ('pending','needs_info','processing') THEN CONCAT(entity_type,':',entity_id) ELSE NULL END" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		if ( false === $keyed ) {
+			return new \WP_Error( 'manager_schema_revision_active_key', __( 'Não foi possível normalizar as revisões pendentes.', 'adam-comunidade' ) );
+		}
+
+		if ( self::index_exists( $table, 'active_entity' ) && ! self::index_is_unique( $table, 'active_entity' ) ) {
+			$dropped = $wpdb->query( "ALTER TABLE {$table} DROP INDEX active_entity" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			if ( false === $dropped ) {
+				return new \WP_Error( 'manager_schema_revision_active_index', __( 'Não foi possível proteger as revisões contra conflitos.', 'adam-comunidade' ) );
+			}
+		}
+		if ( ! self::index_exists( $table, 'active_entity' ) ) {
+			$indexed = $wpdb->query( "ALTER TABLE {$table} ADD UNIQUE KEY active_entity (active_key)" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			if ( false === $indexed ) {
+				return new \WP_Error( 'manager_schema_revision_active_index', __( 'Não foi possível proteger as revisões contra conflitos.', 'adam-comunidade' ) );
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Verifies tables and columns used by runtime queries.
 	 *
 	 * @return true|\WP_Error
@@ -287,7 +350,7 @@ final class Schema {
 			self::assignments_table() => array( 'id', 'manager_id', 'entity_type', 'entity_id', 'status', 'created_at', 'updated_at' ),
 			self::invitations_table() => array( 'id', 'manager_id', 'purpose', 'entity_type', 'entity_id', 'token_hash', 'expires_at', 'used_at', 'created_at' ),
 			self::sessions_table()    => array( 'id', 'manager_id', 'token_hash', 'expires_at', 'last_seen_at', 'created_at' ),
-			self::revisions_table()   => array( 'id', 'manager_id', 'entity_type', 'entity_id', 'payload', 'status', 'admin_note', 'reviewed_by', 'submitted_at', 'reviewed_at', 'updated_at' ),
+			self::revisions_table()   => array( 'id', 'manager_id', 'entity_type', 'entity_id', 'payload', 'base_payload', 'status', 'active_key', 'admin_note', 'reviewed_by', 'submitted_at', 'reviewed_at', 'published_at', 'updated_at' ),
 		);
 
 		foreach ( $required as $table => $columns ) {
@@ -306,7 +369,7 @@ final class Schema {
 			self::assignments_table() => array( 'PRIMARY', 'manager_entity', 'manager_status', 'entity_lookup' ),
 			self::invitations_table() => array( 'PRIMARY', 'token_hash', 'manager_open', 'invitation_history' ),
 			self::sessions_table()    => array( 'PRIMARY', 'token_hash', 'manager_expiry', 'expires_at' ),
-			self::revisions_table()   => array( 'PRIMARY', 'moderation_queue', 'entity_history', 'manager_history' ),
+			self::revisions_table()   => array( 'PRIMARY', 'active_entity', 'moderation_queue', 'entity_history', 'manager_history' ),
 		);
 		foreach ( $indexes as $table => $names ) {
 			foreach ( $names as $name ) {
@@ -314,6 +377,9 @@ final class Schema {
 					return new \WP_Error( 'manager_schema_missing_index', __( 'A estrutura de dados dos Gestores está incompleta.', 'adam-comunidade' ), array( 'component' => sanitize_key( $name ) ) );
 				}
 			}
+		}
+		if ( ! self::index_is_unique( self::revisions_table(), 'active_entity' ) ) {
+			return new \WP_Error( 'manager_schema_missing_index', __( 'A estrutura de dados dos Gestores está incompleta.', 'adam-comunidade' ), array( 'component' => 'active_entity_unique' ) );
 		}
 
 		return true;
@@ -336,6 +402,17 @@ final class Schema {
 		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
 			if ( isset( $row->Key_name ) && $index === (string) $row->Key_name ) {
 				return true;
+			}
+		}
+		return false;
+	}
+
+	private static function index_is_unique( string $table, string $index ): bool {
+		global $wpdb;
+		$rows = $wpdb->get_results( "SHOW INDEX FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			if ( isset( $row->Key_name, $row->Non_unique ) && $index === (string) $row->Key_name ) {
+				return 0 === (int) $row->Non_unique;
 			}
 		}
 		return false;

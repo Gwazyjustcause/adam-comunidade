@@ -37,7 +37,7 @@ final class Service {
 		global $wpdb;
 		$email       = sanitize_email( $email );
 		$entity_type = sanitize_key( $entity_type );
-		if ( ! is_email( $email ) || ! in_array( $entity_type, array( 'team', 'field', 'partner', 'institution' ), true ) || $entity_id < 1 ) {
+		if ( ! is_email( $email ) || ! in_array( $entity_type, $this->supported_entity_types(), true ) || $entity_id < 1 ) {
 			return new \WP_Error( 'invalid_invitation', __( 'Não foi possível criar o convite de Gestor.', 'adam-comunidade' ) );
 		}
 
@@ -347,7 +347,7 @@ final class Service {
 	public function assign_existing( int $manager_id, string $type, int $entity_id ): true|\WP_Error {
 		global $wpdb;
 		$type = sanitize_key( $type );
-		if ( $manager_id < 1 || $entity_id < 1 || ! in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) || ! $this->record( $type, $entity_id ) ) {
+		if ( $manager_id < 1 || $entity_id < 1 || ! in_array( $type, $this->supported_entity_types(), true ) || ! $this->record( $type, $entity_id ) ) {
 			return new \WP_Error( 'invalid_assignment', __( 'A atribuição selecionada não é válida.', 'adam-comunidade' ) );
 		}
 		$status = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) );
@@ -514,20 +514,175 @@ final class Service {
 				$names[ $type . ':' . (int) $row->id ] = (string) $row->name;
 			}
 		}
-		return $names;
+		$names = apply_filters( 'adam_comunidade_manager_entity_names', $names, $references );
+		return is_array( $names ) ? $names : array();
 	}
 
 	public function record( string $type, int $id ): ?object {
+		$record = null;
 		if ( 'team' === $type ) {
-			return ( new Team_Repository() )->find( $id );
+			$record = ( new Team_Repository() )->find( $id );
+		} elseif ( 'field' === $type ) {
+			$record = ( new Field_Repository() )->find( $id );
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			$record = ( new Directory_Repository() )->find( $id, $type );
 		}
-		if ( 'field' === $type ) {
-			return ( new Field_Repository() )->find( $id );
+		$record = apply_filters( 'adam_comunidade_manager_entity_record', $record, $type, $id );
+		return is_object( $record ) ? $record : null;
+	}
+
+	/**
+	 * Returns the single active revision for an entity, if one exists.
+	 */
+	public function active_revision( string $type, int $id ): ?object {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Schema::revisions_table() . " WHERE entity_type=%s AND entity_id=%d AND status IN ('pending','needs_info','processing') ORDER BY id DESC LIMIT 1",
+				sanitize_key( $type ),
+				$id
+			)
+		);
+		return is_object( $row ) ? $row : null;
+	}
+
+	/**
+	 * Returns active revisions visible to one manager, keyed by entity.
+	 *
+	 * @return array<string,object>
+	 */
+	public function active_revisions_for_manager( int $manager_id ): array {
+		global $wpdb;
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT r.* FROM ' . Schema::revisions_table() . ' r INNER JOIN ' . Schema::assignments_table()
+				. " a ON a.entity_type=r.entity_type AND a.entity_id=r.entity_id AND a.manager_id=%d AND a.status='active'"
+				. " WHERE r.status IN ('pending','needs_info','processing') ORDER BY r.submitted_at DESC",
+				$manager_id
+			)
+		);
+		$indexed = array();
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$indexed[ (string) $row->entity_type . ':' . (int) $row->entity_id ] = $row;
 		}
-		if ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
-			return ( new Directory_Repository() )->find( $id, $type );
+		return $indexed;
+	}
+
+	/**
+	 * Decodes a stored proposal into comparable values.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function revision_payload( object $revision ): array {
+		$payload = json_decode( (string) ( $revision->payload ?? '' ), true );
+		return $this->normalize_revision_payload( (string) ( $revision->entity_type ?? '' ), is_array( $payload ) ? $payload : array() );
+	}
+
+	/**
+	 * Returns the immutable published baseline captured at submission time.
+	 *
+	 * Legacy revisions fall back to the current record because no historical
+	 * snapshot existed before schema 1.4.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function revision_baseline( object $revision ): array {
+		$baseline = json_decode( (string) ( $revision->base_payload ?? '' ), true );
+		if ( is_array( $baseline ) ) {
+			return $this->normalize_revision_payload( (string) $revision->entity_type, $baseline );
 		}
-		return null;
+		$current = $this->record( (string) $revision->entity_type, (int) $revision->entity_id );
+		return $current ? $this->snapshot( (string) $revision->entity_type, $current ) : array();
+	}
+
+	/**
+	 * Returns only fields whose proposed value differs from the captured base.
+	 *
+	 * @return array<string,array{before:mixed,after:mixed,kind:string}>
+	 */
+	public function revision_changes( object $revision ): array {
+		$before = $this->revision_baseline( $revision );
+		$after  = $this->revision_payload( $revision );
+		$changes = array();
+		foreach ( array_unique( array_merge( array_keys( $before ), array_keys( $after ) ) ) as $key ) {
+			$old = $before[ $key ] ?? null;
+			$new = $after[ $key ] ?? null;
+			if ( $this->canonicalize( $old ) === $this->canonicalize( $new ) ) {
+				continue;
+			}
+			$old_empty = $this->is_empty_revision_value( $old );
+			$new_empty = $this->is_empty_revision_value( $new );
+			$changes[ $key ] = array(
+				'before' => $old,
+				'after'  => $new,
+				'kind'   => $old_empty && ! $new_empty ? 'added' : ( ! $old_empty && $new_empty ? 'removed' : 'changed' ),
+			);
+		}
+		return $changes;
+	}
+
+	/**
+	 * Detects administrator-side changes made after a proposal was submitted.
+	 */
+	public function revision_has_conflict( object $revision ): bool {
+		$stored = json_decode( (string) ( $revision->base_payload ?? '' ), true );
+		if ( ! is_array( $stored ) ) {
+			return false;
+		}
+		$current = $this->record( (string) $revision->entity_type, (int) $revision->entity_id );
+		return ! $current || $this->payload_hash( $this->normalize_revision_payload( (string) $revision->entity_type, $stored ) ) !== $this->payload_hash( $this->snapshot( (string) $revision->entity_type, $current ) );
+	}
+
+	/**
+	 * Describes changes made directly to the published record after submission.
+	 *
+	 * @return array<string,array{before:mixed,current:mixed,proposed:mixed}>
+	 */
+	public function revision_conflicts( object $revision ): array {
+		$stored = json_decode( (string) ( $revision->base_payload ?? '' ), true );
+		if ( ! is_array( $stored ) ) {
+			return array();
+		}
+		$type    = (string) $revision->entity_type;
+		$record  = $this->record( $type, (int) $revision->entity_id );
+		$before  = $this->normalize_revision_payload( $type, $stored );
+		$current = $record ? $this->snapshot( $type, $record ) : array();
+		$proposal = $this->revision_payload( $revision );
+		$conflicts = array();
+		foreach ( array_unique( array_merge( array_keys( $before ), array_keys( $current ), array_keys( $proposal ) ) ) as $key ) {
+			$old = $before[ $key ] ?? null;
+			$now = $current[ $key ] ?? null;
+			if ( $this->canonicalize( $old ) === $this->canonicalize( $now ) ) {
+				continue;
+			}
+			$conflicts[ $key ] = array(
+				'before'   => $old,
+				'current'  => $now,
+				'proposed' => $proposal[ $key ] ?? null,
+			);
+		}
+		return $conflicts;
+	}
+
+	/**
+	 * Returns recent moderation history for administrators.
+	 *
+	 * @return object[]
+	 */
+	public function revision_history( int $limit = 50 ): array {
+		global $wpdb;
+		$limit = max( 1, min( 200, $limit ) );
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT r.*,m.email,u.display_name AS reviewer_name FROM ' . Schema::revisions_table() . ' r'
+				. ' LEFT JOIN ' . Schema::managers_table() . ' m ON m.id=r.manager_id'
+				. " LEFT JOIN {$wpdb->users} u ON u.ID=r.reviewed_by"
+				. " WHERE r.status IN ('approved','rejected','needs_info','superseded')"
+				. ' ORDER BY COALESCE(r.reviewed_at,r.updated_at,r.submitted_at) DESC LIMIT %d',
+				$limit
+			)
+		);
+		return is_array( $rows ) ? $rows : array();
 	}
 
 	public function submit_revision( int $manager_id, string $type, int $id, array $input, array $relations = array() ): int|\WP_Error {
@@ -539,6 +694,14 @@ final class Service {
 		if ( ! $current ) {
 			return new \WP_Error( 'not_found', __( 'O registo já não está disponível.', 'adam-comunidade' ) );
 		}
+		$active_revision = $this->active_revision( $type, $id );
+		if ( $active_revision && (int) $active_revision->manager_id !== $manager_id ) {
+			return new \WP_Error( 'revision_conflict', __( 'Já existe uma revisão desta organização a aguardar análise. Tente novamente depois de a ADAM concluir essa revisão.', 'adam-comunidade' ) );
+		}
+		if ( $active_revision && 'processing' === (string) $active_revision->status ) {
+			return new \WP_Error( 'revision_processing', __( 'Esta revisão está a ser analisada neste momento. Aguarde até a decisão estar concluída.', 'adam-comunidade' ) );
+		}
+		$baseline = $active_revision ? $this->revision_baseline( $active_revision ) : $this->snapshot( $type, $current );
 		$merged = $this->decode_lists( $type, array_merge( (array) $current, $input ) );
 		if ( 'team' === $type ) {
 			$data = ( new Team_Validator( new Team_Repository() ) )->validate( $merged, $id );
@@ -547,7 +710,10 @@ final class Service {
 		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
 			$data = Directory_Validator::sanitize( $type, $merged );
 		} else {
-			return new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+			$data = apply_filters( 'adam_comunidade_manager_revision_validate', null, $type, $id, $merged, $current );
+			if ( ! is_array( $data ) && ! is_wp_error( $data ) ) {
+				return new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+			}
 		}
 		if ( is_wp_error( $data ) ) {
 			return $data;
@@ -568,7 +734,38 @@ final class Service {
 			);
 			$payload['amenity_ids'] = array_values( array_intersect( $payload['amenity_ids'], $active_ids ) );
 		}
+		$payload = $this->normalize_revision_payload( $type, $payload );
+		if ( $this->payload_hash( $baseline ) === $this->payload_hash( $payload ) ) {
+			return new \WP_Error( 'revision_unchanged', __( 'Não existem alterações para enviar. O registo publicado já contém estes dados.', 'adam-comunidade' ) );
+		}
+
 		$now = current_time( 'mysql', true );
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			Logger::error( 'community_manager_revision_transaction_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $id ) );
+			return new \WP_Error( 'revision_failed', __( 'Não foi possível guardar as alterações para revisão.', 'adam-comunidade' ) );
+		}
+		$locked_revision = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Schema::revisions_table() . " WHERE active_key=%s AND status IN ('pending','needs_info','processing') FOR UPDATE",
+				$type . ':' . $id
+			)
+		);
+		if ( $locked_revision && ( (int) $locked_revision->manager_id !== $manager_id || 'processing' === (string) $locked_revision->status ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'revision_conflict', __( 'Já existe uma revisão desta organização a aguardar análise.', 'adam-comunidade' ) );
+		}
+		if ( $locked_revision ) {
+			$superseded = $wpdb->update(
+				Schema::revisions_table(),
+				array( 'status' => 'superseded', 'active_key' => null, 'updated_at' => $now ),
+				array( 'id' => (int) $locked_revision->id, 'active_key' => $type . ':' . $id )
+			);
+			if ( 1 !== $superseded ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				Logger::error( 'community_manager_revision_supersede_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $id ) );
+				return new \WP_Error( 'revision_failed', __( 'Não foi possível guardar as alterações para revisão.', 'adam-comunidade' ) );
+			}
+		}
 		$inserted = $wpdb->insert(
 			Schema::revisions_table(),
 			array(
@@ -576,35 +773,28 @@ final class Service {
 				'entity_type'=> $type,
 				'entity_id'  => $id,
 				'payload'    => wp_json_encode( $payload ),
+				'base_payload'=> wp_json_encode( $baseline ),
 				'status'     => 'pending',
+				'active_key' => $type . ':' . $id,
 				'submitted_at'=> $now,
 				'updated_at' => $now,
 			)
 		);
 		if ( false === $inserted ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			Logger::error( 'community_manager_revision_insert_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $id ) );
 			return new \WP_Error( 'revision_failed', __( 'Não foi possível guardar as alterações para revisão.', 'adam-comunidade' ) );
 		}
 		$revision_id = (int) $wpdb->insert_id;
-		$superseded = $wpdb->query(
-			$wpdb->prepare(
-				'UPDATE ' . Schema::revisions_table() . " SET status = 'superseded', updated_at = %s WHERE manager_id = %d AND entity_type = %s AND entity_id = %d AND status IN ('pending','needs_info') AND id <> %d",
-				$now,
-				$manager_id,
-				$type,
-				$id,
-				$revision_id
-			)
-		);
-		if ( false === $superseded ) {
-			$wpdb->delete( Schema::revisions_table(), array( 'id' => $revision_id ) );
-			Logger::error( 'community_manager_revision_supersede_failed', array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $id ) );
+		if ( false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			Logger::error( 'community_manager_revision_commit_failed', array( 'revision_id' => $revision_id ) );
 			return new \WP_Error( 'revision_failed', __( 'Não foi possível guardar as alterações para revisão.', 'adam-comunidade' ) );
 		}
 		return $revision_id;
 	}
 
-	public function moderate_revision( int $revision_id, string $decision, string $note, int $reviewer_id ): bool|\WP_Error {
+	public function moderate_revision( int $revision_id, string $decision, string $note, int $reviewer_id, bool $force_conflict = false ): bool|\WP_Error {
 		global $wpdb;
 		$revision = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::revisions_table() . ' WHERE id = %d', $revision_id ) );
 		if ( ! $revision || ! in_array( $revision->status, array( 'pending', 'needs_info' ), true ) ) {
@@ -617,8 +807,10 @@ final class Service {
 		if ( in_array( $decision, array( 'reject', 'info' ), true ) && '' === trim( $note ) ) {
 			return new \WP_Error( 'note_required', __( 'Indique ao Gestor o motivo da decisão ou a informação necessária.', 'adam-comunidade' ) );
 		}
-		$original_status = (string) $revision->status;
-		$now             = current_time( 'mysql', true );
+		$now = current_time( 'mysql', true );
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return new \WP_Error( 'moderation_failed', __( 'Não foi possível iniciar a decisão de moderação.', 'adam-comunidade' ) );
+		}
 		$claimed = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE " . Schema::revisions_table() . " SET status='processing',updated_at=%s WHERE id=%d AND status IN ('pending','needs_info')",
@@ -627,26 +819,38 @@ final class Service {
 			)
 		);
 		if ( 1 !== $claimed ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			return new \WP_Error( 'revision_unavailable', __( 'A revisão já não está disponível.', 'adam-comunidade' ) );
 		}
 		if ( 'approve' === $decision ) {
-			$result = $this->apply_revision( $revision );
+			$result = $this->apply_revision( $revision, $force_conflict );
 			if ( is_wp_error( $result ) ) {
-				$wpdb->update(
-					Schema::revisions_table(),
-					array( 'status' => $original_status, 'updated_at' => current_time( 'mysql', true ) ),
-					array( 'id' => $revision_id, 'status' => 'processing' )
-				);
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				return $result;
 			}
 		}
+		$terminal = in_array( $status, array( 'approved', 'rejected' ), true );
 		$updated = $wpdb->update(
 			Schema::revisions_table(),
-			array( 'status' => $status, 'admin_note' => sanitize_textarea_field( $note ), 'reviewed_by' => $reviewer_id, 'reviewed_at' => $now, 'updated_at' => $now ),
+			array(
+				'status'       => $status,
+				'active_key'   => $terminal ? null : (string) $revision->entity_type . ':' . (int) $revision->entity_id,
+				'admin_note'   => sanitize_textarea_field( $note ),
+				'reviewed_by'  => $reviewer_id,
+				'reviewed_at'  => $now,
+				'published_at' => 'approved' === $status ? $now : null,
+				'updated_at'   => $now,
+			),
 			array( 'id' => $revision_id, 'status' => 'processing' )
 		);
-		if ( false === $updated ) {
+		if ( 1 !== $updated ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			Logger::error( 'community_manager_revision_moderation_failed', array( 'revision_id' => $revision_id ) );
+			return new \WP_Error( 'moderation_failed', __( 'Não foi possível concluir a revisão.', 'adam-comunidade' ) );
+		}
+		if ( false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			Logger::error( 'community_manager_revision_commit_failed', array( 'revision_id' => $revision_id ) );
 			return new \WP_Error( 'moderation_failed', __( 'Não foi possível concluir a revisão.', 'adam-comunidade' ) );
 		}
 		$manager = $wpdb->get_row( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id = %d', $revision->manager_id ) );
@@ -665,14 +869,21 @@ final class Service {
 		return true;
 	}
 
-	private function apply_revision( object $revision ): bool|\WP_Error {
+	private function apply_revision( object $revision, bool $force_conflict = false ): bool|\WP_Error {
 		$payload = json_decode( (string) $revision->payload, true );
 		$payload = is_array( $payload ) ? $payload : array();
 		$type    = (string) $revision->entity_type;
 		$id      = (int) $revision->entity_id;
+		$locked  = $this->lock_revision_entity( $type, $id );
+		if ( is_wp_error( $locked ) ) {
+			return $locked;
+		}
 		$current = $this->record( $type, $id );
 		if ( ! $current ) {
 			return new \WP_Error( 'not_found', __( 'O registo já não está disponível.', 'adam-comunidade' ) );
+		}
+		if ( ! $force_conflict && $this->revision_has_conflict( $revision ) ) {
+			return new \WP_Error( 'published_version_changed', __( 'O registo publicado foi alterado depois desta proposta. Reveja o conflito antes de forçar a aprovação.', 'adam-comunidade' ) );
 		}
 		$relations = array_intersect_key( $payload, array_flip( array( 'amenity_ids', 'gallery_ids' ) ) );
 		unset( $payload['amenity_ids'], $payload['gallery_ids'] );
@@ -687,21 +898,143 @@ final class Service {
 			$repo = new Directory_Repository();
 			$data = Directory_Validator::sanitize( $type, $input );
 		} else {
-			return new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+			$result = apply_filters( 'adam_comunidade_apply_manager_revision', null, $type, $id, $input, $relations, $revision );
+			return is_wp_error( $result ) || true === $result
+				? $result
+				: new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
 		}
 		if ( is_wp_error( $data ) || ! $repo->update( $id, $data ) ) {
 			return is_wp_error( $data ) ? $data : new \WP_Error( 'save_failed', __( 'Não foi possível aplicar a revisão.', 'adam-comunidade' ) );
 		}
 		if ( 'field' === $type && isset( $relations['amenity_ids'] ) ) {
-			$repo->sync_amenities( $id, $relations['amenity_ids'] );
+			if ( ! $repo->sync_amenities( $id, $relations['amenity_ids'] ) ) {
+				return new \WP_Error( 'amenities_failed', __( 'Não foi possível aplicar as alterações às comodidades.', 'adam-comunidade' ) );
+			}
 		}
 		if ( 'field' === $type && isset( $relations['gallery_ids'] ) ) {
-			$repo->sync_gallery( $id, array_map( static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ), $relations['gallery_ids'] ) );
+			if ( ! $repo->sync_gallery( $id, array_map( static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ), $relations['gallery_ids'] ) ) ) {
+				return new \WP_Error( 'gallery_failed', __( 'Não foi possível aplicar as alterações à galeria.', 'adam-comunidade' ) );
+			}
 		}
 		if ( in_array( $type, array( 'partner', 'institution' ), true ) && isset( $relations['gallery_ids'] ) ) {
-			$repo->sync_gallery( $id, array_map( static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ), $relations['gallery_ids'] ) );
+			if ( ! $repo->sync_gallery( $id, array_map( static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ), $relations['gallery_ids'] ) ) ) {
+				return new \WP_Error( 'gallery_failed', __( 'Não foi possível aplicar as alterações à galeria.', 'adam-comunidade' ) );
+			}
 		}
 		return true;
+	}
+
+	/**
+	 * Locks the published row until the surrounding moderation transaction ends.
+	 *
+	 * Future entity adapters can return true from the filter after acquiring
+	 * their own equivalent lock.
+	 */
+	private function lock_revision_entity( string $type, int $id ): true|\WP_Error {
+		global $wpdb;
+		$table = match ( $type ) {
+			'team'  => \ADAM\Comunidade\Teams\Schema::teams_table(),
+			'field' => \ADAM\Comunidade\Fields\Schema::fields_table(),
+			'partner', 'institution' => \ADAM\Comunidade\Directory\Schema::entries_table(),
+			default => '',
+		};
+		if ( $table ) {
+			$sql = 'SELECT id FROM ' . $table . ' WHERE id=%d';
+			$args = array( $id );
+			if ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+				$sql   .= ' AND entity_type=%s';
+				$args[] = $type;
+			}
+			$locked_id = $wpdb->get_var( $wpdb->prepare( $sql . ' FOR UPDATE', ...$args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			return $locked_id ? true : new \WP_Error( 'not_found', __( 'O registo já não está disponível.', 'adam-comunidade' ) );
+		}
+		$result = apply_filters( 'adam_comunidade_lock_manager_revision_entity', null, $type, $id );
+		return true === $result
+			? true
+			: new \WP_Error( 'unsupported_type', __( 'Este tipo de organização não é suportado.', 'adam-comunidade' ) );
+	}
+
+	/**
+	 * Captures only manager-editable fields and moderated relationships.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function snapshot( string $type, object $record ): array {
+		$data = $this->decode_lists( $type, (array) $record );
+		$data = array_intersect_key( $data, array_flip( $this->allowed_fields( $type ) ) );
+		if ( 'field' === $type ) {
+			$repo = new Field_Repository();
+			$data['amenity_ids'] = $repo->amenity_ids( (int) $record->id );
+			$data['gallery_ids'] = array_map(
+				static fn( object $item ): int => absint( $item->attachment_id ?? 0 ),
+				$repo->gallery( (int) $record->id )
+			);
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			$data['gallery_ids'] = array_map(
+				static fn( object $item ): int => absint( $item->attachment_id ?? 0 ),
+				( new Directory_Repository() )->gallery( (int) $record->id )
+			);
+		}
+		return $this->normalize_revision_payload( $type, $data );
+	}
+
+	/**
+	 * Normalizes JSON lists and media relations without losing gallery order.
+	 *
+	 * @param array<string,mixed> $payload Revision values.
+	 * @return array<string,mixed>
+	 */
+	private function normalize_revision_payload( string $type, array $payload ): array {
+		$payload = $this->decode_lists( $type, $payload );
+		foreach ( array( 'gallery', 'gallery_ids', 'amenity_ids' ) as $key ) {
+			if ( array_key_exists( $key, $payload ) ) {
+				$payload[ $key ] = array_values( array_unique( array_filter( array_map( 'absint', (array) $payload[ $key ] ) ) ) );
+			}
+		}
+		if ( isset( $payload['amenity_ids'] ) ) {
+			sort( $payload['amenity_ids'], SORT_NUMERIC );
+		}
+		foreach ( array( 'playing_styles', 'equipment_tags' ) as $key ) {
+			if ( array_key_exists( $key, $payload ) ) {
+				$payload[ $key ] = array_values( array_unique( array_map( 'sanitize_key', (array) $payload[ $key ] ) ) );
+			}
+		}
+		return $payload;
+	}
+
+	/**
+	 * Creates a stable hash while preserving intentional gallery ordering.
+	 *
+	 * @param array<string,mixed> $payload Revision values.
+	 */
+	private function payload_hash( array $payload ): string {
+		return hash( 'sha256', (string) wp_json_encode( $this->canonicalize( $payload ) ) );
+	}
+
+	private function canonicalize( mixed $value ): mixed {
+		if ( is_array( $value ) ) {
+			if ( ! array_is_list( $value ) ) {
+				ksort( $value );
+			}
+			foreach ( $value as $key => $item ) {
+				$value[ $key ] = $this->canonicalize( $item );
+			}
+			return $value;
+		}
+		if ( null === $value ) {
+			return '';
+		}
+		if ( is_bool( $value ) ) {
+			return $value ? '1' : '0';
+		}
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	private function is_empty_revision_value( mixed $value ): bool {
+		if ( is_array( $value ) ) {
+			return array() === $value;
+		}
+		return null === $value || '' === trim( (string) $value );
 	}
 
 	/**
@@ -721,12 +1054,26 @@ final class Service {
 	private function allowed_fields( string $type ): array {
 		$common = array( 'name', 'cover_id', 'short_description', 'full_description', 'district', 'municipality', 'address', 'latitude', 'longitude', 'maps_url', 'website', 'facebook', 'instagram', 'email', 'phone', 'playing_styles' );
 		if ( 'team' === $type ) {
-			return array_merge( $common, array( 'short_name', 'logo_id', 'gallery', 'team_colour', 'discord', 'youtube', 'tiktok', 'founded', 'members', 'recruitment_status', 'recruitment_min_age', 'recruitment_experience', 'recruitment_equipment', 'recruitment_training', 'equipment_tags' ) );
+			$fields = array_merge( $common, array( 'short_name', 'logo_id', 'gallery', 'team_colour', 'discord', 'youtube', 'tiktok', 'founded', 'members', 'recruitment_status', 'recruitment_min_age', 'recruitment_experience', 'recruitment_equipment', 'recruitment_training', 'equipment_tags' ) );
+		} elseif ( 'field' === $type ) {
+			$fields = array_merge( $common, array( 'availability', 'rules', 'opening_hours', 'max_players', 'min_players', 'recommended_players' ) );
+		} elseif ( in_array( $type, array( 'partner', 'institution' ), true ) ) {
+			$fields = array( 'name', 'logo_id', 'cover_id', 'short_description', 'full_description', 'website', 'facebook', 'instagram', 'email', 'phone', 'address', 'district', 'latitude', 'longitude', 'category', 'benefits', 'member_benefits', 'country', 'popular_products' );
+		} else {
+			$fields = array();
 		}
-		if ( 'field' === $type ) {
-			return array_merge( $common, array( 'availability', 'rules', 'opening_hours', 'max_players', 'min_players', 'recommended_players' ) );
-		}
-		return array( 'name', 'logo_id', 'cover_id', 'short_description', 'full_description', 'website', 'facebook', 'instagram', 'email', 'phone', 'address', 'district', 'latitude', 'longitude', 'category', 'benefits', 'member_benefits', 'country', 'popular_products' );
+		$fields = apply_filters( 'adam_comunidade_manager_revision_fields', $fields, $type );
+		return array_values( array_unique( array_map( 'sanitize_key', is_array( $fields ) ? $fields : array() ) ) );
+	}
+
+	/**
+	 * Allows Notícias and Eventos adapters to join the same workflow later.
+	 *
+	 * @return string[]
+	 */
+	private function supported_entity_types(): array {
+		$types = apply_filters( 'adam_comunidade_manager_revision_entity_types', array( 'team', 'field', 'partner', 'institution' ) );
+		return array_values( array_unique( array_map( 'sanitize_key', is_array( $types ) ? $types : array() ) ) );
 	}
 
 	private function decode_lists( string $type, array $input ): array {

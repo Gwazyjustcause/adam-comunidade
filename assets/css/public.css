@@ -337,6 +337,16 @@
 	position: relative;
 }
 
+.adam-manager-current-media label.is-dragging {
+	opacity: .45;
+}
+
+.adam-manager-current-media label:focus-visible {
+	border-radius: 9px;
+	outline: 3px solid #97c44b;
+	outline-offset: 3px;
+}
+
 .adam-manager-current-media img {
 	aspect-ratio: 1;
 	border-radius: 9px;
@@ -365,6 +375,67 @@
 	font-size: .92rem;
 }
 
+.adam-manager-pending-banner {
+	background: #f4f8e9;
+	border: 1px solid #b8cb83;
+	border-radius: 12px;
+	margin-bottom: 22px;
+	padding: 16px 18px;
+}
+
+.adam-manager-pending-banner p:last-child {
+	margin-bottom: 0;
+}
+
+.adam-manager-revision-status {
+	background: #edf3df;
+	border-radius: 999px;
+	color: #3d5710;
+	display: inline-flex;
+	font-size: .82rem;
+	font-weight: 800;
+	padding: 5px 10px;
+}
+
+.adam-manager-revision-status--needs_info {
+	background: #fff0c2;
+	color: #694d00;
+}
+
+.adam-manager-revision-status--processing {
+	background: #dcecf8;
+	color: #174b70;
+}
+
+.adam-manager-current-image {
+	align-items: center;
+	background: #f7f9f6;
+	border: 1px solid #dce5db;
+	border-radius: 10px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(140px, 1fr) 90px minmax(180px, 1fr);
+	margin: 16px 0;
+	padding: 12px;
+}
+
+.adam-manager-current-image img {
+	border-radius: 7px;
+	height: 72px;
+	object-fit: cover;
+	width: 90px;
+}
+
+.adam-manager-current-image label {
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+}
+
+.adam-manager-current-image input {
+	width: auto;
+}
+
 .adam-manager-portal :is(a, button, input, select, textarea):focus-visible {
 	outline: 3px solid #97c44b;
 	outline-offset: 3px;
@@ -386,6 +457,10 @@
 		grid-template-columns: 1fr;
 	}
 
+	.adam-manager-current-image {
+		grid-template-columns: 1fr;
+	}
+
 	.adam-manager-header {
 		border-radius: 16px;
 	}
@@ -402,7 +477,8 @@
 	.adam-manager-card,
 	.adam-manager-form,
 	.adam-manager-current-media,
-	.adam-manager-choices {
+	.adam-manager-choices,
+	.adam-manager-current-image {
 		background: #182219;
 		border-color: #3c4c3d;
 		color: #eef4ec;
@@ -419,6 +495,12 @@
 	.adam-manager-help,
 	.adam-manager-review-note {
 		color: #b9c5b8;
+	}
+
+	.adam-manager-pending-banner {
+		background: #26351d;
+		border-color: #52683c;
+		color: #eef4ec;
 	}
 
 	.adam-manager-notice {

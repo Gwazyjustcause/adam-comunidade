@@ -265,14 +265,17 @@ final class Repository {
 	 * Replaces an entry gallery.
 	 *
 	 * @param array<int,array{id:int,caption:string}> $items Gallery items.
+	 * @return bool
 	 */
-	public function sync_gallery( int $entry_id, array $items ): void {
+	public function sync_gallery( int $entry_id, array $items ): bool {
 		global $wpdb;
-		$wpdb->delete( Schema::galleries_table(), array( 'entry_id' => $entry_id ), array( '%d' ) );
+		if ( false === $wpdb->delete( Schema::galleries_table(), array( 'entry_id' => $entry_id ), array( '%d' ) ) ) {
+			return false;
+		}
 		foreach ( $items as $order => $item ) {
 			$attachment_id = absint( $item['id'] ?? 0 );
 			if ( $attachment_id ) {
-				$wpdb->insert(
+				$inserted = $wpdb->insert(
 					Schema::galleries_table(),
 					array(
 						'entry_id'     => $entry_id,
@@ -282,7 +285,11 @@ final class Repository {
 						'created_at'   => current_time( 'mysql', true ),
 					)
 				);
+				if ( false === $inserted ) {
+					return false;
+				}
 			}
 		}
+		return true;
 	}
 }

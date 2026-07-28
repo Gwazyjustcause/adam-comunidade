@@ -175,6 +175,7 @@ final class Portal {
 		}
 		$assignments = $this->service->assignments( (int) $manager->id );
 		$record_names = $this->service->record_names( $assignments );
+		$active_revisions = $this->service->active_revisions_for_manager( (int) $manager->id );
 		?>
 		<div class="adam-manager-toolbar">
 			<p><?php echo esc_html( sprintf( __( 'Sessão iniciada como %s', 'adam-comunidade' ), (string) $manager->email ) ); ?></p>
@@ -189,14 +190,32 @@ final class Portal {
 			<div class="adam-community-empty"><h3><?php esc_html_e( 'Ainda não existem registos atribuídos.', 'adam-comunidade' ); ?></h3></div>
 		<?php else : ?>
 			<div class="adam-manager-list">
-				<?php foreach ( $assignments as $assignment ) : $record_name = $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? ''; ?>
+				<?php foreach ( $assignments as $assignment ) :
+					$revision_key = (string) $assignment->entity_type . ':' . (int) $assignment->entity_id;
+					$record_name = $record_names[ $revision_key ] ?? '';
+					$active_revision = $active_revisions[ $revision_key ] ?? null;
+					?>
 					<?php if ( ! $record_name ) { continue; } ?>
 					<article class="adam-card adam-manager-card">
 						<?php $entity_labels = array( 'field' => __( 'Campo', 'adam-comunidade' ), 'team' => __( 'Equipa', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ); ?>
 						<span class="adam-card__eyebrow"><?php echo esc_html( $entity_labels[ $assignment->entity_type ] ?? __( 'Organização', 'adam-comunidade' ) ); ?></span>
 						<h3><?php echo esc_html( $record_name ); ?></h3>
-						<p><?php esc_html_e( 'As alterações enviadas ficam pendentes até serem revistas pela administração.', 'adam-comunidade' ); ?></p>
-						<a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar registo', 'adam-comunidade' ); ?></a>
+						<?php if ( $active_revision ) :
+							$is_own_revision = (int) $active_revision->manager_id === (int) $manager->id;
+							$status_labels = array(
+								'pending'    => __( 'A aguardar revisão', 'adam-comunidade' ),
+								'needs_info' => __( 'Informação adicional necessária', 'adam-comunidade' ),
+								'processing' => __( 'Em análise neste momento', 'adam-comunidade' ),
+							);
+							?>
+							<p><span class="adam-manager-revision-status adam-manager-revision-status--<?php echo esc_attr( (string) $active_revision->status ); ?>"><?php echo esc_html( $status_labels[ $active_revision->status ] ?? __( 'Em revisão', 'adam-comunidade' ) ); ?></span></p>
+							<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Nota da ADAM:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $active_revision->admin_note ); ?></p><?php endif; ?>
+							<p><?php echo esc_html( $is_own_revision ? __( 'Pode atualizar a proposta enquanto esta não estiver em análise.', 'adam-comunidade' ) : __( 'Outro Gestor já enviou alterações para esta organização.', 'adam-comunidade' ) ); ?></p>
+							<?php if ( $is_own_revision && 'processing' !== $active_revision->status ) : ?><a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar proposta pendente', 'adam-comunidade' ); ?></a><?php endif; ?>
+						<?php else : ?>
+							<p><?php esc_html_e( 'As alterações enviadas ficam pendentes até serem revistas pela administração.', 'adam-comunidade' ); ?></p>
+							<a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar registo', 'adam-comunidade' ); ?></a>
+						<?php endif; ?>
 					</article>
 				<?php endforeach; ?>
 			</div>
@@ -276,9 +295,24 @@ final class Portal {
 			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'Não tem acesso a este registo.', 'adam-comunidade' ) . '</h2></div>';
 			return;
 		}
+		$active_revision = $this->service->active_revision( $type, $id );
+		if ( $active_revision && (int) $active_revision->manager_id !== (int) $manager->id ) {
+			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'Já existe uma proposta em revisão.', 'adam-comunidade' ) . '</h2><p>' . esc_html__( 'Outro Gestor enviou alterações para esta organização. Poderá editar novamente depois de a ADAM concluir essa revisão.', 'adam-comunidade' ) . '</p><a class="adam-community-button" href="' . esc_url( self::url() ) . '">' . esc_html__( 'Voltar à Área do Gestor', 'adam-comunidade' ) . '</a></div>';
+			return;
+		}
+		if ( $active_revision && 'processing' === (string) $active_revision->status ) {
+			echo '<div class="adam-community-empty"><h2>' . esc_html__( 'A proposta está a ser analisada.', 'adam-comunidade' ) . '</h2><p>' . esc_html__( 'A edição fica temporariamente indisponível enquanto a ADAM conclui a decisão.', 'adam-comunidade' ) . '</p><a class="adam-community-button" href="' . esc_url( self::url() ) . '">' . esc_html__( 'Voltar à Área do Gestor', 'adam-comunidade' ) . '</a></div>';
+			return;
+		}
+		$pending_payload = $active_revision ? $this->service->revision_payload( $active_revision ) : array();
+		if ( $pending_payload ) {
+			$record = (object) array_merge( (array) $record, $pending_payload );
+		}
 		$styles = 'field' === $type ? Field_Options::playing_styles() : ( 'team' === $type ? Team_Options::playing_styles() : array() );
 		$selected_styles = 'field' === $type ? Field_Options::decode_list( $record->playing_styles ?? '' ) : ( 'team' === $type ? Team_Options::decode_list( $record->playing_styles ?? '' ) : array() );
-		$current_gallery_ids = $this->gallery_ids( $type, $record );
+		$current_gallery_ids = isset( $pending_payload['gallery_ids'] )
+			? array_map( 'absint', (array) $pending_payload['gallery_ids'] )
+			: ( isset( $pending_payload['gallery'] ) ? array_map( 'absint', (array) $pending_payload['gallery'] ) : $this->gallery_ids( $type, $record ) );
 		?>
 		<form class="adam-card adam-manager-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_revision">
@@ -286,6 +320,13 @@ final class Portal {
 			<input type="hidden" name="entity_type" value="<?php echo esc_attr( $type ); ?>">
 			<input type="hidden" name="entity_id" value="<?php echo esc_attr( (string) $id ); ?>">
 			<div class="adam-manager-form__heading"><div><p class="adam-manager-eyebrow"><?php esc_html_e( 'Proposta de alteração', 'adam-comunidade' ); ?></p><h2><?php echo esc_html( (string) $record->name ); ?></h2></div><a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Voltar aos meus registos', 'adam-comunidade' ); ?></a></div>
+			<?php if ( $active_revision ) : ?>
+				<div class="adam-manager-pending-banner" role="status">
+					<strong><?php esc_html_e( 'Está a editar a proposta pendente.', 'adam-comunidade' ); ?></strong>
+					<p><?php esc_html_e( 'Ao voltar a enviar, esta versão substitui a proposta anterior no trabalho pendente. A versão anterior permanece no histórico administrativo.', 'adam-comunidade' ); ?></p>
+					<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Informação pedida pela ADAM:', 'adam-comunidade' ); ?></strong> <?php echo esc_html( (string) $active_revision->admin_note ); ?></p><?php endif; ?>
+				</div>
+			<?php endif; ?>
 			<div class="adam-form-grid">
 				<label><span><?php esc_html_e( 'Nome', 'adam-comunidade' ); ?></span><input type="text" name="manager[name]" value="<?php echo esc_attr( (string) $record->name ); ?>" required></label>
 				<?php if ( in_array( $type, array( 'team', 'field' ), true ) ) : ?><label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><input type="text" name="manager[municipality]" value="<?php echo esc_attr( (string) ( $record->municipality ?? '' ) ); ?>"></label><?php endif; ?>
@@ -300,19 +341,21 @@ final class Portal {
 				<label><span><?php esc_html_e( 'Telefone de contacto interno', 'adam-comunidade' ); ?></span><input type="tel" name="manager[phone]" value="<?php echo esc_attr( (string) ( $record->phone ?? '' ) ); ?>"></label>
 			</div>
 			<?php if ( $styles ) : ?><fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Estilos de jogo', 'adam-comunidade' ); ?></legend><?php foreach ( $styles as $key => $label ) : ?><label><input type="checkbox" name="manager[playing_styles][]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $selected_styles, true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></fieldset><?php endif; ?>
-			<?php if ( 'field' === $type ) { $this->field_sections( $record ); } elseif ( 'team' === $type ) { $this->team_sections( $record ); } else { $this->directory_sections( $record ); } ?>
+			<?php if ( 'field' === $type ) { $this->field_sections( $record, $pending_payload ); } elseif ( 'team' === $type ) { $this->team_sections( $record ); } else { $this->directory_sections( $record ); } ?>
 			<div class="adam-manager-media">
 				<h3><?php esc_html_e( 'Imagens', 'adam-comunidade' ); ?></h3>
 				<?php if ( $current_gallery_ids ) : ?>
 					<fieldset class="adam-manager-current-media">
-						<legend><?php esc_html_e( 'Fotografias atuais', 'adam-comunidade' ); ?></legend>
-						<p><?php esc_html_e( 'Desmarque uma fotografia para propor a sua remoção.', 'adam-comunidade' ); ?></p>
-						<div><?php foreach ( $current_gallery_ids as $attachment_id ) : ?><label><input type="checkbox" name="keep_gallery_ids[]" value="<?php echo esc_attr( (string) $attachment_id ); ?>" checked><?php echo wp_get_attachment_image( $attachment_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></label><?php endforeach; ?></div>
+						<legend><?php echo esc_html( $active_revision ? __( 'Fotografias da proposta pendente', 'adam-comunidade' ) : __( 'Fotografias atuais', 'adam-comunidade' ) ); ?></legend>
+						<p><?php esc_html_e( 'Desmarque para propor a remoção. Arraste as fotografias para alterar a ordem.', 'adam-comunidade' ); ?></p>
+						<div data-adam-current-gallery><?php foreach ( $current_gallery_ids as $attachment_id ) : ?><label draggable="true" tabindex="0" data-attachment-id="<?php echo esc_attr( (string) $attachment_id ); ?>"><input type="checkbox" name="keep_gallery_ids[]" value="<?php echo esc_attr( (string) $attachment_id ); ?>" checked><?php echo wp_get_attachment_image( $attachment_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><span class="screen-reader-text"><?php esc_html_e( 'Manter fotografia. Use Alt e as setas para alterar a ordem.', 'adam-comunidade' ); ?></span></label><?php endforeach; ?></div>
 					</fieldset>
 				<?php endif; ?>
 				<input type="hidden" name="gallery_reviewed" value="1">
+				<?php if ( ! empty( $record->cover_id ) && wp_attachment_is_image( (int) $record->cover_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Capa incluída na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->cover_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_cover" value="1"> <?php esc_html_e( 'Propor remoção da capa', 'adam-comunidade' ); ?></label></div><?php endif; ?>
 				<label><?php esc_html_e( 'Nova imagem de capa (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?>
+				<?php if ( 'field' !== $type && ! empty( $record->logo_id ) && wp_attachment_is_image( (int) $record->logo_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Logótipo incluído na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->logo_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_logo" value="1"> <?php esc_html_e( 'Propor remoção do logótipo', 'adam-comunidade' ); ?></label></div><?php endif; ?>
 				<?php if ( 'field' !== $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => 'image/jpeg,image/png,image/webp', 'max_size_mb' => 10 ) ); ?><?php endif; ?>
 				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => 'image/jpeg,image/png,image/webp', 'multiple' => true, 'max' => 20, 'max_size_mb' => 10 ) ); ?>
@@ -323,9 +366,11 @@ final class Portal {
 		<?php
 	}
 
-	private function field_sections( object $record ): void {
+	private function field_sections( object $record, array $pending_payload = array() ): void {
 		$repo = new Field_Repository();
-		$selected = $repo->amenity_ids( (int) $record->id );
+		$selected = isset( $pending_payload['amenity_ids'] )
+			? array_map( 'absint', (array) $pending_payload['amenity_ids'] )
+			: $repo->amenity_ids( (int) $record->id );
 		?>
 		<div class="adam-form-grid">
 			<label><span><?php esc_html_e( 'Jogadores recomendados', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[recommended_players]" value="<?php echo esc_attr( (string) $record->recommended_players ); ?>"></label>
@@ -439,9 +484,25 @@ final class Portal {
 		if ( ! $this->service->can_manage( (int) $manager->id, $type, $id ) ) {
 			wp_die( esc_html__( 'Não tem acesso a este registo.', 'adam-comunidade' ), 403 );
 		}
+		$active_revision = $this->service->active_revision( $type, $id );
+		$pending_payload = $active_revision && (int) $active_revision->manager_id === (int) $manager->id
+			? $this->service->revision_payload( $active_revision )
+			: array();
 		$input = isset( $_POST['manager'] ) && is_array( $_POST['manager'] ) ? wp_unslash( $_POST['manager'] ) : array();
 		// Media IDs are accepted only from uploads processed in this request.
 		unset( $input['cover_id'], $input['logo_id'], $input['gallery'] );
+		if ( isset( $pending_payload['cover_id'] ) ) {
+			$input['cover_id'] = absint( $pending_payload['cover_id'] );
+		}
+		if ( isset( $pending_payload['logo_id'] ) ) {
+			$input['logo_id'] = absint( $pending_payload['logo_id'] );
+		}
+		if ( ! empty( $_POST['remove_cover'] ) ) {
+			$input['cover_id'] = 0;
+		}
+		if ( 'field' !== $type && ! empty( $_POST['remove_logo'] ) ) {
+			$input['logo_id'] = 0;
+		}
 		$uploaded = array();
 		$cover = $this->upload_one( 'manager_cover' );
 		if ( is_wp_error( $cover ) ) { wp_die( esc_html( $cover->get_error_message() ) ); }
@@ -455,7 +516,9 @@ final class Portal {
 		if ( is_wp_error( $gallery ) ) { wp_die( esc_html( $gallery->get_error_message() ) ); }
 		$uploaded = array_merge( $uploaded, $gallery );
 		$current_record = $this->service->record( $type, $id );
-		$current_gallery_ids = $current_record ? $this->gallery_ids( $type, $current_record ) : array();
+		$current_gallery_ids = isset( $pending_payload['gallery_ids'] )
+			? array_map( 'absint', (array) $pending_payload['gallery_ids'] )
+			: ( isset( $pending_payload['gallery'] ) ? array_map( 'absint', (array) $pending_payload['gallery'] ) : ( $current_record ? $this->gallery_ids( $type, $current_record ) : array() ) );
 		$kept_gallery_ids = array_values(
 			array_intersect(
 				$current_gallery_ids,

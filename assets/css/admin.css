@@ -504,6 +504,221 @@
 	width: 100%;
 }
 
+.adam-manager-revision-list {
+	display: grid;
+	gap: 20px;
+	margin-bottom: 28px;
+}
+
+.adam-manager-revision-header {
+	align-items: start;
+	display: flex;
+	gap: 18px;
+	justify-content: space-between;
+}
+
+.adam-manager-revision-header h3 {
+	margin: 4px 0;
+}
+
+.adam-manager-revision-header p {
+	margin: 0;
+}
+
+.adam-revision-comparison {
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	margin: 18px 0;
+	overflow: hidden;
+}
+
+.adam-revision-conflict-comparison {
+	border: 2px solid #dba617;
+	border-radius: 8px;
+	margin: 12px 0 18px;
+	overflow: hidden;
+}
+
+.adam-revision-comparison__head,
+.adam-revision-change {
+	display: grid;
+	grid-template-columns: minmax(150px, .65fr) repeat(2, minmax(0, 1fr));
+}
+
+.adam-revision-conflict-comparison__head,
+.adam-revision-conflict-row {
+	display: grid;
+	grid-template-columns: minmax(130px, .55fr) repeat(3, minmax(0, 1fr));
+}
+
+.adam-revision-comparison__head {
+	background: #1f4f29;
+	color: #fff;
+	font-weight: 700;
+}
+
+.adam-revision-conflict-comparison__head {
+	background: #725500;
+	color: #fff;
+	font-weight: 700;
+}
+
+.adam-revision-comparison__head span,
+.adam-revision-change > div,
+.adam-revision-conflict-comparison__head span,
+.adam-revision-conflict-row > div {
+	border-right: 1px solid #dcdcde;
+	padding: 12px;
+}
+
+.adam-revision-comparison__head span:last-child,
+.adam-revision-change > div:last-child,
+.adam-revision-conflict-comparison__head span:last-child,
+.adam-revision-conflict-row > div:last-child {
+	border-right: 0;
+}
+
+.adam-revision-change,
+.adam-revision-conflict-row {
+	border-top: 1px solid #dcdcde;
+}
+
+.adam-revision-conflict-row > div:first-child {
+	background: #fff8e5;
+}
+
+.adam-revision-change__label {
+	background: #f6f7f7;
+}
+
+.adam-revision-change__label small {
+	color: #646970;
+	display: block;
+	margin-top: 4px;
+}
+
+.adam-revision-change--added .adam-revision-change__label {
+	border-left: 4px solid #16803a;
+}
+
+.adam-revision-change--removed .adam-revision-change__label {
+	border-left: 4px solid #b32d2e;
+}
+
+.adam-revision-change--changed .adam-revision-change__label {
+	border-left: 4px solid #dba617;
+}
+
+.adam-revision-long-text {
+	max-height: 280px;
+	overflow: auto;
+	white-space: pre-wrap;
+}
+
+.adam-revision-image img {
+	border-radius: 6px;
+	height: auto;
+	max-height: 180px;
+	max-width: 100%;
+	object-fit: cover;
+}
+
+.adam-revision-gallery {
+	display: grid;
+	gap: 7px;
+	grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+
+.adam-revision-gallery a {
+	position: relative;
+}
+
+.adam-revision-gallery img {
+	aspect-ratio: 1;
+	border-radius: 6px;
+	height: auto;
+	object-fit: cover;
+	width: 100%;
+}
+
+.adam-revision-gallery span {
+	background: #1f4f29;
+	border-radius: 999px;
+	color: #fff;
+	font-size: 11px;
+	left: 4px;
+	line-height: 20px;
+	position: absolute;
+	text-align: center;
+	top: 4px;
+	width: 20px;
+	z-index: 1;
+}
+
+.adam-revision-actions {
+	border-top: 1px solid #dcdcde;
+	padding-top: 18px;
+}
+
+.adam-revision-actions > label {
+	display: grid;
+	font-weight: 600;
+	gap: 6px;
+}
+
+.adam-revision-actions textarea {
+	width: 100%;
+}
+
+.adam-revision-conflict-confirm {
+	align-items: center;
+	background: #fff8e5;
+	border: 1px solid #dba617;
+	border-radius: 6px;
+	display: flex !important;
+	flex-direction: row;
+	margin-top: 12px;
+	padding: 10px;
+}
+
+.adam-revision-history {
+	display: grid;
+	gap: 8px;
+	margin-bottom: 28px;
+}
+
+.adam-revision-history details {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 7px;
+	padding: 11px 14px;
+}
+
+.adam-revision-history summary {
+	align-items: center;
+	cursor: pointer;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: 1fr auto auto;
+}
+
+.adam-revision-history dl {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.adam-revision-history dt {
+	color: #646970;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.adam-revision-history dd {
+	margin: 3px 0 0;
+}
+
 .adam-managers-admin {
 	display: grid;
 	gap: 18px;
@@ -682,6 +897,12 @@
 	outline: 0;
 }
 
+.adam-manager-revision-list :is(button, input, textarea, a):focus-visible,
+.adam-revision-history summary:focus-visible {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #315c25;
+	outline: 0;
+}
+
 .adam-managers-admin form[aria-busy="true"] {
 	opacity: .7;
 }
@@ -710,6 +931,50 @@
 	.adam-manager-delete form {
 		grid-template-columns: 1fr;
 	}
+
+	.adam-revision-comparison__head,
+	.adam-revision-conflict-comparison__head {
+		display: none;
+	}
+
+	.adam-revision-change,
+	.adam-revision-conflict-row {
+		grid-template-columns: 1fr;
+	}
+
+	.adam-revision-change > div,
+	.adam-revision-conflict-row > div {
+		border-right: 0;
+		border-top: 1px solid #dcdcde;
+	}
+
+	.adam-revision-change > div:nth-child(2)::before,
+	.adam-revision-change > div:nth-child(3)::before {
+		color: #646970;
+		display: block;
+		font-size: 11px;
+		font-weight: 700;
+		margin-bottom: 6px;
+		text-transform: uppercase;
+	}
+
+	.adam-revision-change > div[data-label]::before {
+		content: attr(data-label);
+	}
+
+	.adam-revision-conflict-row > div[data-label]::before {
+		color: #646970;
+		content: attr(data-label);
+		display: block;
+		font-size: 11px;
+		font-weight: 700;
+		margin-bottom: 6px;
+		text-transform: uppercase;
+	}
+
+	.adam-revision-history dl {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 @media (max-width: 520px) {
@@ -719,6 +984,17 @@
 
 	.adam-manager-entity-picker {
 		grid-column: auto;
+	}
+
+	.adam-manager-revision-header,
+	.adam-revision-history summary {
+		align-items: stretch;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.adam-revision-history dl {
+		grid-template-columns: 1fr;
 	}
 }
 
@@ -730,5 +1006,37 @@
 
 	.adam-managers-admin .adam-manager-stats strong {
 		color: #b7dc59;
+	}
+
+	.adam-manager-revision-card,
+	.adam-revision-history details,
+	.adam-revision-change > div,
+	.adam-revision-conflict-row > div {
+		background: #182219;
+		border-color: #405043;
+		color: #eef4ec;
+	}
+
+	.adam-revision-change__label,
+	.adam-revision-conflict-row > div:first-child {
+		background: #202c22 !important;
+	}
+
+	.adam-revision-comparison,
+	.adam-revision-conflict-comparison,
+	.adam-revision-change,
+	.adam-revision-conflict-row,
+	.adam-revision-comparison__head span,
+	.adam-revision-conflict-comparison__head span,
+	.adam-revision-change > div,
+	.adam-revision-conflict-row > div,
+	.adam-revision-actions {
+		border-color: #405043;
+	}
+
+	.adam-revision-conflict-confirm {
+		background: #3a3017;
+		border-color: #9b7820;
+		color: #fff;
 	}
 }
