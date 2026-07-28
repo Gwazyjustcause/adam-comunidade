@@ -50,12 +50,14 @@ foreach ( array( $field_cover, $team_cover, $team_avatar ) as $artwork ) {
 	$assert( str_contains( $artwork, '<title>' ), 'Placeholder must expose an accessible title.' );
 	$assert( str_contains( $artwork, 'adam-generated-placeholder' ), 'Shared placeholder CSS contract is missing.' );
 	$assert( ! str_contains( $artwork, '<img' ), 'Placeholder must not depend on a committed media file.' );
+	$assert( ! str_contains( $artwork, '<text' ), 'Placeholder artwork must not contain visible embedded text.' );
+	$assert( ! str_contains( $artwork, 'Sem Fotografia' ), 'Placeholder artwork must not embed an empty-image message.' );
 }
 
-$assert( str_contains( $field_cover, 'Sem Fotografia' ), 'Cover message is missing.' );
-$assert( str_contains( $field_cover, 'Campo do Pinhal' ), 'Field cover must include the entity name.' );
-$assert( str_contains( $team_cover, 'Raposas do Centro' ), 'Team cover must include the entity name.' );
-$assert( str_contains( $team_avatar, '>RD<' ), 'Team avatar must derive unique initials.' );
+$assert( str_contains( $field_cover, '<title>Imagem ilustrativa de Campo do Pinhal</title>' ), 'Field cover needs an accessible title.' );
+$assert( str_contains( $team_cover, '<title>Imagem ilustrativa de Raposas do Centro</title>' ), 'Team cover needs an accessible title.' );
+$assert( str_contains( $team_avatar, '<title>Imagem ilustrativa de Raposas do Centro</title>' ), 'Team avatar needs an accessible title.' );
+$assert( $field_cover !== $team_cover, 'Entity types must retain distinct graphical artwork.' );
 $assert( ! str_contains( $safe_cover, '<script>' ), 'Entity names must be escaped inside generated SVG.' );
 
 $integrations = array(

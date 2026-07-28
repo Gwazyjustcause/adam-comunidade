@@ -43,11 +43,7 @@ final class Placeholder_Image {
 		$accent_y = 100 + ( (int) floor( $seed / 7 ) % max( 1, $height - 200 ) );
 		$id       = 'adam-placeholder-' . (++self::$instance) . '-' . substr( md5( $type . $name . $variant ), 0, 8 );
 		$classes  = trim( 'adam-generated-placeholder adam-generated-placeholder--' . $variant . ' adam-generated-placeholder--' . $type . ' ' . $class );
-		$title    = $avatar
-			? sprintf( __( 'Emblema provisório de %s', 'adam-comunidade' ), $name )
-			: sprintf( __( 'Sem fotografia: %s', 'adam-comunidade' ), $name );
-		$display_name = self::name( $name, self::label( $type ), $avatar ? 22 : 42 );
-		$initials     = self::initials( $name );
+		$title = sprintf( __( 'Imagem ilustrativa de %s', 'adam-comunidade' ), $name );
 
 		ob_start();
 		?>
@@ -77,25 +73,32 @@ final class Placeholder_Image {
 			<path d="M0 <?php echo esc_attr( (string) ( $height * .72 ) ); ?>C<?php echo esc_attr( (string) ( $width * .24 ) ); ?> <?php echo esc_attr( (string) ( $height * .56 ) ); ?> <?php echo esc_attr( (string) ( $width * .62 ) ); ?> <?php echo esc_attr( (string) ( $height * .9 ) ); ?> <?php echo esc_attr( (string) $width ); ?> <?php echo esc_attr( (string) ( $height * .62 ) ); ?>V<?php echo esc_attr( (string) $height ); ?>H0z" fill="#061008" opacity=".52"/>
 
 			<?php if ( $avatar ) : ?>
-				<g transform="translate(200 190)" filter="url(#<?php echo esc_attr( $id ); ?>-shadow)">
+				<g transform="translate(200 200)" filter="url(#<?php echo esc_attr( $id ); ?>-shadow)">
 					<path d="M0-126L104-86v88c0 71-43 120-104 150C-61 122-104 73-104-2v-84z" fill="#152a16" stroke="#c9f6a1" stroke-width="9"/>
 					<path d="M0-92L72-64v58c0 48-27 82-72 107-45-25-72-59-72-107v-58z" fill="#78920e" opacity=".5"/>
-					<text x="0" y="18" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="74" font-weight="800" letter-spacing="-3"><?php echo esc_html( $initials ); ?></text>
+					<g transform="translate(0 -8) scale(.58)">
+						<?php echo self::icon( $type ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed internal SVG paths. ?>
+					</g>
+					<circle cx="-44" cy="76" r="5" fill="#c9f6a1" opacity=".78"/>
+					<circle cx="0" cy="92" r="5" fill="#c9f6a1" opacity=".78"/>
+					<circle cx="44" cy="76" r="5" fill="#c9f6a1" opacity=".78"/>
 				</g>
-				<text x="200" y="352" text-anchor="middle" fill="#dff8c6" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="700" letter-spacing="3">ADAM · <?php echo esc_html( strtoupper( self::label( $type ) ) ); ?></text>
 			<?php else : ?>
-				<g transform="translate(<?php echo esc_attr( (string) ( $width - 238 ) ); ?> 214)" opacity=".94" filter="url(#<?php echo esc_attr( $id ); ?>-shadow)">
-					<circle r="112" fill="#102612" stroke="#c9f6a1" stroke-width="7"/>
+				<g transform="translate(600 316)" opacity=".96" filter="url(#<?php echo esc_attr( $id ); ?>-shadow)">
+					<circle r="148" fill="#102612" stroke="#c9f6a1" stroke-width="7"/>
+					<circle r="122" fill="none" stroke="#e8f8d8" stroke-width="2" stroke-opacity=".28" stroke-dasharray="8 14"/>
 					<?php echo self::icon( $type ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed internal SVG paths. ?>
 				</g>
 				<g transform="translate(64 62)">
 					<circle cx="25" cy="25" r="24" fill="#c9f6a1"/>
-					<text x="25" y="34" text-anchor="middle" fill="#173016" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="900">A</text>
-					<text x="63" y="33" fill="#effbe3" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="800" letter-spacing="5">ADAM</text>
+					<path d="M13 36L25 11l12 25M18 27h14" fill="none" stroke="#173016" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+					<path d="M64 15h54M64 25h38M64 35h46" fill="none" stroke="#effbe3" stroke-width="5" stroke-linecap="round" opacity=".82"/>
 				</g>
-				<text x="64" y="<?php echo esc_attr( (string) ( $height - 128 ) ); ?>" fill="#c9f6a1" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="800" letter-spacing="4"><?php echo esc_html( strtoupper( self::label( $type ) ) ); ?></text>
-				<text x="64" y="<?php echo esc_attr( (string) ( $height - 76 ) ); ?>" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="48" font-weight="800">Sem Fotografia</text>
-				<text x="64" y="<?php echo esc_attr( (string) ( $height - 34 ) ); ?>" fill="#e1edd7" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="600"><?php echo esc_html( $display_name ); ?></text>
+				<g fill="#c9f6a1" opacity=".58">
+					<circle cx="64" cy="<?php echo esc_attr( (string) ( $height - 64 ) ); ?>" r="6"/>
+					<circle cx="92" cy="<?php echo esc_attr( (string) ( $height - 64 ) ); ?>" r="6"/>
+					<circle cx="120" cy="<?php echo esc_attr( (string) ( $height - 64 ) ); ?>" r="6"/>
+				</g>
 			<?php endif; ?>
 		</svg>
 		<?php
@@ -144,12 +147,4 @@ final class Placeholder_Image {
 		return function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $name, 0, $limit, '…', 'UTF-8' ) : substr( $name, 0, $limit );
 	}
 
-	private static function initials( string $name ): string {
-		$words    = preg_split( '/\s+/u', trim( $name ) ) ?: array();
-		$initials = '';
-		foreach ( array_slice( array_filter( $words ), 0, 2 ) as $word ) {
-			$initials .= function_exists( 'mb_substr' ) ? mb_substr( $word, 0, 1, 'UTF-8' ) : substr( $word, 0, 1 );
-		}
-		return strtoupper( '' !== $initials ? $initials : 'AD' );
-	}
 }
