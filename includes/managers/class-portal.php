@@ -153,32 +153,33 @@ final class Portal {
 						<p class="<?php echo esc_attr( Public_Hero::element( 'kicker', 'adam-manager-eyebrow' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
 						<h1 id="adam-manager-page-title" class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $page_heading['title'] ); ?></h1>
 						<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( $page_heading['description'] ); ?></p>
-						<?php if ( ( $manager && 'edit' === $route ) || ! $manager ) : ?>
+						<?php if ( ( $manager && 'edit' === $route ) || ( ! $manager && 'login' !== $route ) ) : ?>
 							<nav class="adam-manager-nav" aria-label="<?php esc_attr_e( 'Navegação do Gestor', 'adam-comunidade' ); ?>">
 								<?php if ( $manager ) : ?>
 									<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Área do Gestor', 'adam-comunidade' ); ?></a>
 								<?php else : ?>
-									<?php if ( 'login' !== $route ) : ?><a href="<?php echo esc_url( self::login_url() ); ?>"><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></a><?php endif; ?>
-									<?php if ( 'recovery' !== $route ) : ?><a href="<?php echo esc_url( self::recovery_url() ); ?>"><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></a><?php endif; ?>
+									<a href="<?php echo esc_url( self::login_url() ); ?>"><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></a>
 								<?php endif; ?>
 							</nav>
 						<?php endif; ?>
 					</div>
 				</header>
-				<?php $this->notice(); ?>
-				<?php
-				if ( 'login' === $route ) {
-					$this->login_form();
-				} elseif ( 'activate' === $route ) {
-					$this->activation_form();
-				} elseif ( 'recovery' === $route ) {
-					$this->recovery_form();
-				} elseif ( 'edit' === $route ) {
-					$this->edit_form();
-				} else {
-					$this->dashboard();
-				}
-				?>
+				<div class="adam-manager-content">
+					<?php $this->notice(); ?>
+					<?php
+					if ( 'login' === $route ) {
+						$this->login_form();
+					} elseif ( 'activate' === $route ) {
+						$this->activation_form();
+					} elseif ( 'recovery' === $route ) {
+						$this->recovery_form();
+					} elseif ( 'edit' === $route ) {
+						$this->edit_form();
+					} else {
+						$this->dashboard();
+					}
+					?>
+				</div>
 			</section>
 		</main>
 		<?php
@@ -192,8 +193,8 @@ final class Portal {
 	private function page_heading( string $route ): array {
 		return match ( $route ) {
 			'login' => array(
-				'title'       => __( 'Iniciar Sessão', 'adam-comunidade' ),
-				'description' => __( 'Aceda aos registos que gere na ADAM Comunidade.', 'adam-comunidade' ),
+				'title'       => __( 'Gestor da Comunidade', 'adam-comunidade' ),
+				'description' => __( 'Gerir equipas, campos, parceiros e outras organizações da Comunidade ADAM.', 'adam-comunidade' ),
 			),
 			'activate' => array(
 				'title'       => __( 'Criar Palavra-passe', 'adam-comunidade' ),

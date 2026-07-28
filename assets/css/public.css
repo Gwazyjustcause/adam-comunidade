@@ -259,6 +259,7 @@
 
 .adam-manager-portal--auth {
 	align-items: center;
+	justify-items: center;
 	min-height: max(70vh, 680px);
 }
 
@@ -270,6 +271,20 @@
 
 .adam-manager-shell--auth {
 	max-width: 720px;
+}
+
+.adam-manager-content {
+	width: 100%;
+}
+
+.adam-manager-shell--auth .adam-manager-content {
+	display: grid;
+	justify-items: center;
+	width: 100%;
+}
+
+.adam-manager-shell--auth .adam-manager-content > * {
+	width: min(100%, 520px);
 }
 
 .adam-manager-header {

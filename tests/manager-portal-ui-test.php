@@ -22,8 +22,10 @@ $assets = $read( 'includes/class-assets.php' );
 $assert(
 	str_contains( $portal, 'adam-manager-portal--' )
 	&& str_contains( $portal, 'adam-manager-shell--auth' )
+	&& str_contains( $portal, 'class="adam-manager-content"' )
 	&& str_contains( $styles, '.adam-manager-portal--auth' )
-	&& str_contains( $styles, '.adam-manager-shell--auth' ),
+	&& str_contains( $styles, '.adam-manager-shell--auth .adam-manager-content' )
+	&& str_contains( $styles, 'justify-items: center' ),
 	'Authentication and dashboard layouts do not have balanced route-aware centring.'
 );
 $assert(
@@ -33,9 +35,21 @@ $assert(
 	&& str_contains( $styles, '.adam-public-hero--light' ),
 	'The portal and shared Hero system do not enforce background-aware title colours.'
 );
-foreach ( array( 'Iniciar Sessão', 'Criar Palavra-passe', 'Recuperar Palavra-passe', 'Gestor da Comunidade' ) as $title ) {
+foreach ( array( 'Criar Palavra-passe', 'Recuperar Palavra-passe', 'Gestor da Comunidade' ) as $title ) {
 	$assert( str_contains( $portal, $title ), 'Missing route-aware portal heading: ' . $title );
 }
+$assert(
+	str_contains( $portal, 'Gerir equipas, campos, parceiros e outras organizações da Comunidade ADAM.' ),
+	'The login Hero does not describe the purpose of the Community Manager portal.'
+);
+$hero_start  = strpos( $portal, '<header class=' );
+$hero_length = strpos( $portal, '</header>' ) - $hero_start;
+$hero_markup = substr( $portal, $hero_start, $hero_length );
+$assert(
+	! str_contains( $hero_markup, 'recovery_url()' )
+	&& str_contains( $portal, '<p><a href="<?php echo esc_url( self::recovery_url() ); ?>"' ),
+	'Password recovery must appear below the login form, not in the Hero.'
+);
 $assert(
 	str_contains( $portal, 'aria-labelledby="adam-manager-page-title"' )
 	&& str_contains( $portal, 'id="adam-manager-page-title"' ),
