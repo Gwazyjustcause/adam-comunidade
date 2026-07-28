@@ -15,6 +15,7 @@ use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Managed_Pages;
+use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Teams\Options as Team_Options;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
 use ADAM\Comunidade\Uploads\Handler as Upload_Handler;
@@ -73,8 +74,8 @@ final class Portal {
 		$route = $this->route();
 		if ( $route ) {
 			$titles = array(
-				'login'    => __( 'Login do Gestor', 'adam-comunidade' ),
-				'activate' => __( 'Definir Palavra-passe', 'adam-comunidade' ),
+				'login'    => __( 'Iniciar Sessão', 'adam-comunidade' ),
+				'activate' => __( 'Criar Palavra-passe', 'adam-comunidade' ),
 				'recovery' => __( 'Recuperar Palavra-passe', 'adam-comunidade' ),
 			);
 			$parts['title'] = $titles[ $route ] ?? __( 'Área do Gestor', 'adam-comunidade' );
@@ -139,19 +140,30 @@ final class Portal {
 	}
 
 	private function render_page(): void {
-		$route = $this->route();
+		$route        = $this->route();
+		$is_auth      = in_array( $route, array( 'login', 'activate', 'recovery' ), true );
+		$page_heading = $this->page_heading( $route );
+		$manager      = $this->auth->current();
 		?>
-		<main class="adam-community adam-manager-portal">
-			<section class="adam-manager-shell">
+		<main class="adam-community adam-manager-portal adam-manager-portal--<?php echo esc_attr( $is_auth ? 'auth' : sanitize_html_class( $route ?: 'dashboard' ) ); ?>">
+			<section class="adam-manager-shell<?php echo $is_auth ? ' adam-manager-shell--auth' : ''; ?>">
 				<p class="screen-reader-text" data-adam-manager-live aria-live="polite"></p>
-				<header class="adam-manager-header">
-					<p class="adam-manager-eyebrow"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
-					<h1><?php esc_html_e( 'Gestor da Comunidade', 'adam-comunidade' ); ?></h1>
-					<p><?php esc_html_e( 'Atualize os registos que lhe foram atribuídos. Todas as alterações são revistas pela ADAM antes da publicação.', 'adam-comunidade' ); ?></p>
-					<nav class="adam-manager-nav" aria-label="<?php esc_attr_e( 'Navegação do Gestor', 'adam-comunidade' ); ?>">
-						<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Área do Gestor', 'adam-comunidade' ); ?></a>
-						<?php if ( ! $this->auth->current() ) : ?><a href="<?php echo esc_url( self::login_url() ); ?>"><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></a><a href="<?php echo esc_url( self::recovery_url() ); ?>"><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></a><?php endif; ?>
-					</nav>
+				<header class="<?php echo esc_attr( Public_Hero::root( 'adam-manager-header', 'dark' ) ); ?>">
+					<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-manager-header__content' ) ); ?>">
+						<p class="<?php echo esc_attr( Public_Hero::element( 'kicker', 'adam-manager-eyebrow' ) ); ?>"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
+						<h1 id="adam-manager-page-title" class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $page_heading['title'] ); ?></h1>
+						<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( $page_heading['description'] ); ?></p>
+						<?php if ( ( $manager && 'edit' === $route ) || ! $manager ) : ?>
+							<nav class="adam-manager-nav" aria-label="<?php esc_attr_e( 'Navegação do Gestor', 'adam-comunidade' ); ?>">
+								<?php if ( $manager ) : ?>
+									<a href="<?php echo esc_url( self::url() ); ?>"><?php esc_html_e( 'Área do Gestor', 'adam-comunidade' ); ?></a>
+								<?php else : ?>
+									<?php if ( 'login' !== $route ) : ?><a href="<?php echo esc_url( self::login_url() ); ?>"><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></a><?php endif; ?>
+									<?php if ( 'recovery' !== $route ) : ?><a href="<?php echo esc_url( self::recovery_url() ); ?>"><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></a><?php endif; ?>
+								<?php endif; ?>
+							</nav>
+						<?php endif; ?>
+					</div>
 				</header>
 				<?php $this->notice(); ?>
 				<?php
@@ -170,6 +182,36 @@ final class Portal {
 			</section>
 		</main>
 		<?php
+	}
+
+	/**
+	 * Provides route-aware Hero copy while preserving one visual component.
+	 *
+	 * @return array{title:string,description:string}
+	 */
+	private function page_heading( string $route ): array {
+		return match ( $route ) {
+			'login' => array(
+				'title'       => __( 'Iniciar Sessão', 'adam-comunidade' ),
+				'description' => __( 'Aceda aos registos que gere na ADAM Comunidade.', 'adam-comunidade' ),
+			),
+			'activate' => array(
+				'title'       => __( 'Criar Palavra-passe', 'adam-comunidade' ),
+				'description' => __( 'Defina os dados de acesso da sua conta de Gestor da Comunidade.', 'adam-comunidade' ),
+			),
+			'recovery' => array(
+				'title'       => __( 'Recuperar Palavra-passe', 'adam-comunidade' ),
+				'description' => __( 'Recupere o acesso à sua conta de forma segura.', 'adam-comunidade' ),
+			),
+			'edit' => array(
+				'title'       => __( 'Editar Registo', 'adam-comunidade' ),
+				'description' => __( 'Prepare uma proposta de alteração para revisão pela ADAM.', 'adam-comunidade' ),
+			),
+			default => array(
+				'title'       => __( 'Gestor da Comunidade', 'adam-comunidade' ),
+				'description' => __( 'Atualize os registos que lhe foram atribuídos. Todas as alterações são revistas pela ADAM antes da publicação.', 'adam-comunidade' ),
+			),
+		};
 	}
 
 	private function dashboard(): void {
@@ -249,10 +291,9 @@ final class Portal {
 
 	private function login_form(): void {
 		?>
-		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form class="adam-card adam-manager-form adam-manager-login" aria-labelledby="adam-manager-page-title" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_login">
 			<?php wp_nonce_field( 'adam_manager_login' ); ?>
-			<h2><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></h2>
 			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
 			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" autocomplete="current-password" required></label>
 			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Entrar', 'adam-comunidade' ); ?></button>
@@ -265,11 +306,10 @@ final class Portal {
 	private function activation_form(): void {
 		$token = sanitize_text_field( (string) ( get_query_var( 'adam_manager_token' ) ?: wp_unslash( $_GET['convite'] ?? '' ) ) );
 		?>
-		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form class="adam-card adam-manager-form adam-manager-login" aria-labelledby="adam-manager-page-title" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_activate">
 			<?php wp_nonce_field( 'adam_manager_activate' ); ?>
 			<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
-			<h2><?php esc_html_e( 'Criar conta de Gestor', 'adam-comunidade' ); ?></h2>
 			<p><?php esc_html_e( 'Defina a palavra-passe desta conta. O endereço de e-mail já está associado ao convite.', 'adam-comunidade' ); ?></p>
 			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
 			<label><span><?php esc_html_e( 'Confirmar palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password_confirm" minlength="10" autocomplete="new-password" required></label>
@@ -282,11 +322,10 @@ final class Portal {
 		$token = sanitize_text_field( (string) wp_unslash( $_GET['codigo'] ?? '' ) );
 		if ( $token ) {
 			?>
-			<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form class="adam-card adam-manager-form adam-manager-login" aria-labelledby="adam-manager-page-title" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="adam_manager_reset">
 				<?php wp_nonce_field( 'adam_manager_reset' ); ?>
 				<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
-				<h2><?php esc_html_e( 'Definir nova palavra-passe', 'adam-comunidade' ); ?></h2>
 				<label><span><?php esc_html_e( 'Nova palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
 				<label><span><?php esc_html_e( 'Confirmar palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password_confirm" minlength="10" autocomplete="new-password" required></label>
 				<button class="adam-community-button" type="submit"><?php esc_html_e( 'Guardar nova palavra-passe', 'adam-comunidade' ); ?></button>
@@ -295,10 +334,9 @@ final class Portal {
 			return;
 		}
 		?>
-		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form class="adam-card adam-manager-form adam-manager-login" aria-labelledby="adam-manager-page-title" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_request_reset">
 			<?php wp_nonce_field( 'adam_manager_request_reset' ); ?>
-			<h2><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></h2>
 			<p><?php esc_html_e( 'Introduza o e-mail da sua conta de Gestor. Se existir uma conta ativa, receberá um endereço de recuperação.', 'adam-comunidade' ); ?></p>
 			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
 			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar recuperação', 'adam-comunidade' ); ?></button>

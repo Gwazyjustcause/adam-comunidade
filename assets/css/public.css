@@ -76,6 +76,22 @@
 	position: relative;
 }
 
+.adam-public-hero--dark,
+.adam-public-hero--image,
+.adam-public-hero--archive,
+.adam-public-hero--single {
+	--adam-hero-title: #c9f6a1;
+	--adam-hero-text: #f3f7ef;
+}
+
+.adam-public-hero--light {
+	--adam-hero-title: var(--adam-primary, #315c25);
+	--adam-hero-text: var(--adam-secondary, #17241a);
+	--adam-hero-overlay-start: rgba(255, 255, 255, .94);
+	--adam-hero-overlay-end: rgba(244, 247, 243, .82);
+	background: #f4f7f3;
+}
+
 .adam-public-hero::after {
 	background: linear-gradient(90deg, var(--adam-hero-overlay-start), var(--adam-hero-overlay-end));
 	content: "";
@@ -142,6 +158,37 @@
 	background: rgba(11, 31, 14, .86);
 }
 
+.adam-public-hero--light p,
+.adam-public-hero--light .adam-public-hero__subtitle,
+.adam-public-hero--light .adam-public-hero__kicker,
+.adam-public-hero--light .adam-public-hero__meta,
+.adam-public-hero--light .adam-public-hero__meta span,
+.adam-public-hero--light small,
+.adam-public-hero--light [class*="stats"] span,
+.adam-public-hero--light [class*="stats"] strong {
+	color: var(--adam-hero-text) !important;
+	text-shadow: none;
+}
+
+.adam-public-hero--light h1,
+.adam-public-hero--light .adam-public-hero__title {
+	color: var(--adam-hero-title) !important;
+	text-shadow: none;
+}
+
+.adam-public-hero--light .adam-public-hero__kicker {
+	color: var(--adam-primary, #315c25) !important;
+}
+
+.adam-public-hero--light .adam-public-hero__badge,
+.adam-public-hero--light .adam-badge,
+.adam-public-hero--light .adam-community-badge {
+	background: rgba(255, 255, 255, .86);
+	border-color: rgba(49, 92, 37, .28);
+	color: var(--adam-primary, #315c25);
+	text-shadow: none;
+}
+
 .adam-generated-placeholder {
 	display: block;
 	height: 100%;
@@ -204,13 +251,25 @@
 	background:
 		radial-gradient(circle at 10% 0, rgba(151, 196, 75, .16), transparent 32rem),
 		#f4f7f3;
+	display: grid;
 	min-height: 70vh;
 	padding: clamp(32px, 6vw, 80px) 20px;
+	width: 100%;
+}
+
+.adam-manager-portal--auth {
+	align-items: center;
+	min-height: max(70vh, 680px);
 }
 
 .adam-manager-shell {
 	margin: 0 auto;
 	max-width: 1100px;
+	width: 100%;
+}
+
+.adam-manager-shell--auth {
+	max-width: 720px;
 }
 
 .adam-manager-header {
@@ -221,10 +280,16 @@
 	padding: clamp(28px, 5vw, 52px);
 }
 
+.adam-manager-header__content {
+	max-width: 820px;
+}
+
 .adam-manager-header h1 {
-	color: #b7dc59;
 	font-size: clamp(2rem, 5vw, 3.8rem);
+	hyphens: auto;
 	margin: 4px 0 12px;
+	overflow-wrap: anywhere;
+	text-wrap: balance;
 }
 
 .adam-manager-header p {
@@ -238,6 +303,20 @@
 	flex-wrap: wrap;
 	gap: 10px 18px;
 	margin-top: 24px;
+}
+
+.adam-manager-shell--auth .adam-manager-header__content {
+	margin: 0 auto;
+	max-width: 580px;
+	text-align: center;
+}
+
+.adam-manager-shell--auth .adam-manager-header p {
+	margin-inline: auto;
+}
+
+.adam-manager-shell--auth .adam-manager-nav {
+	justify-content: center;
 }
 
 .adam-manager-nav a {
@@ -273,12 +352,21 @@
 	text-transform: uppercase;
 }
 
+.adam-manager-header .adam-manager-eyebrow {
+	color: #b7dc59 !important;
+}
+
 .adam-manager-notice {
 	background: #eef8df;
 	border: 1px solid #b7dc59;
 	border-radius: 12px;
 	margin: 0 0 20px;
 	padding: 14px 18px;
+}
+
+.adam-manager-shell--auth .adam-manager-notice {
+	margin-inline: auto;
+	max-width: 520px;
 }
 
 .adam-manager-toolbar,
@@ -293,6 +381,12 @@
 .adam-manager-toolbar form,
 .adam-manager-toolbar p {
 	margin: 0;
+}
+
+.adam-manager-toolbar p,
+.adam-manager-card,
+.adam-manager-form {
+	overflow-wrap: anywhere;
 }
 
 .adam-manager-list {
@@ -310,9 +404,26 @@
 	padding: clamp(22px, 4vw, 36px);
 }
 
+.adam-manager-card :is(h2, h3),
+.adam-manager-form :is(h2, h3) {
+	color: var(--adam-primary, #315c25);
+}
+
 .adam-manager-login {
+	display: grid;
+	gap: 18px;
 	margin: 0 auto;
 	max-width: 520px;
+	width: 100%;
+}
+
+.adam-manager-login > * {
+	margin-bottom: 0;
+	margin-top: 0;
+}
+
+.adam-manager-login > .adam-community-button {
+	width: 100%;
 }
 
 .adam-manager-form label {
@@ -327,6 +438,8 @@
 	border: 1px solid #bdcbbd;
 	border-radius: 9px;
 	font: inherit;
+	min-height: 46px;
+	min-width: 0;
 	padding: 11px 12px;
 	width: 100%;
 }
@@ -579,25 +692,41 @@
 }
 
 .adam-password-control input {
-	padding-right: 132px;
+	padding-right: 52px;
 }
 
 .adam-password-toggle {
+	align-items: center;
 	background: transparent;
 	border: 0;
+	border-radius: 7px;
 	color: #315c25;
 	cursor: pointer;
-	font-size: .78rem;
-	font-weight: 800;
-	padding: 8px;
+	display: inline-flex;
+	height: 40px;
+	justify-content: center;
+	padding: 0;
 	position: absolute;
-	right: 4px;
+	right: 3px;
 	top: 50%;
 	transform: translateY(-50%);
+	width: 42px;
 }
 
-.adam-password-toggle:hover {
-	text-decoration: underline;
+.adam-password-toggle:hover,
+.adam-password-toggle:focus-visible {
+	background: rgba(49, 92, 37, .1);
+}
+
+.adam-password-toggle svg {
+	fill: none;
+	height: 21px;
+	pointer-events: none;
+	stroke: currentColor;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	stroke-width: 1.8;
+	width: 21px;
 }
 
 @media (max-width: 700px) {
@@ -617,6 +746,11 @@
 
 	.adam-manager-header {
 		border-radius: 16px;
+		padding: 28px 22px;
+	}
+
+	.adam-manager-portal--auth {
+		min-height: 70vh;
 	}
 
 	.adam-manager-summary {
@@ -647,6 +781,11 @@
 		background: #182219;
 		border-color: #3c4c3d;
 		color: #eef4ec;
+	}
+
+	.adam-manager-card :is(h2, h3),
+	.adam-manager-form :is(h2, h3) {
+		color: #c9f6a1;
 	}
 
 	.adam-manager-form input,
@@ -692,6 +831,11 @@
 		color: #b7dc59;
 	}
 
+	.adam-password-toggle:hover,
+	.adam-password-toggle:focus-visible {
+		background: rgba(201, 246, 161, .12);
+	}
+
 	.adam-community-button--secondary,
 	.adam-community-button--ghost {
 		background: #263329;
@@ -717,6 +861,14 @@
 }
 
 @media (max-width: 420px) {
+	.adam-manager-portal {
+		padding-inline: 14px;
+	}
+
+	.adam-manager-portal--auth {
+		min-height: 70vh;
+	}
+
 	.adam-manager-summary {
 		grid-template-columns: 1fr;
 	}
