@@ -17,6 +17,7 @@ $auth    = (string) file_get_contents( $root . '/includes/managers/class-auth.ph
 $service = (string) file_get_contents( $root . '/includes/managers/class-service.php' );
 $portal  = (string) file_get_contents( $root . '/includes/managers/class-portal.php' );
 $admin   = (string) file_get_contents( $root . '/includes/managers/class-admin.php' );
+$cleanup = (string) file_get_contents( $root . '/includes/managers/class-cleanup.php' );
 $loader  = (string) file_get_contents( $root . '/includes/class-loader.php' );
 $emails  = (string) file_get_contents( $root . '/includes/experience/class-email-service.php' );
 $approval = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
@@ -27,6 +28,7 @@ foreach ( array( 'managers_table', 'assignments_table', 'invitations_table', 'se
 	$assert( str_contains( $schema, 'function ' . $table_method ), 'Missing isolated manager table: ' . $table_method );
 }
 $assert( str_contains( $loader, 'new Managers\\Module()' ), 'The manager module is not booted.' );
+$assert( str_contains( $cleanup, 'adam_comunidade_manager_cleanup' ), 'The manager data lifecycle cleanup is not registered.' );
 $assert( str_contains( $auth, "private const COOKIE = 'adam_community_manager_session'" ), 'The manager session must use its own cookie.' );
 $assert( str_contains( $auth, "hash( 'sha256', \$raw )" ), 'Session tokens must be hashed at rest.' );
 $assert( str_contains( $auth, "password_verify( \$password" ), 'Manager login does not verify its own password hash.' );

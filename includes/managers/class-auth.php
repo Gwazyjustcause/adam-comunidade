@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Managers;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Logger;
+
 /**
  * Authenticates managers without WordPress users or ADAM Members.
  */
@@ -30,7 +32,7 @@ final class Auth {
 		$now = current_time( 'mysql', true );
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				'SELECT m.* FROM ' . Schema::sessions_table() . ' s INNER JOIN ' . Schema::managers_table()
+				'SELECT m.*,s.id AS manager_session_id,s.last_seen_at AS manager_session_last_seen FROM ' . Schema::sessions_table() . ' s INNER JOIN ' . Schema::managers_table()
 				. ' m ON m.id = s.manager_id WHERE s.token_hash = %s AND s.expires_at > %s AND m.status = %s',
 				hash( 'sha256', $raw ),
 				$now,
@@ -40,6 +42,15 @@ final class Auth {
 		if ( ! $row ) {
 			return null;
 		}
+		$last_seen = strtotime( (string) $row->manager_session_last_seen );
+		if ( false === $last_seen || $last_seen < time() - 5 * MINUTE_IN_SECONDS ) {
+			$wpdb->update(
+				Schema::sessions_table(),
+				array( 'last_seen_at' => $now ),
+				array( 'id' => (int) $row->manager_session_id )
+			);
+		}
+		unset( $row->manager_session_id, $row->manager_session_last_seen );
 		$this->session_token = $raw;
 		$this->manager       = $row;
 		return $row;
@@ -48,11 +59,15 @@ final class Auth {
 	public function login( string $email, string $password ): bool {
 		global $wpdb;
 		$email = sanitize_email( $email );
-		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE email = %s', $email ) );
-		if ( ! $row || 'active' !== $row->status || ! password_verify( $password, (string) $row->password_hash ) ) {
+		$row   = is_email( $email ) ? $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE email = %s', $email ) ) : null;
+		$hash  = $row ? (string) $row->password_hash : '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG';
+		$valid = password_verify( $password, $hash );
+		if ( ! $row || 'active' !== $row->status || ! $valid ) {
 			return false;
 		}
-		$this->create_session( (int) $row->id );
+		if ( ! $this->create_session( (int) $row->id ) ) {
+			return false;
+		}
 		$wpdb->update(
 			Schema::managers_table(),
 			array( 'last_login_at' => current_time( 'mysql', true ), 'updated_at' => current_time( 'mysql', true ) ),
@@ -82,11 +97,16 @@ final class Auth {
 		return $expected && is_string( $token ) && hash_equals( $expected, $token );
 	}
 
-	private function create_session( int $manager_id ): void {
+	private function create_session( int $manager_id ): bool {
 		global $wpdb;
-		$raw = bin2hex( random_bytes( 32 ) );
+		try {
+			$raw = bin2hex( random_bytes( 32 ) );
+		} catch ( \Throwable $throwable ) {
+			Logger::error( 'community_manager_session_token_failed', array( 'exception' => get_class( $throwable ) ) );
+			return false;
+		}
 		$now = current_time( 'mysql', true );
-		$wpdb->insert(
+		$inserted = $wpdb->insert(
 			Schema::sessions_table(),
 			array(
 				'manager_id'  => $manager_id,
@@ -96,18 +116,41 @@ final class Auth {
 				'created_at'  => $now,
 			)
 		);
+		if ( false === $inserted ) {
+			Logger::error( 'community_manager_session_create_failed', array( 'manager_id' => $manager_id ) );
+			return false;
+		}
 		$this->session_token = $raw;
-		$this->set_cookie( $raw, time() + 14 * DAY_IN_SECONDS );
+		if ( ! $this->set_cookie( $raw, time() + 14 * DAY_IN_SECONDS ) ) {
+			$wpdb->delete( Schema::sessions_table(), array( 'token_hash' => hash( 'sha256', $raw ) ) );
+			$this->session_token = '';
+			return false;
+		}
+
+		$session_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				'SELECT id FROM ' . Schema::sessions_table() . ' WHERE manager_id=%d ORDER BY created_at DESC',
+				$manager_id
+			)
+		);
+		foreach ( array_slice( array_map( 'intval', is_array( $session_ids ) ? $session_ids : array() ), 5 ) as $session_id ) {
+			$wpdb->delete( Schema::sessions_table(), array( 'id' => $session_id ) );
+		}
+		return true;
 	}
 
-	private function set_cookie( string $value, int $expires ): void {
-		setcookie(
+	private function set_cookie( string $value, int $expires ): bool {
+		if ( headers_sent() ) {
+			Logger::error( 'community_manager_cookie_headers_sent' );
+			return false;
+		}
+		$set = setcookie(
 			self::COOKIE,
 			$value,
 			array(
 				'expires'  => $expires,
-				'path'     => COOKIEPATH ?: '/',
-				'domain'   => COOKIE_DOMAIN ?: '',
+				'path'     => defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/',
+				'domain'   => defined( 'COOKIE_DOMAIN' ) && COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
 				'secure'   => is_ssl(),
 				'httponly' => true,
 				'samesite' => 'Lax',
@@ -118,5 +161,6 @@ final class Auth {
 		} else {
 			$_COOKIE[ self::COOKIE ] = $value;
 		}
+		return $set;
 	}
 }

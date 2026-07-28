@@ -14,6 +14,20 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Logger {
 	/**
+	 * Writes an error log entry.
+	 *
+	 * Operational failures are always logged because they require administrator
+	 * attention. Context must contain identifiers/codes only, never tokens,
+	 * passwords, SQL text or stack traces.
+	 *
+	 * @param string              $message Event message.
+	 * @param array<string,mixed> $context Safe event context.
+	 */
+	public static function error( string $message, array $context = array() ): void {
+		self::write( 'ERROR', $message, $context );
+	}
+
+	/**
 	 * Writes an informational log entry.
 	 *
 	 * The third argument permits settings-update hooks to use the newly saved

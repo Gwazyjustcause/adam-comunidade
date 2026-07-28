@@ -137,6 +137,7 @@ final class Portal {
 			return;
 		}
 		$assignments = $this->service->assignments( (int) $manager->id );
+		$record_names = $this->service->record_names( $assignments );
 		?>
 		<div class="adam-manager-toolbar">
 			<p><?php echo esc_html( sprintf( __( 'Sessão iniciada como %s', 'adam-comunidade' ), (string) $manager->email ) ); ?></p>
@@ -151,12 +152,12 @@ final class Portal {
 			<div class="adam-community-empty"><h3><?php esc_html_e( 'Ainda não existem registos atribuídos.', 'adam-comunidade' ); ?></h3></div>
 		<?php else : ?>
 			<div class="adam-manager-list">
-				<?php foreach ( $assignments as $assignment ) : $record = $this->service->record( (string) $assignment->entity_type, (int) $assignment->entity_id ); ?>
-					<?php if ( ! $record ) { continue; } ?>
+				<?php foreach ( $assignments as $assignment ) : $record_name = $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? ''; ?>
+					<?php if ( ! $record_name ) { continue; } ?>
 					<article class="adam-card adam-manager-card">
 						<?php $entity_labels = array( 'field' => __( 'Campo', 'adam-comunidade' ), 'team' => __( 'Equipa', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ); ?>
 						<span class="adam-card__eyebrow"><?php echo esc_html( $entity_labels[ $assignment->entity_type ] ?? __( 'Organização', 'adam-comunidade' ) ); ?></span>
-						<h3><?php echo esc_html( (string) $record->name ); ?></h3>
+						<h3><?php echo esc_html( $record_name ); ?></h3>
 						<p><?php esc_html_e( 'As alterações enviadas ficam pendentes até serem revistas pela administração.', 'adam-comunidade' ); ?></p>
 						<a class="adam-community-button" href="<?php echo esc_url( self::edit_url( (string) $assignment->entity_type, (int) $assignment->entity_id ) ); ?>"><?php esc_html_e( 'Editar registo', 'adam-comunidade' ); ?></a>
 					</article>
@@ -169,6 +170,7 @@ final class Portal {
 		?>
 		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_login">
+			<?php wp_nonce_field( 'adam_manager_login' ); ?>
 			<h2><?php esc_html_e( 'Iniciar sessão', 'adam-comunidade' ); ?></h2>
 			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
 			<label><span><?php esc_html_e( 'Palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" autocomplete="current-password" required></label>
@@ -184,6 +186,7 @@ final class Portal {
 		?>
 		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_activate">
+			<?php wp_nonce_field( 'adam_manager_activate' ); ?>
 			<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
 			<h2><?php esc_html_e( 'Criar conta de Gestor', 'adam-comunidade' ); ?></h2>
 			<p><?php esc_html_e( 'Defina a palavra-passe desta conta. O endereço de e-mail já está associado ao convite.', 'adam-comunidade' ); ?></p>
@@ -200,6 +203,7 @@ final class Portal {
 			?>
 			<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="adam_manager_reset">
+				<?php wp_nonce_field( 'adam_manager_reset' ); ?>
 				<input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
 				<h2><?php esc_html_e( 'Definir nova palavra-passe', 'adam-comunidade' ); ?></h2>
 				<label><span><?php esc_html_e( 'Nova palavra-passe', 'adam-comunidade' ); ?></span><input type="password" name="password" minlength="10" autocomplete="new-password" required></label>
@@ -212,6 +216,7 @@ final class Portal {
 		?>
 		<form class="adam-card adam-manager-form adam-manager-login" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_request_reset">
+			<?php wp_nonce_field( 'adam_manager_request_reset' ); ?>
 			<h2><?php esc_html_e( 'Recuperar palavra-passe', 'adam-comunidade' ); ?></h2>
 			<p><?php esc_html_e( 'Introduza o e-mail da sua conta de Gestor. Se existir uma conta ativa, receberá um endereço de recuperação.', 'adam-comunidade' ); ?></p>
 			<label><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="email" autocomplete="email" required></label>
@@ -323,6 +328,7 @@ final class Portal {
 	}
 
 	public function handle_login(): never {
+		check_admin_referer( 'adam_manager_login' );
 		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$key   = 'adam_manager_login_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		$attempts = absint( get_transient( $key ) );
@@ -335,6 +341,7 @@ final class Portal {
 	}
 
 	public function handle_activate(): never {
+		check_admin_referer( 'adam_manager_activate' );
 		$password = (string) wp_unslash( $_POST['password'] ?? '' );
 		$token    = sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) );
 		if ( ! hash_equals( $password, (string) wp_unslash( $_POST['password_confirm'] ?? '' ) ) ) {
@@ -350,6 +357,7 @@ final class Portal {
 	}
 
 	public function handle_request_reset(): never {
+		check_admin_referer( 'adam_manager_request_reset' );
 		$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$key = 'adam_manager_reset_' . md5( strtolower( $email ) . '|' . (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 		if ( absint( get_transient( $key ) ) < 3 ) {
@@ -361,6 +369,7 @@ final class Portal {
 	}
 
 	public function handle_reset(): never {
+		check_admin_referer( 'adam_manager_reset' );
 		$password = (string) wp_unslash( $_POST['password'] ?? '' );
 		$token    = sanitize_text_field( wp_unslash( $_POST['token'] ?? '' ) );
 		if ( ! hash_equals( $password, (string) wp_unslash( $_POST['password_confirm'] ?? '' ) ) ) {
@@ -430,13 +439,14 @@ final class Portal {
 	}
 
 	private function upload_one( string $name ): int|\WP_Error {
-		if ( empty( $_FILES[ $name ]['name'] ) ) {
+		$file = $_FILES[ $name ] ?? null;
+		if ( ! is_array( $file ) || empty( $file['name'] ) ) {
 			return 0;
 		}
-		if ( absint( $_FILES[ $name ]['size'] ?? 0 ) > 10 * MB_IN_BYTES ) {
+		if ( absint( $file['size'] ?? 0 ) > 10 * MB_IN_BYTES ) {
 			return new \WP_Error( 'large_upload', __( 'A imagem excede o limite de 10 MB.', 'adam-comunidade' ) );
 		}
-		$extension = strtolower( pathinfo( sanitize_file_name( (string) $_FILES[ $name ]['name'] ), PATHINFO_EXTENSION ) );
+		$extension = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
 		if ( ! in_array( $extension, array( 'jpg', 'jpeg', 'png', 'webp' ), true ) ) {
 			return new \WP_Error( 'invalid_upload', __( 'O tipo de imagem não é permitido.', 'adam-comunidade' ) );
 		}
@@ -448,17 +458,28 @@ final class Portal {
 	}
 
 	private function upload_many( string $name, int $limit ): array|\WP_Error {
-		if ( empty( $_FILES[ $name ]['name'] ) || ! is_array( $_FILES[ $name ]['name'] ) ) {
+		$original = $_FILES[ $name ] ?? null;
+		if ( ! is_array( $original ) || empty( $original['name'] ) || ! is_array( $original['name'] ) ) {
 			return array();
 		}
-		$original = $_FILES[ $name ];
+		foreach ( array( 'type', 'tmp_name', 'error', 'size' ) as $property ) {
+			if ( ! isset( $original[ $property ] ) || ! is_array( $original[ $property ] ) ) {
+				return new \WP_Error( 'invalid_upload', __( 'Os dados do envio de imagens não são válidos.', 'adam-comunidade' ) );
+			}
+		}
 		if ( count( array_filter( $original['name'] ) ) > $limit ) {
 			return new \WP_Error( 'too_many', sprintf( __( 'Pode enviar no máximo %d fotografias.', 'adam-comunidade' ), $limit ) );
 		}
 		$ids = array();
 		foreach ( array_keys( $original['name'] ) as $index ) {
 			if ( empty( $original['name'][ $index ] ) ) { continue; }
-			$_FILES[ $name ] = array( 'name' => $original['name'][ $index ], 'type' => $original['type'][ $index ], 'tmp_name' => $original['tmp_name'][ $index ], 'error' => $original['error'][ $index ], 'size' => $original['size'][ $index ] );
+			$_FILES[ $name ] = array(
+				'name'     => (string) ( $original['name'][ $index ] ?? '' ),
+				'type'     => (string) ( $original['type'][ $index ] ?? '' ),
+				'tmp_name' => (string) ( $original['tmp_name'][ $index ] ?? '' ),
+				'error'    => absint( $original['error'][ $index ] ?? UPLOAD_ERR_NO_FILE ),
+				'size'     => absint( $original['size'][ $index ] ?? 0 ),
+			);
 			$id = $this->upload_one( $name );
 			if ( is_wp_error( $id ) ) {
 				$_FILES[ $name ] = $original;

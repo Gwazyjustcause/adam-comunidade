@@ -39,6 +39,14 @@ final class Install {
 		Directory\Schema::install();
 		Events\Migration::run();
 		Experience\Schema::install();
+		$manager_schema = Managers\Schema::install();
+		if ( is_wp_error( $manager_schema ) ) {
+			wp_die(
+				'Não foi possível preparar a base de dados dos Gestores. Consulte o registo de erros e tente ativar o plugin novamente.',
+				'Erro de instalação',
+				array( 'back_link' => true )
+			);
+		}
 		self::schedule_rewrite_flush();
 	}
 

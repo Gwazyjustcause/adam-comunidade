@@ -55,22 +55,22 @@ final class Admin {
 			$args[]  = $status;
 		}
 		$sql = 'SELECT m.* FROM ' . Schema::managers_table() . ' m WHERE ' . implode( ' AND ', $where ) . ' ORDER BY m.created_at DESC';
-		$managers = $args ? $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) ) : $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$managers = ( $args ? $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) ) : $wpdb->get_results( $sql ) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$assignments = array();
-		foreach ( $managers as $manager ) {
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					'SELECT a.*,i.used_at AS invitation_used_at,i.expires_at AS invitation_expires_at FROM ' . Schema::assignments_table() . ' a'
-					. ' LEFT JOIN ' . Schema::invitations_table() . " i ON i.id=(SELECT i2.id FROM " . Schema::invitations_table() . " i2 WHERE i2.manager_id=a.manager_id AND i2.purpose='invitation' AND i2.entity_type=a.entity_type AND i2.entity_id=a.entity_id ORDER BY i2.created_at DESC LIMIT 1)"
-					. ' WHERE a.manager_id=%d AND a.status=%s ORDER BY a.created_at ASC',
-					(int) $manager->id,
-					'active'
-				)
-			) ?: array();
-			foreach ( $rows as $row ) {
-				$row->record = $this->service->record( (string) $row->entity_type, (int) $row->entity_id );
-			}
-			$assignments[ (int) $manager->id ] = $rows;
+		$manager_ids = array_map( static fn( object $manager ): int => (int) $manager->id, $managers );
+		$rows = array();
+		if ( $manager_ids ) {
+			$placeholders = implode( ',', array_fill( 0, count( $manager_ids ), '%d' ) );
+			$assignment_sql = 'SELECT a.*,i.used_at AS invitation_used_at,i.expires_at AS invitation_expires_at FROM ' . Schema::assignments_table() . ' a'
+				. ' LEFT JOIN ' . Schema::invitations_table() . " i ON i.id=(SELECT i2.id FROM " . Schema::invitations_table() . " i2 WHERE i2.manager_id=a.manager_id AND i2.purpose='invitation' AND i2.entity_type=a.entity_type AND i2.entity_id=a.entity_id ORDER BY i2.created_at DESC LIMIT 1)"
+				. " WHERE a.manager_id IN ({$placeholders}) AND a.status=%s ORDER BY a.created_at ASC";
+			$rows = $wpdb->get_results( $wpdb->prepare( $assignment_sql, ...array_merge( $manager_ids, array( 'active' ) ) ) ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		$record_names = $this->service->record_names( $rows );
+		foreach ( $rows as $row ) {
+			$key = (string) $row->entity_type . ':' . (int) $row->entity_id;
+			$row->record = isset( $record_names[ $key ] ) ? (object) array( 'name' => $record_names[ $key ] ) : null;
+			$assignments[ (int) $row->manager_id ][] = $row;
 		}
 		$team_choices  = ( new Team_Repository() )->choices( '' );
 		$field_choices = ( new Field_Repository() )->choices( '' );
@@ -88,12 +88,15 @@ final class Admin {
 		global $wpdb;
 		$revisions = $wpdb->get_results( 'SELECT r.*,m.email FROM ' . Schema::revisions_table() . ' r INNER JOIN ' . Schema::managers_table() . " m ON m.id=r.manager_id WHERE r.status IN ('pending','needs_info') ORDER BY r.submitted_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$assignments = $wpdb->get_results( 'SELECT a.*,m.email,m.status AS manager_status FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . " m ON m.id=a.manager_id WHERE a.status='active' ORDER BY a.created_at DESC LIMIT 100" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$revisions    = is_array( $revisions ) ? $revisions : array();
+		$assignments  = is_array( $assignments ) ? $assignments : array();
+		$record_names = $this->service->record_names( array_merge( $revisions, $assignments ) );
 		?>
 		<hr>
 		<h2><?php esc_html_e( 'Alterações propostas por Gestores', 'adam-comunidade' ); ?></h2>
 		<?php if ( ! $revisions ) : ?><p><?php esc_html_e( 'Não existem alterações de Gestores a aguardar revisão.', 'adam-comunidade' ); ?></p><?php endif; ?>
 		<div class="adam-card-grid">
-			<?php foreach ( $revisions as $revision ) : $record = $this->service->record( (string) $revision->entity_type, (int) $revision->entity_id ); $payload = json_decode( (string) $revision->payload, true ) ?: array(); ?>
+			<?php foreach ( $revisions as $revision ) : $record = (object) array( 'name' => $record_names[ (string) $revision->entity_type . ':' . (int) $revision->entity_id ] ?? __( 'Registo indisponível', 'adam-comunidade' ) ); $payload = json_decode( (string) $revision->payload, true ) ?: array(); ?>
 				<article class="adam-card">
 					<span class="adam-card__eyebrow"><?php esc_html_e( 'Revisão de Gestor', 'adam-comunidade' ); ?></span>
 					<h3><?php echo esc_html( (string) ( $record->name ?? __( 'Registo indisponível', 'adam-comunidade' ) ) ); ?></h3>
@@ -111,7 +114,7 @@ final class Admin {
 		</div>
 		<h2><?php esc_html_e( 'Atribuições de Gestor', 'adam-comunidade' ); ?></h2>
 		<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Registo', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Estado', 'adam-comunidade' ); ?></th><th></th></tr></thead><tbody>
-		<?php foreach ( $assignments as $assignment ) : $record = $this->service->record( (string) $assignment->entity_type, (int) $assignment->entity_id ); ?><tr><td><?php echo esc_html( (string) $assignment->email ); ?></td><td><?php echo esc_html( (string) ( $record->name ?? '#' . $assignment->entity_id ) ); ?></td><td><?php echo esc_html( 'active' === $assignment->manager_status ? __( 'Ativo', 'adam-comunidade' ) : __( 'Convite pendente', 'adam-comunidade' ) ); ?></td><td><a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_resend_manager_invitation', 'assignment_id' => $assignment->id ), admin_url( 'admin-post.php' ) ), 'adam_resend_manager_invitation_' . $assignment->id ) ); ?>"><?php esc_html_e( 'Reenviar convite', 'adam-comunidade' ); ?></a></td></tr><?php endforeach; ?>
+		<?php foreach ( $assignments as $assignment ) : $record = (object) array( 'name' => $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? '#' . $assignment->entity_id ); ?><tr><td><?php echo esc_html( (string) $assignment->email ); ?></td><td><?php echo esc_html( (string) $record->name ); ?></td><td><?php echo esc_html( 'active' === $assignment->manager_status ? __( 'Ativo', 'adam-comunidade' ) : __( 'Convite pendente', 'adam-comunidade' ) ); ?></td><td><a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_resend_manager_invitation', 'assignment_id' => $assignment->id ), admin_url( 'admin-post.php' ) ), 'adam_resend_manager_invitation_' . $assignment->id ) ); ?>"><?php esc_html_e( 'Reenviar convite', 'adam-comunidade' ); ?></a></td></tr><?php endforeach; ?>
 		</tbody></table>
 		<?php
 	}
@@ -165,7 +168,7 @@ final class Admin {
 		$id = absint( $_POST['assignment_id'] ?? 0 );
 		check_admin_referer( 'adam_manager_remove_assignment_' . $id );
 		global $wpdb;
-		$wpdb->update( Schema::assignments_table(), array( 'status' => 'removed' ), array( 'id' => $id ) );
+		$wpdb->update( Schema::assignments_table(), array( 'status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
 		$this->redirect_managers();
 	}
 
@@ -179,10 +182,20 @@ final class Admin {
 		$entity_id  = absint( $entity[1] ?? 0 );
 		$manager    = $manager_id ? $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE id=%d', $manager_id ) ) : null;
 		$email      = $manager ? (string) $manager->email : sanitize_email( wp_unslash( $_POST['manager_email'] ?? '' ) );
-		if ( $manager && $entity_id && in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
-			$transferred = $wpdb->replace(
-				Schema::assignments_table(),
-				array( 'manager_id' => $manager_id, 'entity_type' => $type, 'entity_id' => $entity_id, 'status' => 'active', 'created_at' => current_time( 'mysql', true ) )
+		$record = $entity_id ? $this->service->record( $type, $entity_id ) : null;
+		if ( $manager && $record && in_array( $type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
+			$now = current_time( 'mysql', true );
+			$transferred = $wpdb->query(
+				$wpdb->prepare(
+					'INSERT INTO ' . Schema::assignments_table() . ' (manager_id,entity_type,entity_id,status,created_at,updated_at) VALUES (%d,%s,%d,%s,%s,%s)'
+					. ' ON DUPLICATE KEY UPDATE status=VALUES(status),updated_at=VALUES(updated_at)',
+					$manager_id,
+					$type,
+					$entity_id,
+					'active',
+					$now,
+					$now
+				)
 			);
 		} else {
 			$url = $this->service->invite( $email, $type, $entity_id );
@@ -201,20 +214,23 @@ final class Admin {
 		$target_id = absint( $_POST['target_manager_id'] ?? 0 );
 		global $wpdb;
 		$assignment = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::assignments_table() . ' WHERE id=%d', $assignment_id ) );
-		$target_exists = $target_id && (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE id=%d', $target_id ) );
+		$target_exists = $target_id && (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE id=%d AND status<>%s', $target_id, 'disabled' ) );
 		if ( $assignment && $target_exists && $target_id !== (int) $assignment->manager_id ) {
-			$wpdb->replace(
-				Schema::assignments_table(),
-				array(
-					'manager_id' => $target_id,
-					'entity_type'=> (string) $assignment->entity_type,
-					'entity_id'  => (int) $assignment->entity_id,
-					'status'     => 'active',
-					'created_at' => current_time( 'mysql', true ),
+			$now = current_time( 'mysql', true );
+			$transferred = $wpdb->query(
+				$wpdb->prepare(
+					'INSERT INTO ' . Schema::assignments_table() . ' (manager_id,entity_type,entity_id,status,created_at,updated_at) VALUES (%d,%s,%d,%s,%s,%s)'
+					. ' ON DUPLICATE KEY UPDATE status=VALUES(status),updated_at=VALUES(updated_at)',
+					$target_id,
+					(string) $assignment->entity_type,
+					(int) $assignment->entity_id,
+					'active',
+					$now,
+					$now
 				)
 			);
 			if ( false !== $transferred ) {
-				$wpdb->update( Schema::assignments_table(), array( 'status' => 'transferred' ), array( 'id' => $assignment_id ) );
+				$wpdb->update( Schema::assignments_table(), array( 'status' => 'transferred', 'updated_at' => $now ), array( 'id' => $assignment_id ) );
 			}
 		}
 		$this->redirect_managers();
