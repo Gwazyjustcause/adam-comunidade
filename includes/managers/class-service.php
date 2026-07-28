@@ -194,6 +194,14 @@ final class Service {
 			Logger::error( 'community_manager_invitation_replay_cleanup_failed', array( 'manager_id' => (int) $invitation->manager_id ) );
 		}
 		$wpdb->delete( Schema::sessions_table(), array( 'manager_id' => (int) $invitation->manager_id ) );
+		$manager_email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id=%d', (int) $invitation->manager_id ) );
+		if ( is_email( $manager_email ) ) {
+			$this->emails->send(
+				'manager_password_created',
+				$manager_email,
+				array( 'manager_url' => Portal::url() )
+			);
+		}
 		return (int) $invitation->manager_id;
 	}
 
@@ -308,6 +316,14 @@ final class Service {
 				)
 			);
 			Logger::error( 'community_manager_password_reset_replay_cleanup_failed', array( 'manager_id' => (int) $row->manager_id ) );
+		}
+		$manager_email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id=%d', (int) $row->manager_id ) );
+		if ( is_email( $manager_email ) ) {
+			$this->emails->send(
+				'manager_password_changed',
+				$manager_email,
+				array( 'manager_url' => Portal::login_url() )
+			);
 		}
 		return true;
 	}

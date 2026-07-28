@@ -103,3 +103,17 @@
 	font-weight: 600;
 	gap: 5px;
 }
+
+.adam-email-template-category {
+	color: #526b18;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	margin: 0;
+	text-transform: uppercase;
+}
+
+.adam-form-manager__email .description code {
+	display: inline-block;
+	margin: 3px 3px 0 0;
+}

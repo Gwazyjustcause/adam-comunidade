@@ -63,6 +63,8 @@ namespace {
 		'community_rejected',
 		'manager_invitation',
 		'manager_password_reset',
+		'manager_password_created',
+		'manager_password_changed',
 		'manager_revision_approved',
 		'manager_revision_rejected',
 		'manager_information_requested',

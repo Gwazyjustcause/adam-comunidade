@@ -41,6 +41,8 @@ final class Admin_Controller {
 			$forms[ $type ] = $this->manager->get( $type );
 		}
 		$email_templates = $this->emails->templates();
+		$email_status = get_option( 'adam_comunidade_email_last_status', array() );
+		$email_status = is_array( $email_status ) ? $email_status : array();
 		require Helpers::path( 'admin/views/forms/manager.php' );
 	}
 

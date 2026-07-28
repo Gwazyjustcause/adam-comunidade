@@ -79,16 +79,39 @@ defined( 'ABSPATH' ) || exit;
 		<?php $first = false; endforeach; ?>
 
 		<section class="adam-card adam-form-manager__emails">
-			<h2><?php esc_html_e( 'Emails automáticos de campos', 'adam-comunidade' ); ?></h2>
-			<p><?php esc_html_e( 'Estes emails usam o contacto oficial configurado no ADAM Comunidade e a identidade visual partilhada da plataforma. Pode editar o assunto, o cabeçalho e o conteúdo sem alterar código.', 'adam-comunidade' ); ?></p>
-			<p><code>{{field_name}}</code> <code>{{field_url}}</code> <code>{{admin_note}}</code> <code>{{adam_email}}</code></p>
+			<h2><?php esc_html_e( 'E-mails automáticos da Comunidade', 'adam-comunidade' ); ?></h2>
+			<p><?php esc_html_e( 'Todas as mensagens usam o remetente e o contacto oficial configurados nas Definições, a mesma identidade visual e uma alternativa em texto simples. Pode editar o assunto, o cabeçalho e o conteúdo sem alterar código.', 'adam-comunidade' ); ?></p>
+			<?php if ( ! empty( $email_status ) ) : ?>
+				<div class="notice inline <?php echo 'failed' === ( $email_status['status'] ?? '' ) ? 'notice-error' : 'notice-success'; ?>">
+					<p>
+						<strong><?php esc_html_e( 'Último envio:', 'adam-comunidade' ); ?></strong>
+						<?php echo 'failed' === ( $email_status['status'] ?? '' ) ? esc_html__( 'Falhou', 'adam-comunidade' ) : esc_html__( 'Aceite pelo serviço de correio', 'adam-comunidade' ); ?>
+						<?php if ( ! empty( $email_status['email_type'] ) ) : ?> · <code><?php echo esc_html( (string) $email_status['email_type'] ); ?></code><?php endif; ?>
+						<?php if ( ! empty( $email_status['attempts'] ) ) : ?> · <?php echo esc_html( sprintf( _n( '%d tentativa', '%d tentativas', (int) $email_status['attempts'], 'adam-comunidade' ), (int) $email_status['attempts'] ) ); ?><?php endif; ?>
+					</p>
+				</div>
+			<?php endif; ?>
+			<?php
+			$adam_email_categories = array(
+				'submissions' => __( 'Submissões', 'adam-comunidade' ),
+				'onboarding'  => __( 'Convites e ativação', 'adam-comunidade' ),
+				'access'      => __( 'Palavras-passe e segurança', 'adam-comunidade' ),
+				'moderation'  => __( 'Revisão de alterações', 'adam-comunidade' ),
+			);
+			?>
 			<?php foreach ( $email_templates as $template_key => $template ) : ?>
 				<article class="adam-form-manager__email">
+					<p class="adam-email-template-category"><?php echo esc_html( $adam_email_categories[ $template['category'] ] ?? __( 'Comunidade', 'adam-comunidade' ) ); ?></p>
 					<h3><?php echo esc_html( $template['label'] ); ?></h3>
-					<label><input type="checkbox" name="email_templates[<?php echo esc_attr( $template_key ); ?>][enabled]" value="1" <?php checked( ! empty( $template['enabled'] ) ); ?>> <?php esc_html_e( 'Email ativado', 'adam-comunidade' ); ?></label>
+					<label><input type="checkbox" name="email_templates[<?php echo esc_attr( $template_key ); ?>][enabled]" value="1" <?php checked( ! empty( $template['enabled'] ) ); ?>> <?php esc_html_e( 'E-mail ativado', 'adam-comunidade' ); ?></label>
 					<label><?php esc_html_e( 'Assunto', 'adam-comunidade' ); ?><input class="large-text" name="email_templates[<?php echo esc_attr( $template_key ); ?>][subject]" value="<?php echo esc_attr( $template['subject'] ); ?>"></label>
 					<label><?php esc_html_e( 'Cabeçalho', 'adam-comunidade' ); ?><input class="large-text" name="email_templates[<?php echo esc_attr( $template_key ); ?>][heading]" value="<?php echo esc_attr( $template['heading'] ); ?>"></label>
 					<label><?php esc_html_e( 'Conteúdo', 'adam-comunidade' ); ?><textarea class="large-text" rows="8" name="email_templates[<?php echo esc_attr( $template_key ); ?>][body]"><?php echo esc_textarea( $template['body'] ); ?></textarea></label>
+					<?php if ( ! empty( $template['placeholders'] ) ) : ?>
+						<p class="description"><strong><?php esc_html_e( 'Variáveis disponíveis:', 'adam-comunidade' ); ?></strong>
+							<?php foreach ( $template['placeholders'] as $adam_placeholder ) : ?><code>{{<?php echo esc_html( $adam_placeholder ); ?>}}</code><?php endforeach; ?>
+						</p>
+					<?php endif; ?>
 				</article>
 			<?php endforeach; ?>
 		</section>

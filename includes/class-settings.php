@@ -62,6 +62,12 @@ final class Settings {
 			'render_email',
 			'adam_comunidade_general'
 		);
+		$this->add_field(
+			'email_from_name',
+			__( 'Nome do remetente', 'adam-comunidade' ),
+			'render_email_from_name',
+			'adam_comunidade_general'
+		);
 		add_settings_section(
 			'adam_comunidade_appearance',
 			__( 'Aspeto', 'adam-comunidade' ),
@@ -137,6 +143,7 @@ final class Settings {
 			'secondary_colour'     => sanitize_hex_color( $input['secondary_colour'] ?? '' ) ?: $defaults['secondary_colour'],
 			'accent_colour'        => sanitize_hex_color( $input['accent_colour'] ?? '' ) ?: $defaults['accent_colour'],
 			'contact_email'        => sanitize_email( (string) ( $input['contact_email'] ?? '' ) ),
+			'email_from_name'      => sanitize_text_field( (string) ( $input['email_from_name'] ?? $defaults['email_from_name'] ) ),
 			'community_page_id'    => absint( $current['community_page_id'] ),
 			'teams_page_id'        => absint( $current['teams_page_id'] ),
 			'fields_page_id'       => absint( $current['fields_page_id'] ),
@@ -206,6 +213,19 @@ final class Settings {
 			esc_attr( (string) self::get( 'contact_email' ) ),
 			esc_attr( (string) get_option( 'admin_email', '' ) ),
 			esc_html__( 'Usado nos emails públicos. Se ficar vazio, será utilizado o email de administração do WordPress.', 'adam-comunidade' )
+		);
+	}
+
+	/**
+	 * Renders the sender name used by every Community email.
+	 */
+	public function render_email_from_name(): void {
+		printf(
+			'<input class="regular-text" type="text" name="%1$s" value="%2$s" placeholder="%3$s"><p class="description">%4$s</p>',
+			esc_attr( self::OPTION_NAME . '[email_from_name]' ),
+			esc_attr( (string) self::get( 'email_from_name' ) ),
+			esc_attr__( 'ADAM Comunidade', 'adam-comunidade' ),
+			esc_html__( 'Nome apresentado como remetente em todas as mensagens da Comunidade.', 'adam-comunidade' )
 		);
 	}
 
@@ -281,6 +301,7 @@ final class Settings {
 			'secondary_colour'     => '#0f172a',
 			'accent_colour'        => '#f59e0b',
 			'contact_email'        => '',
+			'email_from_name'      => 'ADAM Comunidade',
 			'community_page_id'    => 0,
 			'teams_page_id'        => 0,
 			'fields_page_id'       => 0,

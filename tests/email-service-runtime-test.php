@@ -8,6 +8,10 @@ declare(strict_types=1);
 namespace {
 	define( 'ABSPATH', __DIR__ . '/' );
 	$GLOBALS['adam_test_mail'] = array();
+	$GLOBALS['adam_test_mail_calls'] = 0;
+	$GLOBALS['adam_test_mail_failures'] = 0;
+	$GLOBALS['adam_test_actions'] = array();
+	$GLOBALS['adam_test_alt_body'] = '';
 	$GLOBALS['adam_test_options'] = array(
 		'adam_comunidade_submission_email_templates' => array(
 			'field_rejected' => array(
@@ -75,11 +79,25 @@ namespace {
 	function add_filter( string $tag, callable $callback ): void {
 		unset( $tag, $callback );
 	}
+	function add_action( string $tag, callable $callback ): void {
+		$GLOBALS['adam_test_actions'][ $tag ][] = $callback;
+	}
 	function remove_filter( string $tag, callable $callback ): void {
 		unset( $tag, $callback );
 	}
 	function wp_mail( string $recipient, string $subject, string $html, array $headers ): bool {
+		++$GLOBALS['adam_test_mail_calls'];
+		$mailer = new \stdClass();
+		$mailer->AltBody = '';
+		foreach ( $GLOBALS['adam_test_actions']['phpmailer_init'] ?? array() as $callback ) {
+			$callback( $mailer );
+		}
+		$GLOBALS['adam_test_alt_body'] = (string) $mailer->AltBody;
 		$GLOBALS['adam_test_mail'] = compact( 'recipient', 'subject', 'html', 'headers' );
+		if ( $GLOBALS['adam_test_mail_failures'] > 0 ) {
+			--$GLOBALS['adam_test_mail_failures'];
+			return false;
+		}
 		return true;
 	}
 	function wp_hash( string $value ): string {
@@ -131,6 +149,18 @@ namespace {
 	}
 	if ( ! str_contains( $html, 'Campo submetido' ) || ! str_contains( $html, 'contacto@adam.pt' ) ) {
 		throw new \RuntimeException( 'Required null fallbacks were not rendered.' );
+	}
+	if ( ! str_contains( $GLOBALS['adam_test_alt_body'], 'Campo submetido' ) || str_contains( $GLOBALS['adam_test_alt_body'], '<table' ) ) {
+		throw new \RuntimeException( 'The accessible plain-text alternative was not attached.' );
+	}
+
+	$GLOBALS['adam_test_mail_failures'] = 1;
+	$calls_before_retry = $GLOBALS['adam_test_mail_calls'];
+	if ( ! $service->send( 'manager_password_changed', 'pessoa@dominio.pt', array( 'manager_url' => 'https://dominio.pt/gestor/' ) ) ) {
+		throw new \RuntimeException( 'The bounded retry did not recover from a transient mail failure.' );
+	}
+	if ( 2 !== $GLOBALS['adam_test_mail_calls'] - $calls_before_retry ) {
+		throw new \RuntimeException( 'The mail retry policy did not make exactly one additional attempt.' );
 	}
 
 	echo "Email service runtime tests passed.\n";
