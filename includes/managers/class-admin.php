@@ -212,7 +212,7 @@ final class Admin {
 		<?php $this->render_revision_history( $history, $record_names ); ?>
 		<h2><?php esc_html_e( 'Atribuições de Gestor', 'adam-comunidade' ); ?></h2>
 		<table class="widefat striped"><thead><tr><th><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Registo', 'adam-comunidade' ); ?></th><th><?php esc_html_e( 'Estado', 'adam-comunidade' ); ?></th><th></th></tr></thead><tbody>
-		<?php foreach ( $assignments as $assignment ) : $record = (object) array( 'name' => $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? '#' . $assignment->entity_id ); ?><tr><td><?php echo esc_html( (string) $assignment->email ); ?></td><td><?php echo esc_html( (string) $record->name ); ?></td><td><?php echo esc_html( 'active' === $assignment->manager_status ? __( 'Ativo', 'adam-comunidade' ) : __( 'Convite pendente', 'adam-comunidade' ) ); ?></td><td><a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_resend_manager_invitation', 'assignment_id' => $assignment->id ), admin_url( 'admin-post.php' ) ), 'adam_resend_manager_invitation_' . $assignment->id ) ); ?>"><?php esc_html_e( 'Reenviar convite', 'adam-comunidade' ); ?></a></td></tr><?php endforeach; ?>
+		<?php foreach ( $assignments as $assignment ) : $record = (object) array( 'name' => $record_names[ (string) $assignment->entity_type . ':' . (int) $assignment->entity_id ] ?? '#' . $assignment->entity_id ); ?><tr><td><?php echo esc_html( (string) $assignment->email ); ?></td><td><?php echo esc_html( (string) $record->name ); ?></td><td><?php echo esc_html( 'active' === $assignment->manager_status ? __( 'Ativo', 'adam-comunidade' ) : __( 'Convite pendente', 'adam-comunidade' ) ); ?></td><td><?php if ( 'invited' === $assignment->manager_status ) : ?><a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_resend_manager_invitation', 'assignment_id' => $assignment->id ), admin_url( 'admin-post.php' ) ), 'adam_resend_manager_invitation_' . $assignment->id ) ); ?>"><?php esc_html_e( 'Reenviar convite', 'adam-comunidade' ); ?></a><?php endif; ?></td></tr><?php endforeach; ?>
 		</tbody></table>
 		<?php
 	}
@@ -246,8 +246,8 @@ final class Admin {
 		check_admin_referer( 'adam_resend_manager_invitation_' . $id );
 		global $wpdb;
 		$sent = false;
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT a.*,m.email FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . ' m ON m.id=a.manager_id WHERE a.id=%d', $id ) );
-		if ( $row ) {
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT a.*,m.email,m.status AS manager_status FROM ' . Schema::assignments_table() . ' a INNER JOIN ' . Schema::managers_table() . ' m ON m.id=a.manager_id WHERE a.id=%d', $id ) );
+		if ( $row && 'invited' === (string) $row->manager_status ) {
 			$url = $this->service->invite( (string) $row->email, (string) $row->entity_type, (int) $row->entity_id );
 			$record = $this->service->record( (string) $row->entity_type, (int) $row->entity_id );
 			if ( ! is_wp_error( $url ) ) {
@@ -307,16 +307,16 @@ final class Admin {
 			$this->redirect_managers( 'assignment-invalid' );
 		}
 
-		$url = '';
+		$access = array( 'state' => $manager ? (string) $manager->status : 'none', 'action_url' => '' );
 		$partial_failure = false;
 		$assigned_manager_id = $manager_id;
 		foreach ( $references as $index => $reference ) {
 			if ( 0 === $index && ! $manager ) {
-				$url = $this->service->invite( $email, $reference['type'], $reference['id'] );
-				if ( is_wp_error( $url ) ) {
+				$access = $this->service->provision_organisation( $email, $reference['type'], $reference['id'] );
+				if ( is_wp_error( $access ) ) {
 					$this->redirect_managers( 'assignment-failed' );
 				}
-				$assigned_manager_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . Schema::managers_table() . ' WHERE email=%s', $email ) );
+				$assigned_manager_id = (int) $access['manager_id'];
 				continue;
 			}
 			$result = $this->service->assign_existing( $assigned_manager_id, $reference['type'], $reference['id'] );
@@ -324,14 +324,27 @@ final class Admin {
 				$partial_failure = true;
 			}
 		}
-		if ( ! $manager && $url ) {
+		if ( ! $manager && is_array( $access ) ) {
 			$record = 1 === count( $references )
 				? $this->service->record( $references[0]['type'], $references[0]['id'] )
 				: null;
 			$label = 1 === count( $references )
 				? (string) ( $record->name ?? __( 'Organização da Comunidade', 'adam-comunidade' ) )
 				: sprintf( _n( '%d organização', '%d organizações', count( $references ), 'adam-comunidade' ), count( $references ) );
-			$sent = ( new \ADAM\Comunidade\Experience\Email_Service() )->send( 'manager_invitation', $email, array( 'entity_name' => $label, 'manager_invite_url' => $url ) );
+			$template = array(
+				'active'             => 'manager_organisation_assigned',
+				'pending_activation' => 'manager_organisation_pending_activation',
+				'activation_required' => 'manager_invitation',
+			)[ (string) ( $access['state'] ?? '' ) ] ?? '';
+			$sent = '' !== $template && ( new \ADAM\Comunidade\Experience\Email_Service() )->send(
+				$template,
+				$email,
+				array(
+					'entity_name'        => $label,
+					'manager_invite_url' => 'activation_required' === $access['state'] ? (string) $access['action_url'] : '',
+					'manager_url'        => 'active' === $access['state'] ? (string) $access['action_url'] : '',
+				)
+			);
 			if ( ! $sent ) {
 				$this->redirect_managers( 'invitation-send-failed' );
 			}

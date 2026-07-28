@@ -62,6 +62,8 @@ namespace {
 		'community_approved',
 		'community_rejected',
 		'manager_invitation',
+		'manager_organisation_assigned',
+		'manager_organisation_pending_activation',
 		'manager_password_reset',
 		'manager_password_created',
 		'manager_password_changed',
@@ -82,6 +84,9 @@ namespace {
 				'manager_invite_url' => 'http://adam.local/definir-palavra-passe/?convite=abc',
 				'manager_reset_url'  => 'http://adam.local/recuperar-palavra-passe/?codigo=abc',
 				'manager_url'        => 'http://adam.local/gestor/',
+				'manager_action_url'   => 'http://adam.local/gestor/',
+				'manager_action_label' => 'Aceder Ã  Ãrea do Gestor',
+				'manager_guidance'     => 'Inicie sessÃ£o para atualizar a organizaÃ§Ã£o.',
 				'admin_note'         => 'Nota de teste.',
 			)
 		);

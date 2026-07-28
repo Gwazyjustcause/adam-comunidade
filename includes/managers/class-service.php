@@ -29,13 +29,110 @@ final class Service {
 	}
 
 	/**
+	 * Assigns an approved organisation and returns the correct account action.
+	 *
+	 * @return array{manager_id:int,state:string,action_url:string}|\WP_Error
+	 */
+	public function provision_organisation( string $email, string $entity_type, int $entity_id ): array|\WP_Error {
+		$email   = strtolower( sanitize_email( $email ) );
+		$manager = $this->manager_by_email( $email );
+
+		if ( $manager && 'disabled' === (string) $manager->status ) {
+			return new \WP_Error( 'manager_disabled', __( 'Esta conta de Gestor está desativada.', 'adam-comunidade' ) );
+		}
+		if ( $manager && in_array( (string) $manager->status, array( 'active', 'invited' ), true ) ) {
+			$assigned = $this->assign_existing( (int) $manager->id, $entity_type, $entity_id );
+			if ( is_wp_error( $assigned ) ) {
+				return $assigned;
+			}
+			return array(
+				'manager_id' => (int) $manager->id,
+				'state'      => 'active' === (string) $manager->status ? 'active' : 'pending_activation',
+				'action_url' => 'active' === (string) $manager->status ? Portal::url() : '',
+			);
+		}
+
+		$url = $this->invite( $email, $entity_type, $entity_id );
+		if ( is_wp_error( $url ) ) {
+			return $url;
+		}
+		$manager = $this->manager_by_email( $email );
+		return array(
+			'manager_id' => (int) ( $manager->id ?? 0 ),
+			'state'      => 'active' === (string) ( $manager->status ?? '' ) ? 'active' : 'activation_required',
+			'action_url' => $url,
+		);
+	}
+
+	/**
+	 * Resolves account access for a request-changes notification.
+	 *
+	 * A new account is invited once. Existing pending accounts retain their
+	 * original token instead of receiving duplicate activation links.
+	 *
+	 * @return array{manager_id:int,state:string,action_url:string}|\WP_Error
+	 */
+	public function prepare_changes_access( string $email, string $entity_type, int $submission_id ): array|\WP_Error {
+		global $wpdb;
+		$email   = strtolower( sanitize_email( $email ) );
+		$manager = $this->manager_by_email( $email );
+		if ( $manager && 'active' === (string) $manager->status ) {
+			return array( 'manager_id' => (int) $manager->id, 'state' => 'active', 'action_url' => Portal::url() );
+		}
+		if ( $manager && 'invited' === (string) $manager->status ) {
+			return array( 'manager_id' => (int) $manager->id, 'state' => 'pending_activation', 'action_url' => '' );
+		}
+		if ( $manager && 'disabled' === (string) $manager->status ) {
+			return new \WP_Error( 'manager_disabled', __( 'Esta conta de Gestor está desativada.', 'adam-comunidade' ) );
+		}
+		if ( ! is_email( $email ) || ! in_array( $entity_type, Policy::entity_types(), true ) || $submission_id < 1 ) {
+			return new \WP_Error( 'invalid_invitation', __( 'Não foi possível preparar o acesso de Gestor.', 'adam-comunidade' ) );
+		}
+
+		$now = current_time( 'mysql', true );
+		if ( $manager && 'deleted' === (string) $manager->status ) {
+			$updated = $wpdb->update(
+				Schema::managers_table(),
+				array( 'status' => 'invited', 'password_hash' => '', 'updated_at' => $now ),
+				array( 'id' => (int) $manager->id )
+			);
+			if ( false === $updated ) {
+				return new \WP_Error( 'manager_create_failed', __( 'Não foi possível preparar a conta de Gestor.', 'adam-comunidade' ) );
+			}
+			$manager_id = (int) $manager->id;
+		} else {
+			$inserted = $wpdb->insert(
+				Schema::managers_table(),
+				array( 'email' => $email, 'status' => 'invited', 'created_at' => $now, 'updated_at' => $now )
+			);
+			if ( false === $inserted ) {
+				// The unique email constraint may have won a concurrent request.
+				$concurrent = $this->manager_by_email( $email );
+				if ( $concurrent ) {
+					return 'active' === (string) $concurrent->status
+						? array( 'manager_id' => (int) $concurrent->id, 'state' => 'active', 'action_url' => Portal::url() )
+						: array( 'manager_id' => (int) $concurrent->id, 'state' => 'pending_activation', 'action_url' => '' );
+				}
+				return new \WP_Error( 'manager_create_failed', __( 'Não foi possível preparar a conta de Gestor.', 'adam-comunidade' ) );
+			}
+			$manager_id = (int) $wpdb->insert_id;
+		}
+
+		$url = $this->create_invitation_token( $manager_id, 'submission_' . sanitize_key( $entity_type ), $submission_id, $now );
+		if ( is_wp_error( $url ) ) {
+			return $url;
+		}
+		return array( 'manager_id' => $manager_id, 'state' => 'activation_required', 'action_url' => $url );
+	}
+
+	/**
 	 * Creates an explicit assignment and a new single-use invitation.
 	 *
 	 * This deliberately queries only the Community Manager tables.
 	 */
 	public function invite( string $email, string $entity_type, int $entity_id ): string|\WP_Error {
 		global $wpdb;
-		$email       = sanitize_email( $email );
+		$email       = strtolower( sanitize_email( $email ) );
 		$entity_type = sanitize_key( $entity_type );
 		if ( ! is_email( $email ) || ! in_array( $entity_type, Policy::entity_types(), true ) || $entity_id < 1 ) {
 			return new \WP_Error( 'invalid_invitation', __( 'Não foi possível criar o convite de Gestor.', 'adam-comunidade' ) );
@@ -45,14 +142,23 @@ final class Service {
 			return new \WP_Error( 'invalid_assignment_record', __( 'A organização selecionada já não está disponível.', 'adam-comunidade' ) );
 		}
 
-		$manager = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::managers_table() . ' WHERE email = %s', $email ) );
+		$manager = $this->manager_by_email( $email );
 		$now     = current_time( 'mysql', true );
 		if ( ! $manager ) {
-			$wpdb->insert(
+			$inserted = $wpdb->insert(
 				Schema::managers_table(),
 				array( 'email' => $email, 'status' => 'invited', 'created_at' => $now, 'updated_at' => $now )
 			);
-			$manager_id = (int) $wpdb->insert_id;
+			if ( false === $inserted ) {
+				// A concurrent request may have created the canonical account.
+				$manager = $this->manager_by_email( $email );
+				if ( ! $manager ) {
+					return new \WP_Error( 'manager_create_failed', __( 'Não foi possível criar a conta de Gestor.', 'adam-comunidade' ) );
+				}
+				$manager_id = (int) $manager->id;
+			} else {
+				$manager_id = (int) $wpdb->insert_id;
+			}
 		} else {
 			$manager_id = (int) $manager->id;
 		}
@@ -92,45 +198,7 @@ final class Service {
 		if ( $manager && 'active' === $manager->status ) {
 			return Portal::url();
 		}
-		$raw = $this->new_token();
-		if ( is_wp_error( $raw ) ) {
-			return $raw;
-		}
-		$inserted = $wpdb->insert(
-			Schema::invitations_table(),
-			array(
-				'manager_id' => $manager_id,
-				'purpose'    => 'invitation',
-				'entity_type'=> $entity_type,
-				'entity_id'  => $entity_id,
-				'token_hash' => hash( 'sha256', $raw ),
-				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + Config::manager_security()['invitation_ttl'] ),
-				'created_at' => $now,
-			)
-		);
-		if ( false === $inserted ) {
-			Logger::error( 'community_manager_invitation_insert_failed', array( 'manager_id' => $manager_id, 'entity_type' => $entity_type, 'entity_id' => $entity_id ) );
-			return new \WP_Error( 'invitation_failed', __( 'Não foi possível criar o convite de Gestor.', 'adam-comunidade' ) );
-		}
-		$invitation_id = (int) $wpdb->insert_id;
-		$superseded = $wpdb->query(
-			$wpdb->prepare(
-				'UPDATE ' . Schema::invitations_table() . " SET used_at = %s WHERE manager_id = %d AND purpose = 'invitation' AND entity_type = %s AND entity_id = %d AND used_at IS NULL AND id <> %d",
-				$now,
-				$manager_id,
-				$entity_type,
-				$entity_id,
-				$invitation_id
-			)
-		);
-		if ( false === $superseded ) {
-			$wpdb->delete( Schema::invitations_table(), array( 'id' => $invitation_id ) );
-			Logger::error( 'community_manager_invitation_supersede_failed', array( 'manager_id' => $manager_id ) );
-			return new \WP_Error( 'invitation_failed', __( 'Não foi possível concluir o convite de Gestor.', 'adam-comunidade' ) );
-		}
-		$activation_url = Portal::activation_url( $raw );
-		do_action( 'adam_comunidade_manager_invited', $manager_id, $entity_type, $entity_id, $invitation_id );
-		return $activation_url;
+		return $this->create_invitation_token( $manager_id, $entity_type, $entity_id, $now );
 	}
 
 	public function activate( string $token, string $password ): int|\WP_Error {
@@ -1068,6 +1136,66 @@ final class Service {
 			return array() === $value;
 		}
 		return null === $value || '' === trim( (string) $value );
+	}
+
+	/**
+	 * Finds the canonical manager identity for a normalized email address.
+	 */
+	private function manager_by_email( string $email ): ?object {
+		global $wpdb;
+		if ( ! is_email( $email ) ) {
+			return null;
+		}
+		$manager = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Schema::managers_table() . ' WHERE email = %s LIMIT 1',
+				strtolower( $email )
+			)
+		);
+		return is_object( $manager ) ? $manager : null;
+	}
+
+	/**
+	 * Creates the single current activation token for one manager account.
+	 */
+	private function create_invitation_token( int $manager_id, string $entity_type, int $entity_id, string $now ): string|\WP_Error {
+		global $wpdb;
+		$raw = $this->new_token();
+		if ( is_wp_error( $raw ) ) {
+			return $raw;
+		}
+		$inserted = $wpdb->insert(
+			Schema::invitations_table(),
+			array(
+				'manager_id' => $manager_id,
+				'purpose'    => 'invitation',
+				'entity_type'=> sanitize_key( $entity_type ),
+				'entity_id'  => $entity_id,
+				'token_hash' => hash( 'sha256', $raw ),
+				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + Config::manager_security()['invitation_ttl'] ),
+				'created_at' => $now,
+			)
+		);
+		if ( false === $inserted ) {
+			Logger::error( 'community_manager_invitation_insert_failed', array( 'manager_id' => $manager_id, 'entity_type' => $entity_type, 'entity_id' => $entity_id ) );
+			return new \WP_Error( 'invitation_failed', __( 'Não foi possível criar o convite de Gestor.', 'adam-comunidade' ) );
+		}
+		$invitation_id = (int) $wpdb->insert_id;
+		$superseded = $wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . Schema::invitations_table() . " SET used_at = %s WHERE manager_id = %d AND purpose = 'invitation' AND used_at IS NULL AND id <> %d",
+				$now,
+				$manager_id,
+				$invitation_id
+			)
+		);
+		if ( false === $superseded ) {
+			$wpdb->delete( Schema::invitations_table(), array( 'id' => $invitation_id ) );
+			Logger::error( 'community_manager_invitation_supersede_failed', array( 'manager_id' => $manager_id ) );
+			return new \WP_Error( 'invitation_failed', __( 'Não foi possível concluir o convite de Gestor.', 'adam-comunidade' ) );
+		}
+		do_action( 'adam_comunidade_manager_invited', $manager_id, $entity_type, $entity_id, $invitation_id );
+		return Portal::activation_url( $raw );
 	}
 
 	/**

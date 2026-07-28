@@ -45,8 +45,8 @@ $assert( str_contains( $service, 'Policy::decode_lists' ) && str_contains( $poli
 $assert( str_contains( $service, "'approve' => 'approved'" ) && str_contains( $service, "'changes' => 'needs_info'" ) && str_contains( $admin, 'Moderation_Component::render' ) && str_contains( $moderation_component, "value=\"%s\"" ), 'Revision moderation decisions are incomplete.' );
 $assert( str_contains( $admin, 'adam_resend_manager_invitation' ), 'Administrators cannot resend invitations.' );
 $assert( str_contains( $portal, 'Upload_Component::render' ), 'Manager images must reuse the ADAM Upload component.' );
-$assert( str_contains( $approval, "'manager_invite_url' => \$manager_invite_url" ), 'Field approval email does not receive the manager invitation.' );
-foreach ( array( 'manager_invitation', 'manager_revision_approved', 'manager_revision_rejected', 'manager_information_requested', 'manager_password_reset' ) as $template ) {
+$assert( str_contains( $approval, 'provision_organisation' ) && str_contains( $approval, 'prepare_changes_access' ), 'Submission moderation is not account-aware.' );
+foreach ( array( 'manager_invitation', 'manager_organisation_assigned', 'manager_organisation_pending_activation', 'manager_revision_approved', 'manager_revision_rejected', 'manager_information_requested', 'manager_password_reset' ) as $template ) {
 	$assert( str_contains( $emails, "'{$template}'" ), 'Missing manager email template: ' . $template );
 }
 $assert( str_contains( $admin, "'managers'" ) && str_contains( $admin, 'adam_manager_admin_transfer' ), 'Dedicated manager administration is incomplete.' );

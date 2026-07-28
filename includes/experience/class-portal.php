@@ -21,6 +21,7 @@ use ADAM\Comunidade\Fields\Schema as Field_Schema;
 use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Forms\Manager as Forms_Manager;
 use ADAM\Comunidade\Helpers;
+use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Managers\Service as Manager_Service;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
@@ -873,11 +874,22 @@ final class Portal {
 			wp_die( esc_html__( 'Não foi possível concluir a decisão. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
 		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
-		$manager_invite_url = '';
-		if ( 'approve' === $decision && 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
-			$manager_invite = ( new Manager_Service( self::emails() ) )->invite( (string) $row->contact_email, (string) $row->object_type, $object_id );
-			if ( ! is_wp_error( $manager_invite ) ) {
-				$manager_invite_url = $manager_invite;
+		$manager_access = array( 'manager_id' => 0, 'state' => 'none', 'action_url' => '' );
+		if ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'field', 'partner', 'institution' ), true ) ) {
+			$manager_service = new Manager_Service( self::emails() );
+			$manager_result  = null;
+			if ( 'approve' === $decision ) {
+				$manager_result = $manager_service->provision_organisation( (string) $row->contact_email, (string) $row->object_type, $object_id );
+			} elseif ( 'changes' === $decision ) {
+				$manager_result = $manager_service->prepare_changes_access( (string) $row->contact_email, (string) $row->object_type, $id );
+			}
+			if ( is_wp_error( $manager_result ) ) {
+				Logger::error(
+					'community_manager_access_preparation_failed',
+					array( 'submission_id' => $id, 'decision' => $decision, 'error_code' => $manager_result->get_error_code() )
+				);
+			} elseif ( is_array( $manager_result ) ) {
+				$manager_access = $manager_result;
 			}
 		}
 		if ( 'field' === $row->object_type && 'new' === $row->submission_type && in_array( $decision, array( 'approve', 'changes', 'reject' ), true ) ) {
@@ -888,14 +900,26 @@ final class Portal {
 				'changes' => 'field_changes_requested',
 				'reject'  => 'field_rejected',
 			)[ $decision ];
+			if ( 'approve' === $decision && 'active' === $manager_access['state'] ) {
+				$template_key = 'manager_organisation_assigned';
+			} elseif ( 'approve' === $decision && 'pending_activation' === $manager_access['state'] ) {
+				$template_key = 'manager_organisation_pending_activation';
+			}
 			self::emails()->send(
 				$template_key,
 				(string) $row->contact_email,
 				array(
-					'field_name' => (string) ( $email_payload['name'] ?? '' ),
-					'field_url'  => $field ? Field_Router::field_url( $field ) : '',
-					'manager_invite_url' => $manager_invite_url,
-					'admin_note' => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
+					'field_name'           => (string) ( $email_payload['name'] ?? '' ),
+					'field_url'            => $field ? Field_Router::field_url( $field ) : '',
+					'entity_name'          => (string) ( $email_payload['name'] ?? '' ),
+					'entity_type'          => self::object_type_label( (string) $row->object_type ),
+					'entity_url'           => $field ? Field_Router::field_url( $field ) : '',
+					'manager_invite_url'   => 'activation_required' === $manager_access['state'] ? $manager_access['action_url'] : '',
+					'manager_url'          => 'active' === $manager_access['state'] ? $manager_access['action_url'] : '',
+					'manager_action_url'   => in_array( $manager_access['state'], array( 'active', 'activation_required' ), true ) ? $manager_access['action_url'] : '',
+					'manager_action_label' => 'active' === $manager_access['state'] ? __( 'Aceder à Área do Gestor', 'adam-comunidade' ) : __( 'Criar Palavra-passe', 'adam-comunidade' ),
+					'manager_guidance'     => self::manager_access_guidance( (string) $manager_access['state'] ),
+					'admin_note'           => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
 				)
 			);
 		} elseif ( 'new' === $row->submission_type && in_array( $row->object_type, array( 'team', 'partner', 'institution' ), true ) && in_array( $decision, array( 'approve', 'changes', 'reject' ), true ) ) {
@@ -910,15 +934,24 @@ final class Portal {
 				'changes' => 'community_changes_requested',
 				'reject'  => 'community_rejected',
 			)[ $decision ];
+			if ( 'approve' === $decision && 'active' === $manager_access['state'] ) {
+				$template_key = 'manager_organisation_assigned';
+			} elseif ( 'approve' === $decision && 'pending_activation' === $manager_access['state'] ) {
+				$template_key = 'manager_organisation_pending_activation';
+			}
 			self::emails()->send(
 				$template_key,
 				(string) $row->contact_email,
 				array(
-					'entity_name'        => (string) ( $email_payload['name'] ?? '' ),
-					'entity_type'        => self::object_type_label( (string) $row->object_type ),
-					'entity_url'         => $entity_url,
-					'manager_invite_url' => $manager_invite_url,
-					'admin_note'         => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
+					'entity_name'          => (string) ( $email_payload['name'] ?? '' ),
+					'entity_type'          => self::object_type_label( (string) $row->object_type ),
+					'entity_url'           => $entity_url,
+					'manager_invite_url'   => 'activation_required' === $manager_access['state'] ? $manager_access['action_url'] : '',
+					'manager_url'          => 'active' === $manager_access['state'] ? $manager_access['action_url'] : '',
+					'manager_action_url'   => in_array( $manager_access['state'], array( 'active', 'activation_required' ), true ) ? $manager_access['action_url'] : '',
+					'manager_action_label' => 'active' === $manager_access['state'] ? __( 'Aceder à Área do Gestor', 'adam-comunidade' ) : __( 'Criar Palavra-passe', 'adam-comunidade' ),
+					'manager_guidance'     => self::manager_access_guidance( (string) $manager_access['state'] ),
+					'admin_note'           => '' !== $admin_note ? $admin_note : __( 'A submissão não reuniu, nesta fase, as condições necessárias para publicação.', 'adam-comunidade' ),
 				)
 			);
 		}
@@ -1098,6 +1131,22 @@ final class Portal {
 			'partner'     => __( 'Parceiro', 'adam-comunidade' ),
 			'institution' => __( 'Instituição', 'adam-comunidade' ),
 		)[ $type ] ?? __( 'Conteúdo', 'adam-comunidade' );
+	}
+
+	/**
+	 * Explains the account-aware next step used in request-changes emails.
+	 */
+	private static function manager_access_guidance( string $state ): string {
+		if ( 'active' === $state ) {
+			return __( 'A sua conta de Gestor da Comunidade já está ativa. Inicie sessão para atualizar as informações da organização. Todas as alterações continuam sujeitas à aprovação da ADAM antes de serem publicadas.', 'adam-comunidade' );
+		}
+		if ( 'activation_required' === $state ) {
+			return __( "Ainda não possui uma conta ativa de Gestor da Comunidade?\n\nPara atualizar as informações da sua organização, primeiro terá de criar a sua palavra-passe. Esta conta permite-lhe gerir apenas as páginas que lhe estão atribuídas. Todas as alterações continuam sujeitas à aprovação da ADAM antes de serem publicadas.", 'adam-comunidade' );
+		}
+		if ( 'pending_activation' === $state ) {
+			return __( 'A sua conta de Gestor da Comunidade ainda aguarda ativação. Utilize o convite de ativação que já lhe enviámos; não é necessário criar outra conta nem efetuar um novo registo.', 'adam-comunidade' );
+		}
+		return '';
 	}
 
 	/**

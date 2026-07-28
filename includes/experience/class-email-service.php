@@ -121,6 +121,13 @@ final class Email_Service {
 				$template['body']
 			);
 		}
+		if (
+			in_array( $template_key, array( 'field_changes_requested', 'community_changes_requested' ), true )
+			&& '' !== $context['manager_guidance']
+			&& ! str_contains( $template['body'], '{{manager_guidance}}' )
+		) {
+			$template['body'] .= $this->manager_access_content();
+		}
 
 		foreach ( $context as $key => $value ) {
 			if ( '' === $value && ( str_ends_with( $key, '_url' ) || in_array( $key, array( 'adam_email', 'invitation_expiry' ), true ) ) ) {
@@ -318,13 +325,23 @@ final class Email_Service {
 	}
 
 	/**
+	 * Appends account-aware access guidance to customized legacy templates.
+	 */
+	private function manager_access_content(): string {
+		return __(
+			'<h2>Atualizar a organização</h2><p>{{manager_guidance}}</p><p><a href="{{manager_action_url}}">{{manager_action_label}}</a></p>',
+			'adam-comunidade'
+		);
+	}
+
+	/**
 	 * Keeps the administration interface organized as new templates are added.
 	 */
 	private function template_category( string $key ): string {
 		if ( str_starts_with( $key, 'manager_password' ) ) {
 			return 'access';
 		}
-		if ( 'manager_invitation' === $key ) {
+		if ( in_array( $key, array( 'manager_invitation', 'manager_organisation_assigned', 'manager_organisation_pending_activation' ), true ) ) {
 			return 'onboarding';
 		}
 		if ( str_starts_with( $key, 'manager_revision' ) || 'manager_information_requested' === $key ) {
@@ -361,7 +378,7 @@ final class Email_Service {
 		$replacements = array();
 		foreach ( $context as $key => $value ) {
 			$value = $this->string_value( $value );
-			if ( 'admin_note' === $key ) {
+			if ( in_array( $key, array( 'admin_note', 'manager_guidance' ), true ) ) {
 				$replacements[ '{{' . $key . '}}' ] = nl2br( esc_html( $value ), false );
 			} else {
 				$replacements[ '{{' . $key . '}}' ] = str_ends_with( $key, '_url' ) || 'adam_email' === $key
@@ -392,6 +409,7 @@ final class Email_Service {
 			$field_url = $this->public_url( Managed_Pages::url( 'fields' ) );
 		}
 		$manager_invite_url = $this->public_url( $context['manager_invite_url'] ?? null );
+		$manager_action_url = $this->public_url( $context['manager_action_url'] ?? null );
 
 		return array(
 			'field_name'         => $field_name,
@@ -402,6 +420,9 @@ final class Email_Service {
 			'manager_invite_url' => $manager_invite_url,
 			'manager_url'        => $this->public_url( $context['manager_url'] ?? null ),
 			'manager_reset_url'  => $this->public_url( $context['manager_reset_url'] ?? null ),
+			'manager_action_url'   => $manager_action_url,
+			'manager_action_label' => $this->string_value( $context['manager_action_label'] ?? null ),
+			'manager_guidance'     => $this->string_value( $context['manager_guidance'] ?? null ),
 			'invitation_expiry'  => '' !== $manager_invite_url ? $this->string_value( $context['invitation_expiry'] ?? null, __( '14 dias', 'adam-comunidade' ) ) : '',
 			'admin_note'         => $admin_note,
 			'adam_email'         => $this->contact_email(),
@@ -568,7 +589,7 @@ final class Email_Service {
 				'enabled' => true,
 				'subject' => __( 'Precisamos de alterações à sua submissão', 'adam-comunidade' ),
 				'heading' => __( 'Alterações necessárias', 'adam-comunidade' ),
-				'body'    => __( '<p>Revimos a submissão de {{entity_type}} <strong>{{entity_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+				'body'    => __( '<p>Revimos a submissão de {{entity_type}} <strong>{{entity_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><h2>Atualizar a organização</h2><p>{{manager_guidance}}</p><p><a href="{{manager_action_url}}">{{manager_action_label}}</a></p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
 			),
 			'community_rejected' => array(
 				'label'   => __( 'Submissão da Comunidade rejeitada', 'adam-comunidade' ),
@@ -583,6 +604,20 @@ final class Email_Service {
 				'subject' => __( 'Crie a sua conta de Gestor da Comunidade', 'adam-comunidade' ),
 				'heading' => __( 'Convite para Gestor da Comunidade', 'adam-comunidade' ),
 				'body'    => __( '<p>Recebeu este convite porque a ADAM lhe atribuiu a gestão de <strong>{{entity_name}}</strong> no Diretório da Comunidade.</p><h2>O que pode fazer?</h2><p>Poderá atualizar a informação da organização sempre que necessário. Para garantir a qualidade do Diretório, todas as alterações são revistas pela ADAM antes da publicação.</p><p>A conta de Gestor da Comunidade é independente da conta de Sócio ADAM e não requer nome de utilizador nem um novo formulário de registo.</p><p><a href="{{manager_invite_url}}">Criar Palavra-passe</a></p><p>Este convite é pessoal, de utilização única e expira ao fim de {{invitation_expiry}}. Se não estava à espera desta mensagem, não utilize o endereço e contacte a ADAM.</p>', 'adam-comunidade' ),
+			),
+			'manager_organisation_assigned' => array(
+				'label'   => __( 'Nova organização atribuída a um Gestor', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Uma nova organização foi adicionada à sua conta', 'adam-comunidade' ),
+				'heading' => __( 'Nova organização na Área do Gestor', 'adam-comunidade' ),
+				'body'    => __( '<p>A submissão de {{entity_type}} <strong>{{entity_name}}</strong> foi aprovada e a organização foi adicionada à sua conta de Gestor da Comunidade.</p><p><a href="{{entity_url}}">Ver organização no Diretório</a></p><p>Não precisa de criar outra conta nem definir uma nova palavra-passe. Utilize as suas credenciais habituais para ver todas as organizações que gere.</p><p><a href="{{manager_url}}">Aceder à Área do Gestor</a></p>', 'adam-comunidade' ),
+			),
+			'manager_organisation_pending_activation' => array(
+				'label'   => __( 'Nova organização atribuída a um Gestor por ativar', 'adam-comunidade' ),
+				'enabled' => true,
+				'subject' => __( 'Uma nova organização foi adicionada à sua conta', 'adam-comunidade' ),
+				'heading' => __( 'Nova organização atribuída', 'adam-comunidade' ),
+				'body'    => __( '<p>A submissão de {{entity_type}} <strong>{{entity_name}}</strong> foi aprovada e a organização foi adicionada à sua conta de Gestor da Comunidade.</p><p><a href="{{entity_url}}">Ver organização no Diretório</a></p><p>A sua conta ainda aguarda ativação. Utilize o convite de ativação que já lhe enviámos para criar a palavra-passe. Não é necessário criar outra conta nem efetuar um novo registo.</p>', 'adam-comunidade' ),
 			),
 			'manager_revision_approved' => array(
 				'label'   => __( 'Alteração de Gestor aprovada', 'adam-comunidade' ),
@@ -653,7 +688,7 @@ final class Email_Service {
 				'enabled' => true,
 				'subject' => __( 'Precisamos de alterações à submissão do seu campo', 'adam-comunidade' ),
 				'heading' => __( 'Alterações necessárias', 'adam-comunidade' ),
-				'body'    => __( '<p>Revimos a submissão do campo <strong>{{field_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
+				'body'    => __( '<p>Revimos a submissão do campo <strong>{{field_name}}</strong> e precisamos que corrija os pontos seguintes antes de uma nova análise.</p><h2>O que deve corrigir</h2><p>{{admin_note}}</p><h2>Atualizar a organização</h2><p>{{manager_guidance}}</p><p><a href="{{manager_action_url}}">{{manager_action_label}}</a></p><p>Se precisar de esclarecimentos, contacte a ADAM através de {{adam_email}}.</p>', 'adam-comunidade' ),
 			),
 			'field_rejected' => array(
 				'label'   => __( 'Campo rejeitado', 'adam-comunidade' ),
