@@ -26,6 +26,7 @@ final class News {
 					'singular_slug' => 'news',
 					'controller'    => $this,
 					'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
+					'dispatch_on_load' => true,
 				)
 			);
 		}

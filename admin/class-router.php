@@ -78,6 +78,7 @@ final class Router {
 				'methods'     => array(),
 				'arguments'   => array(),
 				'load'        => null,
+				'dispatch_on_load' => false,
 				'menu'        => true,
 			)
 		);
@@ -104,6 +105,7 @@ final class Router {
 				'method'     => $methods['list'],
 				'visible'    => (bool) $config['menu'],
 				'load'       => $config['load'],
+				'dispatch_on_load' => (bool) $config['dispatch_on_load'],
 				'arguments'  => $config['arguments'],
 			)
 		);
@@ -116,6 +118,7 @@ final class Router {
 				'method'     => $methods['create'],
 				'visible'    => false,
 				'arguments'  => $config['arguments'],
+				'dispatch_on_load' => (bool) $config['dispatch_on_load'],
 			)
 		);
 		self::add_route(
@@ -128,6 +131,7 @@ final class Router {
 				'visible'    => false,
 				'arguments'  => $config['arguments'],
 				'requires_id' => true,
+				'dispatch_on_load' => (bool) $config['dispatch_on_load'],
 			)
 		);
 	}
@@ -196,6 +200,10 @@ final class Router {
 			);
 
 			self::record_registration( $slug, $parent_slug, $hook, $route, $callback, 'submenu' );
+
+			if ( $hook && ! empty( $route['dispatch_on_load'] ) ) {
+				add_action( 'load-' . $hook, $callback, 1 );
+			}
 
 			if ( $hook && ! empty( $route['load'] ) && is_callable( $route['load'] ) ) {
 				add_action( 'load-' . $hook, $route['load'] );
@@ -354,6 +362,7 @@ final class Router {
 				'arguments'  => array(),
 				'visible'    => true,
 				'load'       => null,
+				'dispatch_on_load' => false,
 				'requires_id' => false,
 			)
 		);

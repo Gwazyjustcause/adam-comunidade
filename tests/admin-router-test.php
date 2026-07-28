@@ -163,6 +163,7 @@ foreach ( $modules as $module => $definition ) {
 			'controller'    => $controller,
 			'methods'       => array( 'list' => 'list', 'create' => 'create', 'edit' => 'edit' ),
 			'arguments'     => $argument ? array( $argument ) : array(),
+			'dispatch_on_load' => 'news' === $module,
 		)
 	);
 }
@@ -272,6 +273,11 @@ foreach ( $modules as $module => $definition ) {
 	assert( '' !== $GLOBALS['adam_test_submenus'][ $edit_slug ]['page_title'] );
 }
 assert( array() === $GLOBALS['adam_test_removed'], 'Registered routes must never be removed from WordPress menus.' );
+
+foreach ( array( 'adam-comunidade-news', 'adam-comunidade-news-add', 'adam-comunidade-news-edit' ) as $news_route ) {
+	$hook = Router::registered_pages()[ $news_route ]['hook'];
+	assert( isset( $GLOBALS['adam_test_actions'][ 'load-' . $hook ][1][0] ), 'News redirects must run before admin page output: ' . $news_route );
+}
 
 foreach (
 	array(
