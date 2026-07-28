@@ -31,10 +31,14 @@ final class Assets {
 			return;
 		}
 		$settings  = wp_parse_args( get_option( Settings::OPTION_NAME, array() ), Settings::defaults() );
-		$primary   = sanitize_hex_color( $settings['primary_colour'] ?? '' ) ?: '#1d4ed8';
-		$secondary = sanitize_hex_color( $settings['secondary_colour'] ?? '' ) ?: '#0f172a';
-		$accent    = sanitize_hex_color( $settings['accent_colour'] ?? '' ) ?: '#f59e0b';
-		wp_add_inline_style( 'adam-comunidade', ':root{--adam-primary:' . $primary . ';--adam-secondary:' . $secondary . ';--adam-accent:' . $accent . ';}' );
+		$primary   = sanitize_hex_color( $settings['primary_colour'] ?? '' ) ?: '#315c25';
+		$secondary = sanitize_hex_color( $settings['secondary_colour'] ?? '' ) ?: '#17241a';
+		$accent    = sanitize_hex_color( $settings['accent_colour'] ?? '' ) ?: '#97c44b';
+		wp_add_inline_style(
+			'adam-comunidade',
+			':root,.adam-comunidade,.adam-community,.adam-experience{--adam-primary:' . $primary
+			. ';--adam-secondary:' . $secondary . ';--adam-accent:' . $accent . ';}'
+		);
 	}
 
 	/**
@@ -55,6 +59,18 @@ final class Assets {
 			array(),
 			ADAM_COMUNIDADE_VERSION,
 			true
+		);
+		wp_localize_script(
+			'adam-comunidade',
+			'adamPublicUx',
+			array(
+				'processing'     => __( 'A processar…', 'adam-comunidade' ),
+				'showPassword'   => __( 'Mostrar palavra-passe', 'adam-comunidade' ),
+				'hidePassword'   => __( 'Ocultar palavra-passe', 'adam-comunidade' ),
+				'unsaved'        => __( 'Alterações por enviar', 'adam-comunidade' ),
+				'saved'          => __( 'Nenhuma alteração por enviar', 'adam-comunidade' ),
+				'reordered'      => __( 'A ordem das fotografias foi alterada.', 'adam-comunidade' ),
+			)
 		);
 
 		if ( apply_filters( 'adam_comunidade_enqueue_public_assets', false ) ) {

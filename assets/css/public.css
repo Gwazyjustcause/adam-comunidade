@@ -5,7 +5,7 @@
 .adam-comunidade {
 	--adam-primary: #315c25;
 	--adam-secondary: #17241a;
-	--adam-accent: #607608;
+	--adam-accent: #97c44b;
 	--adam-border: #e2e8f0;
 	box-sizing: border-box;
 }
@@ -149,6 +149,47 @@
 	width: 100%;
 }
 
+.adam-community-button {
+	align-items: center;
+	background: var(--adam-primary, #315c25);
+	border: 1px solid transparent;
+	border-radius: 9px;
+	color: #fff;
+	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	font-weight: 750;
+	gap: 8px;
+	justify-content: center;
+	min-height: 44px;
+	padding: 10px 16px;
+	text-decoration: none;
+	transition: background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.adam-community-button:hover {
+	background: #24481c;
+	color: #fff;
+	transform: translateY(-1px);
+}
+
+.adam-community-button:active {
+	transform: translateY(0);
+}
+
+.adam-community-button--secondary,
+.adam-community-button--ghost {
+	background: #eef3ed;
+	border-color: #cad6c9;
+	color: #27491e;
+}
+
+.adam-community-button--secondary:hover,
+.adam-community-button--ghost:hover {
+	background: #e1eadf;
+	color: #17241a;
+}
+
 @media (max-width: 700px) {
 	.adam-comunidade .adam-public-hero--archive,
 	.adam-community .adam-public-hero--archive,
@@ -208,6 +249,19 @@
 
 .adam-manager-nav a:hover {
 	color: #b7dc59;
+}
+
+.adam-manager-portal a:not(.adam-community-button) {
+	color: #315c25;
+	text-underline-offset: 3px;
+}
+
+.adam-manager-portal .adam-manager-header a:not(.adam-community-button) {
+	color: #fff;
+}
+
+.adam-manager-portal a:not(.adam-community-button):hover {
+	color: #567e22;
 }
 
 .adam-manager-eyebrow {
@@ -446,6 +500,106 @@
 	pointer-events: none;
 }
 
+.adam-manager-summary {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	margin: 0 0 28px;
+}
+
+.adam-manager-summary > div {
+	background: #fff;
+	border: 1px solid #dce5db;
+	border-radius: 14px;
+	box-shadow: 0 8px 24px rgba(20, 45, 24, .05);
+	display: grid;
+	gap: 5px;
+	padding: 18px;
+}
+
+.adam-manager-summary strong {
+	color: #315c25;
+	font-size: 1.8rem;
+	line-height: 1;
+}
+
+.adam-manager-summary span {
+	color: #536153;
+	font-size: .82rem;
+	font-weight: 700;
+}
+
+.adam-manager-summary .has-action {
+	background: #fff8e5;
+	border-color: #e5bd4e;
+}
+
+.adam-manager-next-action {
+	background: #fff8e5;
+	border-left: 4px solid #dba617;
+	border-radius: 10px;
+	margin: -8px 0 28px;
+	padding: 14px 16px;
+}
+
+.adam-manager-next-action p {
+	margin: 4px 0 0;
+}
+
+.adam-manager-submit-bar {
+	align-items: center;
+	background: rgba(255, 255, 255, .96);
+	border-top: 1px solid #dce5db;
+	bottom: 0;
+	display: flex;
+	gap: 24px;
+	justify-content: space-between;
+	margin: 28px -36px -36px;
+	padding: 18px 36px;
+	position: sticky;
+	z-index: 5;
+}
+
+.adam-manager-submit-bar p {
+	margin: 4px 0 0;
+}
+
+.adam-manager-submit-bar [data-adam-save-state] {
+	color: #64716a;
+	font-size: .86rem;
+}
+
+.adam-manager-submit-bar [data-adam-save-state].is-dirty {
+	color: #9a6500;
+}
+
+.adam-password-control {
+	display: block;
+	position: relative;
+}
+
+.adam-password-control input {
+	padding-right: 132px;
+}
+
+.adam-password-toggle {
+	background: transparent;
+	border: 0;
+	color: #315c25;
+	cursor: pointer;
+	font-size: .78rem;
+	font-weight: 800;
+	padding: 8px;
+	position: absolute;
+	right: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.adam-password-toggle:hover {
+	text-decoration: underline;
+}
+
 @media (max-width: 700px) {
 	.adam-manager-toolbar,
 	.adam-manager-form__heading {
@@ -463,6 +617,17 @@
 
 	.adam-manager-header {
 		border-radius: 16px;
+	}
+
+	.adam-manager-summary {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.adam-manager-submit-bar {
+		align-items: stretch;
+		flex-direction: column;
+		margin: 24px -22px -22px;
+		padding: 16px 22px;
 	}
 }
 
@@ -507,5 +672,52 @@
 		background: #26351d;
 		border-color: #6f9f24;
 		color: #f2f8ed;
+	}
+
+	.adam-manager-summary > div,
+	.adam-manager-submit-bar {
+		background: #182219;
+		border-color: #3c4c3d;
+	}
+
+	.adam-manager-summary .has-action,
+	.adam-manager-next-action {
+		background: #352d16;
+		border-color: #94751f;
+	}
+
+	.adam-manager-summary strong,
+	.adam-password-toggle,
+	.adam-manager-portal a:not(.adam-community-button) {
+		color: #b7dc59;
+	}
+
+	.adam-community-button--secondary,
+	.adam-community-button--ghost {
+		background: #263329;
+		border-color: #526254;
+		color: #eef4ec;
+	}
+
+	.adam-manager-summary span,
+	.adam-manager-submit-bar [data-adam-save-state] {
+		color: #b9c5b8;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.adam-community-button {
+		transition: none;
+	}
+
+	.adam-community-button:hover,
+	.adam-community-button:active {
+		transform: none;
+	}
+}
+
+@media (max-width: 420px) {
+	.adam-manager-summary {
+		grid-template-columns: 1fr;
 	}
 }

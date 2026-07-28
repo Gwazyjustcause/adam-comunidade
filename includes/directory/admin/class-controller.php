@@ -57,7 +57,7 @@ final class Controller {
 		}
 		wp_enqueue_media();
 		wp_enqueue_style( 'adam-comunidade-directory-admin', Helpers::url( 'assets/css/directory-admin.css' ), array( 'adam-comunidade-admin' ), ADAM_COMUNIDADE_VERSION );
-		wp_enqueue_script( 'adam-comunidade-directory-admin', Helpers::url( 'assets/js/directory-admin.js' ), array( 'jquery', 'jquery-ui-sortable' ), ADAM_COMUNIDADE_VERSION, true );
+		wp_enqueue_script( 'adam-comunidade-directory-admin', Helpers::url( 'assets/js/directory-admin.js' ), array( 'jquery', 'jquery-ui-sortable', 'adam-comunidade-admin' ), ADAM_COMUNIDADE_VERSION, true );
 		wp_localize_script(
 			'adam-comunidade-directory-admin',
 			'adamDirectoryAdmin',

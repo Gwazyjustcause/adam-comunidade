@@ -3,7 +3,7 @@
  * Plugin Name:       ADAM Comunidade
  * Plugin URI:        https://adam.pt/
  * Description:       Community management foundation for ADAM.
- * Version:           6.24.0
+ * Version:           6.25.0
  * Requires at least: 6.8
  * Requires PHP:      8.1
  * Author:            ADAM
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ADAM_COMUNIDADE_VERSION', '6.24.0' );
+define( 'ADAM_COMUNIDADE_VERSION', '6.25.0' );
 define( 'ADAM_COMUNIDADE_DB_VERSION', '6.5.0' );
 define( 'ADAM_COMUNIDADE_FILE', __FILE__ );
 define( 'ADAM_COMUNIDADE_PATH', plugin_dir_path( __FILE__ ) );

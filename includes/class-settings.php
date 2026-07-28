@@ -297,9 +297,9 @@ final class Settings {
 		return array(
 			'debug_mode'           => 0,
 			'enable_logs'          => 0,
-			'primary_colour'       => '#1d4ed8',
-			'secondary_colour'     => '#0f172a',
-			'accent_colour'        => '#f59e0b',
+			'primary_colour'       => '#315c25',
+			'secondary_colour'     => '#17241a',
+			'accent_colour'        => '#97c44b',
 			'contact_email'        => '',
 			'email_from_name'      => 'ADAM Comunidade',
 			'community_page_id'    => 0,

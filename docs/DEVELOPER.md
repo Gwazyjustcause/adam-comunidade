@@ -208,6 +208,24 @@ The stable `data-adam-upload*` markup contract, asset handles, and
 `adam_upload_component_config` filter are intended to be lifted into the
 shared ADAM platform layer when ADAM Members adopts the uploader.
 
+## Product experience contracts
+
+Interface polish is part of the supported product contract:
+
+- JavaScript-generated copy is supplied through `wp_localize_script()` and
+  remains PT-PT.
+- Forms expose validation, busy states, and results with `aria-live`,
+  `role="status"`, or `role="alert"` as appropriate.
+- Destructive administration actions use the shared confirmation dialog.
+- The Community Manager portal always communicates record status and unsent
+  changes.
+- The uploader supports pointer, touch, and keyboard ordering, including
+  explicit move controls.
+- New components must preserve visible focus, contrast, reduced-motion
+  preferences, responsive layouts, and the portal's dark mode.
+
+Update `tests/product-polish-test.php` when these contracts evolve.
+
 ## ADAM Members
 
 An integration can return the total player count through

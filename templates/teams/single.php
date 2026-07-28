@@ -49,7 +49,7 @@ get_header();
 <main
 	class="adam-comunidade adam-team-single"
 	id="main"
-	style="--adam-team-colour: <?php echo esc_attr( $adam_team->team_colour ?: '#1d4ed8' ); ?>"
+	style="--adam-team-colour: <?php echo esc_attr( $adam_team->team_colour ?: '#315c25' ); ?>"
 >
 	<section class="<?php echo esc_attr( Public_Hero::root( 'adam-team-hero' ) ); ?>">
 		<div class="<?php echo esc_attr( Public_Hero::element( 'media', 'adam-team-hero__cover' ) ); ?>">

@@ -160,7 +160,7 @@
 					var submit = form.querySelector('button[type="submit"], input[type="submit"]');
 					if (submit) {
 						submit.disabled = true;
-						if ('BUTTON' === submit.tagName) { submit.textContent = 'A processar…'; }
+						if ('BUTTON' === submit.tagName) { submit.textContent = config.labels.processing || '…'; }
 					}
 				});
 				return;

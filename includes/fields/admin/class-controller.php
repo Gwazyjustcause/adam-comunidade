@@ -149,7 +149,7 @@ final class Controller {
 		wp_enqueue_script(
 			'adam-comunidade-fields-admin',
 			Helpers::url( 'assets/js/fields-admin.js' ),
-			array( 'jquery', 'jquery-ui-sortable' ),
+			array( 'jquery', 'jquery-ui-sortable', 'adam-comunidade-admin' ),
 			ADAM_COMUNIDADE_VERSION,
 			true
 		);

@@ -51,5 +51,23 @@ final class Assets {
 			ADAM_COMUNIDADE_VERSION,
 			true
 		);
+		wp_localize_script(
+			'adam-comunidade-admin',
+			'adamAdminUx',
+			array(
+				'processing'       => __( 'A processar…', 'adam-comunidade' ),
+				'confirmTitle'     => __( 'Confirmar ação', 'adam-comunidade' ),
+				'confirmAction'    => __( 'Confirmar', 'adam-comunidade' ),
+				'cancel'           => __( 'Cancelar', 'adam-comunidade' ),
+				'transferRequired' => __( 'Selecione o Gestor que irá receber as organizações.', 'adam-comunidade' ),
+				'noteRequired'     => __( 'Indique ao Gestor o motivo da decisão ou a informação necessária.', 'adam-comunidade' ),
+				'conflictRequired' => __( 'Confirme que reviu o conflito com a versão publicada.', 'adam-comunidade' ),
+				'entityRequired'   => __( 'Selecione pelo menos uma organização.', 'adam-comunidade' ),
+				'selectedOne'      => __( '1 organização selecionada', 'adam-comunidade' ),
+				'selectedMany'     => __( '%d organizações selecionadas', 'adam-comunidade' ),
+				'noneSelected'     => __( 'Nenhuma organização selecionada', 'adam-comunidade' ),
+				'noMatches'        => __( 'Nenhuma organização corresponde à pesquisa.', 'adam-comunidade' ),
+			)
+		);
 	}
 }

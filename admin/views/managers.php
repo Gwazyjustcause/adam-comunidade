@@ -83,6 +83,9 @@ $adam_all_entities = array(
 			<option value="last_login_desc" <?php selected( $sort, 'last_login_desc' ); ?>><?php esc_html_e( 'Último acesso', 'adam-comunidade' ); ?></option>
 		</select></label>
 		<button class="button button-primary" type="submit"><?php esc_html_e( 'Aplicar filtros', 'adam-comunidade' ); ?></button>
+		<?php if ( $search || $status || 'created_desc' !== $sort ) : ?>
+			<a class="button" href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::page_url( 'managers' ) ); ?>"><?php esc_html_e( 'Limpar filtros', 'adam-comunidade' ); ?></a>
+		<?php endif; ?>
 	</form>
 
 	<section class="adam-card adam-manager-create">
@@ -98,15 +101,34 @@ $adam_all_entities = array(
 				<?php foreach ( $manager_choices as $adam_manager ) : ?><option value="<?php echo esc_attr( (string) $adam_manager->id ); ?>"><?php echo esc_html( (string) $adam_manager->email ); ?> — <?php echo esc_html( $adam_status_labels[ $adam_manager->status ] ?? $adam_manager->status ); ?></option><?php endforeach; ?>
 			</select></label>
 			<label><span><?php esc_html_e( 'E-mail do novo Gestor', 'adam-comunidade' ); ?></span><input type="email" name="manager_email" placeholder="<?php esc_attr_e( 'gestor@organizacao.pt', 'adam-comunidade' ); ?>"><small><?php esc_html_e( 'Preencha apenas quando criar um novo convite.', 'adam-comunidade' ); ?></small></label>
-			<label class="adam-manager-entity-picker"><span><?php esc_html_e( 'Organizações', 'adam-comunidade' ); ?></span><input type="search" data-adam-entity-search placeholder="<?php esc_attr_e( 'Filtrar organizações…', 'adam-comunidade' ); ?>" aria-label="<?php esc_attr_e( 'Filtrar a lista de organizações', 'adam-comunidade' ); ?>"><select name="entities[]" multiple size="9" required>
-				<?php foreach ( $adam_all_entities as $adam_type => $adam_group ) : ?><optgroup label="<?php echo esc_attr( $adam_group['label'] ); ?>"><?php foreach ( $adam_group['items'] as $adam_choice ) : ?><option value="<?php echo esc_attr( $adam_type . ':' . $adam_choice->id ); ?>"><?php echo esc_html( (string) $adam_choice->name ); ?></option><?php endforeach; ?></optgroup><?php endforeach; ?>
-			</select><small><?php esc_html_e( 'Use Ctrl ou Cmd para selecionar várias organizações.', 'adam-comunidade' ); ?></small></label>
+			<div class="adam-manager-entity-picker" data-adam-entity-picker>
+				<div class="adam-manager-entity-picker__heading">
+					<label><span><?php esc_html_e( 'Organizações', 'adam-comunidade' ); ?></span><input type="search" data-adam-entity-search placeholder="<?php esc_attr_e( 'Filtrar organizações…', 'adam-comunidade' ); ?>" aria-label="<?php esc_attr_e( 'Filtrar a lista de organizações', 'adam-comunidade' ); ?>"></label>
+					<strong data-adam-entity-count aria-live="polite"><?php esc_html_e( 'Nenhuma organização selecionada', 'adam-comunidade' ); ?></strong>
+				</div>
+				<div class="adam-manager-entity-options">
+					<?php foreach ( $adam_all_entities as $adam_type => $adam_group ) : ?>
+						<?php if ( ! empty( $adam_group['items'] ) ) : ?>
+							<fieldset data-adam-entity-group>
+								<legend><?php echo esc_html( $adam_group['label'] ); ?></legend>
+								<?php foreach ( $adam_group['items'] as $adam_choice ) : ?>
+									<label data-adam-entity-option><input type="checkbox" name="entities[]" value="<?php echo esc_attr( $adam_type . ':' . $adam_choice->id ); ?>"> <span><?php echo esc_html( (string) $adam_choice->name ); ?></span></label>
+								<?php endforeach; ?>
+							</fieldset>
+						<?php endif; ?>
+					<?php endforeach; ?>
+					<p class="adam-manager-entity-empty" data-adam-entity-empty hidden><?php esc_html_e( 'Nenhuma organização corresponde à pesquisa.', 'adam-comunidade' ); ?></p>
+				</div>
+				<small><?php esc_html_e( 'Selecione todas as organizações que este Gestor poderá atualizar.', 'adam-comunidade' ); ?></small>
+			</div>
 			<p><button class="button button-primary" type="submit"><?php esc_html_e( 'Guardar atribuições', 'adam-comunidade' ); ?></button></p>
 		</form>
 	</section>
 
 	<?php if ( ! $managers ) : ?>
 		<div class="adam-card adam-empty-state"><h2><?php esc_html_e( 'Nenhum Gestor encontrado', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Altere os filtros ou crie o primeiro convite.', 'adam-comunidade' ); ?></p></div>
+	<?php else : ?>
+		<p class="adam-manager-results" role="status"><?php echo esc_html( sprintf( _n( '%d Gestor encontrado', '%d Gestores encontrados', $total_managers, 'adam-comunidade' ), $total_managers ) ); ?></p>
 	<?php endif; ?>
 
 	<?php foreach ( $managers as $adam_manager ) :

@@ -53,6 +53,12 @@ final class Component {
 				'unknownSize'    => __( 'Tamanho não disponível', 'adam-comunidade' ),
 				'file'           => __( 'Ficheiro', 'adam-comunidade' ),
 				'caption'        => __( 'Legenda', 'adam-comunidade' ),
+				'moveEarlier'    => __( 'Mover para trás', 'adam-comunidade' ),
+				'moveLater'      => __( 'Mover para a frente', 'adam-comunidade' ),
+				'reordered'      => __( 'A ordem dos ficheiros foi alterada.', 'adam-comunidade' ),
+				'duplicate'      => __( 'Este ficheiro já foi selecionado.', 'adam-comunidade' ),
+				'added'          => __( 'Ficheiro adicionado.', 'adam-comunidade' ),
+				'removed'        => __( 'Ficheiro removido.', 'adam-comunidade' ),
 			)
 		);
 	}
@@ -122,6 +128,7 @@ final class Component {
 				<strong data-adam-upload-count aria-live="polite"><?php echo esc_html( self::count_label( count( $items ), $max, $kind ) ); ?></strong>
 				<?php if ( $multiple ) : ?><span><?php esc_html_e( 'Arraste para alterar a ordem', 'adam-comunidade' ); ?></span><?php endif; ?>
 			</div>
+			<p class="screen-reader-text" data-adam-upload-live aria-live="polite"></p>
 
 			<div class="adam-upload__list" data-adam-upload-list role="list">
 				<?php foreach ( $items as $item ) : ?>
@@ -187,6 +194,12 @@ final class Component {
 			<div class="adam-upload__meta">
 				<strong title="<?php echo esc_attr( $filename ); ?>"><?php echo esc_html( $filename ); ?></strong>
 				<small><span aria-hidden="true">✓</span> <?php echo esc_html( self::file_type_label( $mime, $filename ) ); ?><?php echo ! empty( $item['size'] ) ? ' · ' . esc_html( (string) $item['size'] ) : ''; ?></small>
+				<?php if ( $multiple ) : ?>
+					<div class="adam-upload__order" aria-label="<?php esc_attr_e( 'Alterar posição', 'adam-comunidade' ); ?>">
+						<button type="button" data-adam-upload-move="-1" aria-label="<?php echo esc_attr( sprintf( __( 'Mover %s para trás', 'adam-comunidade' ), $filename ) ); ?>">←</button>
+						<button type="button" data-adam-upload-move="1" aria-label="<?php echo esc_attr( sprintf( __( 'Mover %s para a frente', 'adam-comunidade' ), $filename ) ); ?>">→</button>
+					</div>
+				<?php endif; ?>
 				<?php if ( $multiple && ! empty( $config['caption_pattern'] ) ) : ?>
 					<input type="text" name="<?php echo esc_attr( str_replace( '__ID__', (string) $id, (string) $config['caption_pattern'] ) ); ?>" value="<?php echo esc_attr( (string) ( $item['caption'] ?? '' ) ); ?>" placeholder="<?php esc_attr_e( 'Legenda', 'adam-comunidade' ); ?>">
 				<?php endif; ?>

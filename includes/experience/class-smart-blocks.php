@@ -44,7 +44,7 @@ final class Smart_Blocks {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'adam_experience' ),
-				'labels'      => array( 'view' => __( 'Ver', 'adam-comunidade' ), 'empty' => __( 'Nenhum conteúdo da comunidade corresponde à pesquisa.', 'adam-comunidade' ), 'error' => __( 'Não foi possível carregar os resultados da comunidade.', 'adam-comunidade' ) ),
+				'labels'      => array( 'view' => __( 'Ver', 'adam-comunidade' ), 'empty' => __( 'Nenhum conteúdo da comunidade corresponde à pesquisa.', 'adam-comunidade' ), 'error' => __( 'Não foi possível carregar os resultados da comunidade.', 'adam-comunidade' ), 'processing' => __( 'A processar…', 'adam-comunidade' ) ),
 				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ), 'events' => __( 'Eventos', 'adam-comunidade' ) ),
 			)
 		);

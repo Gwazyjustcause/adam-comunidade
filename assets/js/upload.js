@@ -45,6 +45,7 @@
 		const input = upload.querySelector( '[data-adam-upload-input]' );
 		const singleValue = upload.querySelector( '[data-adam-upload-value]' );
 		const progress = upload.querySelector( '[data-adam-upload-progress]' );
+		const live = upload.querySelector( '[data-adam-upload-live]' );
 		let files = [];
 		let replaceIndex = null;
 		let dragged = null;
@@ -54,10 +55,30 @@
 		}
 
 		function refresh() {
-			const total = list.querySelectorAll( '[data-adam-upload-item]' ).length;
+			const items = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) );
+			const total = items.length;
 			count.textContent = countLabel();
 			upload.classList.toggle( 'is-full', total >= max );
 			add.hidden = total >= max;
+			items.forEach( ( item, index ) => {
+				const earlier = item.querySelector( '[data-adam-upload-move="-1"]' );
+				const later = item.querySelector( '[data-adam-upload-move="1"]' );
+				if ( earlier ) {
+					earlier.disabled = 0 === index;
+				}
+				if ( later ) {
+					later.disabled = index === total - 1;
+				}
+			} );
+		}
+
+		function announce( message ) {
+			if ( live ) {
+				live.textContent = '';
+				window.requestAnimationFrame( () => {
+					live.textContent = message;
+				} );
+			}
 		}
 
 		function clearClientError() {
@@ -152,10 +173,12 @@
 			replace.type = 'button';
 			replace.dataset.adamUploadReplace = '';
 			replace.textContent = labels.replace;
+			replace.setAttribute( 'aria-label', `${ labels.replace } ${ item.filename }` );
 			const removeHover = document.createElement( 'button' );
 			removeHover.type = 'button';
 			removeHover.dataset.adamUploadRemove = '';
 			removeHover.textContent = labels.remove;
+			removeHover.setAttribute( 'aria-label', `${ labels.remove } ${ item.filename }` );
 			actions.append( replace, removeHover );
 			preview.appendChild( actions );
 			card.appendChild( preview );
@@ -168,6 +191,19 @@
 			const detail = document.createElement( 'small' );
 			detail.textContent = `✓ ${ item.type || extension( item.filename ) || labels.file || '' }${ item.size ? ` · ${ item.size }` : '' }`;
 			meta.append( filename, detail );
+			if ( multiple ) {
+				const order = document.createElement( 'div' );
+				order.className = 'adam-upload__order';
+				[ [ -1, '←', labels.moveEarlier ], [ 1, '→', labels.moveLater ] ].forEach( ( control ) => {
+					const button = document.createElement( 'button' );
+					button.type = 'button';
+					button.dataset.adamUploadMove = String( control[ 0 ] );
+					button.textContent = control[ 1 ];
+					button.setAttribute( 'aria-label', `${ control[ 2 ] || '' } ${ item.filename }` );
+					order.appendChild( button );
+				} );
+				meta.appendChild( order );
+			}
 
 			const captionPattern = upload.dataset.captionPattern;
 			if ( 'library' === mode && multiple && captionPattern ) {
@@ -223,8 +259,22 @@
 
 		function addFiles( selected ) {
 			clearClientError();
-			const incoming = Array.from( selected || [] ).filter( accepted );
+			const signatures = new Set( files.map( ( item ) => `${ item.filename }|${ item.file.size }|${ item.file.lastModified }` ) );
+			let duplicate = false;
+			const incoming = Array.from( selected || [] ).filter( accepted ).filter( ( file ) => {
+				const signature = `${ file.name }|${ file.size }|${ file.lastModified }`;
+				if ( null === replaceIndex && signatures.has( signature ) ) {
+					duplicate = true;
+					return false;
+				}
+				signatures.add( signature );
+				return true;
+			} );
 			if ( ! incoming.length ) {
+				if ( duplicate ) {
+					showClientError( labels.duplicate || '' );
+					input?.setCustomValidity( '' );
+				}
 				return;
 			}
 			// Rejected files are not added, so valid files can still be submitted.
@@ -242,6 +292,7 @@
 					URL.revokeObjectURL( old.url );
 				}
 				files.splice( replaceIndex, 1, mapped[ 0 ] );
+				mapped.slice( 1 ).forEach( ( item ) => item.url && URL.revokeObjectURL( item.url ) );
 				replaceIndex = null;
 			} else {
 				const remaining = max - files.length;
@@ -253,6 +304,31 @@
 				files.push( ...mapped.slice( 0, remaining ) );
 			}
 			renderFiles();
+			if ( duplicate ) {
+				showClientError( labels.duplicate || '' );
+				input?.setCustomValidity( '' );
+			}
+			announce( labels.added || '' );
+		}
+
+		function moveItem( item, direction ) {
+			const items = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) );
+			const from = items.indexOf( item );
+			const to = from + direction;
+			if ( from < 0 || to < 0 || to >= items.length ) {
+				return;
+			}
+			if ( 'file' === mode ) {
+				[ files[ from ], files[ to ] ] = [ files[ to ], files[ from ] ];
+				renderFiles();
+				list.querySelectorAll( '[data-adam-upload-item]' )[ to ]?.focus();
+			} else {
+				const reference = direction < 0 ? items[ to ] : items[ to ].nextSibling;
+				list.insertBefore( item, reference );
+				item.focus();
+				refresh();
+			}
+			announce( labels.reordered || '' );
 		}
 
 		function attachmentItem( model ) {
@@ -304,6 +380,7 @@
 					}
 				}
 				refresh();
+				announce( labels.added || '' );
 			} );
 			frame.open();
 		}
@@ -326,6 +403,11 @@
 			if ( ! item ) {
 				return;
 			}
+			const move = event.target.closest( '[data-adam-upload-move]' );
+			if ( move ) {
+				moveItem( item, parseInt( move.dataset.adamUploadMove || '0', 10 ) );
+				return;
+			}
 			if ( event.target.closest( '[data-adam-upload-remove]' ) ) {
 				const index = parseInt( item.dataset.index || '-1', 10 );
 				if ( 'file' === mode && index >= 0 ) {
@@ -341,6 +423,8 @@
 					}
 					refresh();
 				}
+				announce( labels.removed || '' );
+				return;
 			}
 			if ( event.target.closest( '[data-adam-upload-replace]' ) ) {
 				if ( 'file' === mode ) {
@@ -369,7 +453,10 @@
 					return original;
 				} ).filter( Boolean );
 				renderFiles();
+			} else {
+				refresh();
 			}
+			announce( labels.reordered || '' );
 		} );
 		upload.addEventListener( 'dragover', ( event ) => {
 			event.preventDefault();
@@ -385,22 +472,8 @@
 			if ( ! multiple || ! item || ! event.altKey || ! [ 'ArrowLeft', 'ArrowRight' ].includes( event.key ) ) {
 				return;
 			}
-			const items = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) );
-			const from = items.indexOf( item );
-			const to = 'ArrowLeft' === event.key ? from - 1 : from + 1;
-			if ( from < 0 || to < 0 || to >= items.length ) {
-				return;
-			}
 			event.preventDefault();
-			if ( 'file' === mode ) {
-				[ files[ from ], files[ to ] ] = [ files[ to ], files[ from ] ];
-				renderFiles();
-				list.querySelectorAll( '[data-adam-upload-item]' )[ to ]?.focus();
-				return;
-			}
-			const reference = 'ArrowLeft' === event.key ? items[ to ] : items[ to ].nextSibling;
-			list.insertBefore( item, reference );
-			item.focus();
+			moveItem( item, 'ArrowLeft' === event.key ? -1 : 1 );
 		} );
 		upload.addEventListener( 'dragleave', ( event ) => {
 			if ( ! upload.contains( event.relatedTarget ) ) {

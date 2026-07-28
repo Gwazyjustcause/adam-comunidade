@@ -40,9 +40,15 @@
 
 		document.querySelectorAll( '.adam-team-delete' ).forEach( ( link ) => {
 			link.addEventListener( 'click', ( event ) => {
-				if ( ! window.confirm( config.confirmDelete ) ) {
-					event.preventDefault();
-				}
+				event.preventDefault();
+				const confirmAction = window.adamConfirm
+					? window.adamConfirm( config.confirmDelete )
+					: Promise.resolve( window.confirm( config.confirmDelete ) );
+				confirmAction.then( ( confirmed ) => {
+					if ( confirmed ) {
+						window.location.assign( link.href );
+					}
+				} );
 			} );
 		} );
 	} );

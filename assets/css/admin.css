@@ -3,13 +3,13 @@
  */
 
 .adam-comunidade-admin {
-	--adam-primary: #1d4ed8;
-	--adam-secondary: #0f172a;
-	--adam-accent: #f59e0b;
+	--adam-primary: #315c25;
+	--adam-secondary: #17241a;
+	--adam-accent: #97c44b;
 	--adam-surface: #fff;
 	--adam-surface-subtle: #f8fafc;
 	--adam-border: #e2e8f0;
-	--adam-text: #0f172a;
+	--adam-text: #17241a;
 	--adam-text-muted: #64748b;
 	--adam-success: #15803d;
 	--adam-warning: #b45309;
@@ -262,8 +262,8 @@
 .adam-button.button:focus,
 .adam-comunidade-admin .button-primary:hover,
 .adam-comunidade-admin .button-primary:focus {
-	background: #1e40af;
-	border-color: #1e40af;
+	background: #24481c;
+	border-color: #24481c;
 	color: #fff;
 }
 
@@ -749,6 +749,13 @@
 	color: #646970;
 }
 
+.adam-manager-results {
+	color: var(--adam-text-muted);
+	font-size: 13px;
+	font-weight: 650;
+	margin: -4px 0 0;
+}
+
 .adam-managers-admin .adam-admin-filters,
 .adam-managers-admin .adam-form-grid {
 	align-items: end;
@@ -907,6 +914,161 @@
 	opacity: .7;
 }
 
+.adam-form-feedback {
+	border-radius: 7px;
+	font-weight: 600;
+	grid-column: 1 / -1;
+	margin: 0 0 12px;
+	padding: 11px 13px;
+}
+
+.adam-form-feedback--error {
+	background: #fcf0f1;
+	border-left: 4px solid var(--adam-danger);
+	color: #8a2424;
+}
+
+.adam-manager-entity-picker__heading {
+	align-items: end;
+	display: flex;
+	gap: 18px;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.adam-manager-entity-picker__heading label {
+	flex: 1;
+}
+
+.adam-manager-entity-picker__heading strong {
+	color: var(--adam-primary);
+	font-size: 12px;
+	padding-bottom: 8px;
+	white-space: nowrap;
+}
+
+.adam-manager-entity-options {
+	background: var(--adam-surface-subtle);
+	border: 1px solid var(--adam-border);
+	border-radius: 9px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	max-height: 280px;
+	overflow: auto;
+	padding: 12px;
+}
+
+.adam-manager-entity-options fieldset {
+	border: 0;
+	margin: 0;
+	min-width: 0;
+	padding: 0;
+}
+
+.adam-manager-entity-options legend {
+	color: var(--adam-text-muted);
+	font-size: 11px;
+	font-weight: 750;
+	letter-spacing: .06em;
+	margin-bottom: 6px;
+	text-transform: uppercase;
+}
+
+.adam-manager-entity-options label {
+	align-items: center;
+	background: var(--adam-surface);
+	border: 1px solid transparent;
+	border-radius: 6px;
+	cursor: pointer;
+	display: flex;
+	font-weight: 550;
+	gap: 8px;
+	margin-bottom: 4px;
+	padding: 8px 9px;
+}
+
+.adam-manager-entity-options label:hover {
+	border-color: #b8cb83;
+}
+
+.adam-manager-entity-options label:has(input:checked) {
+	background: #eef8df;
+	border-color: #97c44b;
+	color: #27491e;
+}
+
+.adam-manager-entity-options input {
+	margin: 0;
+}
+
+.adam-manager-entity-empty {
+	grid-column: 1 / -1;
+	margin: 14px !important;
+	text-align: center;
+}
+
+.adam-confirm-dialog {
+	border: 0;
+	border-radius: 14px;
+	box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+	max-width: min(440px, calc(100vw - 32px));
+	padding: 0;
+	width: 100%;
+}
+
+.adam-confirm-dialog::backdrop {
+	background: rgba(15, 23, 42, .56);
+	backdrop-filter: blur(2px);
+}
+
+.adam-confirm-dialog form {
+	display: grid;
+	justify-items: center;
+	padding: 28px;
+	text-align: center;
+}
+
+.adam-confirm-dialog__icon {
+	align-items: center;
+	background: #fff3cd;
+	border-radius: 50%;
+	color: #725500;
+	display: flex;
+	font-size: 22px;
+	font-weight: 800;
+	height: 48px;
+	justify-content: center;
+	width: 48px;
+}
+
+.adam-confirm-dialog h2 {
+	margin: 14px 0 8px;
+}
+
+.adam-confirm-dialog p {
+	color: var(--adam-text-muted);
+	margin: 0;
+}
+
+.adam-confirm-dialog__actions {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin-top: 22px;
+}
+
+.adam-confirm-dialog .button-primary {
+	background: var(--adam-primary, #315c25);
+	border-color: var(--adam-primary, #315c25);
+}
+
+.adam-confirm-dialog .button-primary:hover,
+.adam-confirm-dialog .button-primary:focus {
+	background: #24481c;
+	border-color: #24481c;
+}
+
 @media (max-width: 900px) {
 	.adam-approval-card__header,
 	.adam-approval-card__layout,
@@ -930,6 +1092,16 @@
 
 	.adam-manager-delete form {
 		grid-template-columns: 1fr;
+	}
+
+	.adam-manager-entity-picker__heading {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.adam-manager-entity-picker__heading strong {
+		padding-bottom: 0;
 	}
 
 	.adam-revision-comparison__head,
@@ -984,6 +1156,10 @@
 
 	.adam-manager-entity-picker {
 		grid-column: auto;
+	}
+
+	.adam-manager-entity-options {
+		grid-template-columns: 1fr;
 	}
 
 	.adam-manager-revision-header,

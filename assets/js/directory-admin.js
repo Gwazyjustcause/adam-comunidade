@@ -14,9 +14,16 @@
 	});
 
 	$('.adam-directory-delete').on('click', function (event) {
-		if (!window.confirm(adamDirectoryAdmin.confirmDelete)) {
-			event.preventDefault();
-		}
+		event.preventDefault();
+		var link = this;
+		var confirmAction = window.adamConfirm
+			? window.adamConfirm(adamDirectoryAdmin.confirmDelete)
+			: Promise.resolve(window.confirm(adamDirectoryAdmin.confirmDelete));
+		confirmAction.then(function (confirmed) {
+			if (confirmed) {
+				window.location.assign(link.href);
+			}
+		});
 	});
 
 	var name = $('input[name="entry[name]"]');

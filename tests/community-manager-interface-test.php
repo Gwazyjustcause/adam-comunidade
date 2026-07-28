@@ -18,6 +18,8 @@ $service       = (string) file_get_contents( $root . '/includes/managers/class-s
 $portal        = (string) file_get_contents( $root . '/includes/managers/class-portal.php' );
 $managed_pages = (string) file_get_contents( $root . '/includes/class-managed-pages.php' );
 $settings      = (string) file_get_contents( $root . '/includes/class-settings.php' );
+$admin_assets  = (string) file_get_contents( $root . '/admin/class-assets.php' );
+$public_assets = (string) file_get_contents( $root . '/includes/class-assets.php' );
 $admin_css     = (string) file_get_contents( $root . '/assets/css/admin.css' );
 $public_css    = (string) file_get_contents( $root . '/assets/css/public.css' );
 $admin_js      = (string) file_get_contents( $root . '/assets/js/admin.js' );
@@ -35,7 +37,12 @@ $assert( ! preg_match( '/(?:Team|Field|Directory)_Repository[^;]+->delete\\s*\\(
 $assert( str_contains( $service, "'START TRANSACTION'" ) && str_contains( $service, "'ROLLBACK'" ), 'Manager deletion is not atomic.' );
 $assert( str_contains( $view, 'data-adam-confirm' ) && str_contains( $admin_js, 'window.confirm' ), 'Destructive actions do not require confirmation.' );
 
-$assert( str_contains( $view, 'name="entities[]" multiple' ), 'Administrators cannot assign multiple organisations.' );
+$assert(
+	str_contains( $view, 'name="entities[]" value=' )
+	&& str_contains( $view, 'data-adam-entity-picker' )
+	&& str_contains( $view, 'data-adam-entity-count' ),
+	'Administrators cannot assign multiple organisations through the accessible picker.'
+);
 $assert( str_contains( $admin, "'last_login_desc'" ) && str_contains( $admin, 'LIMIT %d OFFSET %d' ), 'Manager sorting or pagination is incomplete.' );
 $assert( str_contains( $view, 'assigned_manager_count' ), 'The interface cannot reveal multiple managers assigned to one organisation.' );
 $assert( str_contains( $view, 'invitation_expires_at' ) && str_contains( $view, 'last_activity_at' ), 'Invitation expiry or future activity information is missing.' );
@@ -50,7 +57,11 @@ $assert( str_contains( $admin, 'Admin_Router::authorize()' ), 'Administrative ma
 $assert( str_contains( $admin_css, '@media (max-width: 520px)' ) && str_contains( $public_css, '@media (max-width: 700px)' ), 'Manager screens are not responsive.' );
 $assert( str_contains( $admin_css, 'prefers-color-scheme: dark' ) && str_contains( $public_css, 'prefers-color-scheme: dark' ), 'Manager screens do not account for dark mode.' );
 $assert( str_contains( $admin_css, ':focus-visible' ) && str_contains( $public_css, ':focus-visible' ), 'Keyboard focus indicators are missing.' );
-$assert( str_contains( $admin_js, "'A processar…'" ) && str_contains( $public_js, "'A processar…'" ), 'Loading feedback is missing.' );
+$assert(
+	str_contains( $admin_assets, "'processing'" ) && str_contains( $public_assets, "'processing'" )
+	&& str_contains( $admin_js, 'labels.processing' ) && str_contains( $public_js, 'labels.processing' ),
+	'Localized loading feedback is missing.'
+);
 
 foreach ( array( 'Delete Manager', 'Reset Password', 'Cancel Invitation', 'Loading...', 'Transfer ownership' ) as $english ) {
 	$assert( ! str_contains( $view . $portal, $english ), 'English manager-interface text remains: ' . $english );

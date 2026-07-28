@@ -143,6 +143,7 @@ final class Portal {
 		?>
 		<main class="adam-community adam-manager-portal">
 			<section class="adam-manager-shell">
+				<p class="screen-reader-text" data-adam-manager-live aria-live="polite"></p>
 				<header class="adam-manager-header">
 					<p class="adam-manager-eyebrow"><?php esc_html_e( 'ADAM Comunidade', 'adam-comunidade' ); ?></p>
 					<h1><?php esc_html_e( 'Gestor da Comunidade', 'adam-comunidade' ); ?></h1>
@@ -180,6 +181,14 @@ final class Portal {
 		$assignments = $this->service->assignments( (int) $manager->id );
 		$record_names = $this->service->record_names( $assignments );
 		$active_revisions = $this->service->active_revisions_for_manager( (int) $manager->id );
+		$needs_information = count(
+			array_filter(
+				$active_revisions,
+				static fn( object $revision ): bool => 'needs_info' === (string) $revision->status
+			)
+		);
+		$awaiting_review = count( $active_revisions ) - $needs_information;
+		$ready_to_edit   = max( 0, count( $record_names ) - count( $active_revisions ) );
 		?>
 		<div class="adam-manager-toolbar">
 			<p><?php echo esc_html( sprintf( __( 'Sessão iniciada como %s', 'adam-comunidade' ), (string) $manager->email ) ); ?></p>
@@ -189,6 +198,18 @@ final class Portal {
 				<button class="adam-community-button adam-community-button--secondary" type="submit"><?php esc_html_e( 'Terminar sessão', 'adam-comunidade' ); ?></button>
 			</form>
 		</div>
+		<section class="adam-manager-summary" aria-label="<?php esc_attr_e( 'Resumo dos meus registos', 'adam-comunidade' ); ?>">
+			<div><strong><?php echo esc_html( (string) count( $record_names ) ); ?></strong><span><?php esc_html_e( 'Registos atribuídos', 'adam-comunidade' ); ?></span></div>
+			<div><strong><?php echo esc_html( (string) $awaiting_review ); ?></strong><span><?php esc_html_e( 'A aguardar a ADAM', 'adam-comunidade' ); ?></span></div>
+			<div class="<?php echo $needs_information ? 'has-action' : ''; ?>"><strong><?php echo esc_html( (string) $needs_information ); ?></strong><span><?php esc_html_e( 'Requerem a sua atenção', 'adam-comunidade' ); ?></span></div>
+			<div><strong><?php echo esc_html( (string) $ready_to_edit ); ?></strong><span><?php esc_html_e( 'Disponíveis para editar', 'adam-comunidade' ); ?></span></div>
+		</section>
+		<?php if ( $needs_information ) : ?>
+			<div class="adam-manager-next-action" role="status">
+				<strong><?php esc_html_e( 'A ADAM pediu informação adicional.', 'adam-comunidade' ); ?></strong>
+				<p><?php echo esc_html( sprintf( _n( 'Abra o registo assinalado e atualize a proposta.', 'Abra os %d registos assinalados e atualize as propostas.', $needs_information, 'adam-comunidade' ), $needs_information ) ); ?></p>
+			</div>
+		<?php endif; ?>
 		<h2><?php esc_html_e( 'Os meus registos', 'adam-comunidade' ); ?></h2>
 		<?php if ( ! $record_names ) : ?>
 			<div class="adam-community-empty"><h3><?php esc_html_e( 'Ainda não existem registos atribuídos.', 'adam-comunidade' ); ?></h3></div>
@@ -321,7 +342,7 @@ final class Portal {
 		$gallery_policy = Config::upload_policy( 'manager_gallery' );
 		$image_accept   = implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $image_policy['extensions'] ) );
 		?>
-		<form class="adam-card adam-manager-form" method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form class="adam-card adam-manager-form" data-adam-manager-editor method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="adam_manager_revision">
 			<input type="hidden" name="adam_manager_csrf" value="<?php echo esc_attr( $this->auth->csrf_token() ); ?>">
 			<input type="hidden" name="entity_type" value="<?php echo esc_attr( $type ); ?>">
@@ -367,8 +388,13 @@ final class Portal {
 				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $gallery_policy['extensions'] ) ), 'multiple' => true, 'max' => $gallery_policy['max_files'], 'max_size_mb' => $gallery_policy['max_size_mb'] ) ); ?>
 			</div>
-			<p class="adam-manager-review-note"><?php esc_html_e( 'Ao enviar, o registo público não é alterado de imediato. A ADAM irá rever esta proposta.', 'adam-comunidade' ); ?></p>
-			<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar alterações para revisão', 'adam-comunidade' ); ?></button>
+			<div class="adam-manager-submit-bar">
+				<div>
+					<strong data-adam-save-state><?php esc_html_e( 'Nenhuma alteração por enviar', 'adam-comunidade' ); ?></strong>
+					<p class="adam-manager-review-note"><?php esc_html_e( 'O registo público só será atualizado depois da revisão pela ADAM.', 'adam-comunidade' ); ?></p>
+				</div>
+				<button class="adam-community-button" type="submit"><?php esc_html_e( 'Enviar alterações para revisão', 'adam-comunidade' ); ?></button>
+			</div>
 		</form>
 		<?php
 	}

@@ -136,7 +136,7 @@ final class Controller {
 		wp_enqueue_script(
 			'adam-comunidade-teams-admin',
 			Helpers::url( 'assets/js/teams-admin.js' ),
-			array( 'jquery', 'jquery-ui-sortable', 'wp-color-picker' ),
+			array( 'jquery', 'jquery-ui-sortable', 'wp-color-picker', 'adam-comunidade-admin' ),
 			ADAM_COMUNIDADE_VERSION,
 			true
 		);
