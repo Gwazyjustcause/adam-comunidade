@@ -477,16 +477,20 @@
 	margin-top: 32px;
 }
 
-.adam-fields-pagination button {
+.adam-fields-pagination :is(button, a) {
+	align-items: center;
 	background: #fff;
 	border: 1px solid #cbd5e1;
 	border-radius: 7px;
 	cursor: pointer;
+	display: inline-flex;
+	justify-content: center;
 	min-height: 40px;
 	padding: 0 13px;
+	text-decoration: none;
 }
 
-.adam-fields-pagination button[aria-current="page"] {
+.adam-fields-pagination [aria-current="page"] {
 	background: var(--adam-field-accent);
 	border-color: var(--adam-field-accent);
 	color: #fff;

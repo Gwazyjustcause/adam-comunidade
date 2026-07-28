@@ -101,7 +101,8 @@ get_header();
 		<?php if ( $adam_gallery ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Fotografias', 'adam-comunidade' ); ?></h2><div class="adam-team-gallery">
 			<?php foreach ( $adam_gallery as $adam_image_id ) : ?>
 				<?php $adam_full_image = wp_get_attachment_image_url( $adam_image_id, 'full' ); ?>
-				<a href="<?php echo esc_url( $adam_full_image ); ?>" data-adam-lightbox><?php echo wp_get_attachment_image( $adam_image_id, 'large', false, array( 'loading' => 'lazy' ) ); ?></a>
+				<?php $adam_image_alt = (string) get_post_meta( $adam_image_id, '_wp_attachment_image_alt', true ); ?>
+				<a href="<?php echo esc_url( $adam_full_image ); ?>" data-adam-lightbox data-alt="<?php echo esc_attr( $adam_image_alt ); ?>"><?php echo wp_get_attachment_image( $adam_image_id, 'large', false, array( 'loading' => 'lazy' ) ); ?></a>
 			<?php endforeach; ?>
 		</div></section><?php endif; ?>
 

@@ -96,6 +96,7 @@ final class Component {
 		$max      = $multiple ? max( 1, absint( $config['max'] ) ) : 1;
 		$items    = array_slice( (array) $config['items'], 0, $max );
 		$is_full  = count( $items ) >= $max;
+		$label    = trim( (string) $config['label'] ) ?: ( 'image' === $kind ? __( 'Selecionar fotografia', 'adam-comunidade' ) : __( 'Selecionar documento', 'adam-comunidade' ) );
 		?>
 		<div
 			id="<?php echo esc_attr( $id ); ?>"
@@ -112,13 +113,13 @@ final class Component {
 			data-toggle-label="<?php echo esc_attr( (string) $config['toggle_label'] ); ?>"
 		>
 			<?php if ( 'file' === $mode ) : ?>
-				<input class="adam-upload__input" data-adam-upload-input type="file" name="<?php echo esc_attr( (string) $config['name'] ); ?>" aria-label="<?php echo esc_attr( (string) $config['label'] ); ?>" accept="<?php echo esc_attr( (string) $config['accept'] ); ?>" <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $config['required'] ? 'required' : ''; ?> <?php echo $config['error'] ? 'aria-invalid="true"' : ''; ?>>
+				<input class="adam-upload__input" data-adam-upload-input type="file" name="<?php echo esc_attr( (string) $config['name'] ); ?>" aria-label="<?php echo esc_attr( $label ); ?>" accept="<?php echo esc_attr( (string) $config['accept'] ); ?>" <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $config['required'] ? 'required' : ''; ?> <?php echo $config['error'] ? 'aria-invalid="true" aria-describedby="' . esc_attr( $id . '-error' ) . '"' : ''; ?>>
 			<?php elseif ( ! $multiple ) : ?>
 				<input data-adam-upload-value type="hidden" name="<?php echo esc_attr( (string) $config['name'] ); ?>" value="<?php echo esc_attr( (string) absint( $items[0]['id'] ?? 0 ) ); ?>">
 			<?php endif; ?>
 
 			<div class="adam-upload__toolbar">
-				<strong data-adam-upload-count><?php echo esc_html( self::count_label( count( $items ), $max, $kind ) ); ?></strong>
+				<strong data-adam-upload-count aria-live="polite"><?php echo esc_html( self::count_label( count( $items ), $max, $kind ) ); ?></strong>
 				<?php if ( $multiple ) : ?><span><?php esc_html_e( 'Arraste para alterar a ordem', 'adam-comunidade' ); ?></span><?php endif; ?>
 			</div>
 
@@ -138,7 +139,7 @@ final class Component {
 					<span></span><small><?php esc_html_e( 'A preparar o envio…', 'adam-comunidade' ); ?></small>
 				</div>
 			<?php endif; ?>
-			<?php if ( $config['error'] ) : ?><span class="adam-field-error"><?php echo esc_html( (string) $config['error'] ); ?></span><?php endif; ?>
+			<?php if ( $config['error'] ) : ?><span class="adam-field-error" id="<?php echo esc_attr( $id . '-error' ); ?>" role="alert"><?php echo esc_html( (string) $config['error'] ); ?></span><?php endif; ?>
 		</div>
 		<?php
 	}
@@ -170,7 +171,7 @@ final class Component {
 		$filename = (string) ( $item['filename'] ?? '' );
 		$mime     = (string) ( $item['mime'] ?? '' );
 		?>
-		<article class="adam-upload__item" data-adam-upload-item data-id="<?php echo esc_attr( (string) $id ); ?>" draggable="<?php echo $multiple ? 'true' : 'false'; ?>" role="listitem">
+		<article class="adam-upload__item" data-adam-upload-item data-id="<?php echo esc_attr( (string) $id ); ?>" draggable="<?php echo $multiple ? 'true' : 'false'; ?>" role="listitem" <?php echo $multiple ? 'tabindex="0" aria-label="' . esc_attr( $filename . '. ' . __( 'Use Alt e as setas para alterar a ordem.', 'adam-comunidade' ) ) . '"' : ''; ?>>
 			<?php if ( $multiple && 'library' === $config['mode'] ) : ?><input data-adam-upload-item-value type="hidden" name="<?php echo esc_attr( (string) $config['name'] ); ?>" value="<?php echo esc_attr( (string) $id ); ?>"><?php endif; ?>
 			<div class="adam-upload__preview">
 				<?php if ( 'image' === $kind && ! empty( $item['url'] ) ) : ?>

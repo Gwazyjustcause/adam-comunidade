@@ -81,24 +81,26 @@
 		start();
 	} );
 
-	async function filterFields( page = 1 ) {
+	async function filterFields( page = 1, moveFocus = false ) {
 		if ( ! form || ! results || ! window.adamFields ) {
 			return;
 		}
 		requestController?.abort();
 		requestController = new AbortController();
+		const currentRequest = requestController;
 		const data = new FormData( form );
 		data.append( 'action', 'adam_filter_fields' );
 		data.append( 'nonce', window.adamFields.nonce );
 		data.append( 'page_number', page );
 		results.classList.add( 'is-loading' );
 		results.setAttribute( 'aria-busy', 'true' );
+		form.setAttribute( 'aria-busy', 'true' );
 
 		try {
 			const response = await fetch( window.adamFields.ajaxUrl, {
 				method: 'POST',
 				body: data,
-				signal: requestController.signal,
+				signal: currentRequest.signal,
 				credentials: 'same-origin',
 			} );
 			const payload = await response.json();
@@ -108,6 +110,21 @@
 			results.innerHTML = payload.data.cards;
 			pagination.innerHTML = payload.data.pagination;
 			total.textContent = payload.data.total;
+			const url = new URL( window.location.href );
+			url.search = '';
+			new FormData( form ).forEach( ( value, key ) => {
+				if ( value && 'all' !== value ) {
+					url.searchParams.set( key, value );
+				}
+			} );
+			if ( page > 1 ) {
+				url.searchParams.set( 'pagina', page );
+			}
+			window.history.replaceState( {}, '', url );
+			if ( moveFocus ) {
+				results.tabIndex = -1;
+				results.focus( { preventScroll: true } );
+			}
 		} catch ( error ) {
 			if ( 'AbortError' !== error.name ) {
 				const message = document.createElement( 'div' );
@@ -116,8 +133,11 @@
 				results.replaceChildren( message );
 			}
 		} finally {
-			results.classList.remove( 'is-loading' );
-			results.removeAttribute( 'aria-busy' );
+			if ( requestController === currentRequest ) {
+				results.classList.remove( 'is-loading' );
+				results.removeAttribute( 'aria-busy' );
+				form.removeAttribute( 'aria-busy' );
+			}
 		}
 	}
 
@@ -127,14 +147,15 @@
 			filterFields();
 		} );
 		form.addEventListener( 'change', () => filterFields() );
-		form.querySelector( 'input[type="search"]' ).addEventListener( 'input', () => {
+		form.querySelector( 'input[type="search"]' )?.addEventListener( 'input', () => {
 			window.clearTimeout( debounceTimer );
 			debounceTimer = window.setTimeout( () => filterFields(), 300 );
 		} );
 		pagination.addEventListener( 'click', ( event ) => {
 			const button = event.target.closest( '[data-page]' );
 			if ( button ) {
-				filterFields( Number.parseInt( button.dataset.page, 10 ) || 1 );
+				event.preventDefault();
+				filterFields( Number.parseInt( button.dataset.page, 10 ) || 1, true );
 				form.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 			}
 		} );
@@ -144,11 +165,14 @@
 	if ( lightbox ) {
 		const image = lightbox.querySelector( 'img' );
 		const caption = lightbox.querySelector( 'figcaption' );
+		let previousFocus = null;
 		document.querySelectorAll( '[data-field-lightbox]' ).forEach( ( link ) => {
 			link.addEventListener( 'click', ( event ) => {
 				event.preventDefault();
+				previousFocus = link;
 				image.src = link.href;
 				caption.textContent = link.dataset.caption || '';
+				image.alt = link.dataset.caption || '';
 				lightbox.hidden = false;
 				lightbox.querySelector( 'button' ).focus();
 			} );
@@ -156,7 +180,10 @@
 		function closeLightbox() {
 			lightbox.hidden = true;
 			image.src = '';
+			image.alt = '';
 			caption.textContent = '';
+			previousFocus?.focus();
+			previousFocus = null;
 		}
 		lightbox.addEventListener( 'click', ( event ) => {
 			if ( event.target === lightbox || event.target.closest( 'button' ) ) {
@@ -166,6 +193,12 @@
 		document.addEventListener( 'keydown', ( event ) => {
 			if ( 'Escape' === event.key && ! lightbox.hidden ) {
 				closeLightbox();
+			}
+		} );
+		lightbox.addEventListener( 'keydown', ( event ) => {
+			if ( 'Tab' === event.key ) {
+				event.preventDefault();
+				lightbox.querySelector( 'button' ).focus();
 			}
 		} );
 	}

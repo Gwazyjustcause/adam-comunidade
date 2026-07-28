@@ -17,11 +17,32 @@ use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Teams\Hero_Carousel;
 
 $adam_repository = new Repository();
+$adam_search      = sanitize_text_field( (string) filter_input( INPUT_GET, 'search' ) );
+$adam_district    = sanitize_text_field( (string) filter_input( INPUT_GET, 'district' ) );
+$adam_municipality = sanitize_text_field( (string) filter_input( INPUT_GET, 'municipality' ) );
+$adam_playing_style = sanitize_key( (string) filter_input( INPUT_GET, 'playing_style' ) );
+$adam_recruitment = sanitize_key( (string) filter_input( INPUT_GET, 'recruitment' ) );
+$adam_association = sanitize_key( (string) filter_input( INPUT_GET, 'association' ) );
+$adam_sort        = sanitize_key( (string) filter_input( INPUT_GET, 'sort' ) ) ?: 'alphabetical';
+$adam_page        = max( 1, absint( filter_input( INPUT_GET, 'pagina', FILTER_VALIDATE_INT ) ?: 1 ) );
+$adam_sorts       = array(
+	'alphabetical' => array( 'name', 'ASC' ),
+	'newest'       => array( 'created_at', 'DESC' ),
+	'oldest'       => array( 'created_at', 'ASC' ),
+);
+$adam_selected_sort = $adam_sorts[ $adam_sort ] ?? $adam_sorts['alphabetical'];
 $adam_result     = $adam_repository->query(
 	array(
 		'status'                 => 'published',
-		'orderby'                => 'name',
-		'order'                  => 'ASC',
+		'search'                 => $adam_search,
+		'district'               => $adam_district,
+		'municipality'           => $adam_municipality,
+		'playing_style'          => $adam_playing_style,
+		'recruitment'            => $adam_recruitment,
+		'associated'             => 'associated' === $adam_association ? 1 : '',
+		'orderby'                => $adam_selected_sort[0],
+		'order'                  => $adam_selected_sort[1],
+		'page'                   => $adam_page,
 		'per_page'               => 12,
 		'prioritize_associated' => true,
 	)
@@ -55,7 +76,7 @@ get_header();
 			<?php endif; ?>
 			<?php foreach ( $adam_hero_slides as $adam_hero_index => $adam_hero_slide ) : ?>
 				<div class="adam-fields-hero-slide<?php echo 0 === $adam_hero_index ? ' is-active' : ''; ?>" data-adam-directory-slide aria-hidden="<?php echo 0 === $adam_hero_index ? 'false' : 'true'; ?>">
-					<img src="<?php echo esc_url( $adam_hero_slide['url'] ); ?>" alt="<?php echo esc_attr( $adam_hero_slide['alt'] ); ?>" <?php echo 0 === $adam_hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
+					<img src="<?php echo esc_url( $adam_hero_slide['url'] ); ?>" alt="<?php echo esc_attr( $adam_hero_slide['alt'] ); ?>" decoding="async" <?php echo 0 === $adam_hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
 				</div>
 			<?php endforeach; ?>
 		</div>
@@ -78,10 +99,10 @@ get_header();
 	</header>
 
 	<div class="adam-teams-container">
-		<form class="adam-team-filters adam-directory-filters" id="adam-team-filters">
+		<form class="adam-team-filters adam-directory-filters" id="adam-team-filters" method="get">
 			<div class="adam-team-filter adam-team-filter--search">
 				<label for="adam-team-search"><?php esc_html_e( 'Pesquisar', 'adam-comunidade' ); ?></label>
-				<input id="adam-team-search" type="search" name="search" placeholder="<?php esc_attr_e( 'Pesquisar equipas…', 'adam-comunidade' ); ?>">
+				<input id="adam-team-search" type="search" name="search" value="<?php echo esc_attr( $adam_search ); ?>" placeholder="<?php esc_attr_e( 'Pesquisar equipas…', 'adam-comunidade' ); ?>">
 			</div>
 			<?php
 			$adam_filter_selects = array(
@@ -89,6 +110,12 @@ get_header();
 				'municipality'  => array( __( 'Concelho', 'adam-comunidade' ), $adam_municipalities ),
 				'playing_style' => array( __( 'Estilo de jogo', 'adam-comunidade' ), Options::playing_styles() ),
 				'recruitment'   => array( __( 'Recrutamento', 'adam-comunidade' ), Options::recruitment_statuses() ),
+			);
+			$adam_filter_values = array(
+				'district'      => $adam_district,
+				'municipality'  => $adam_municipality,
+				'playing_style' => $adam_playing_style,
+				'recruitment'   => $adam_recruitment,
 			);
 			foreach ( $adam_filter_selects as $adam_filter_key => $adam_filter_data ) :
 				?>
@@ -98,7 +125,8 @@ get_header();
 						<option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option>
 						<?php foreach ( $adam_filter_data[1] as $adam_option_key => $adam_option_label ) : ?>
 							<?php $adam_option_value = is_int( $adam_option_key ) ? $adam_option_label : $adam_option_key; ?>
-							<option value="<?php echo esc_attr( $adam_option_value ); ?>"><?php echo esc_html( $adam_option_label ); ?></option>
+							<?php $adam_selected_value = (string) $adam_filter_values[ $adam_filter_key ]; ?>
+							<option value="<?php echo esc_attr( $adam_option_value ); ?>" <?php selected( $adam_selected_value, (string) $adam_option_value ); ?>><?php echo esc_html( $adam_option_label ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</div>
@@ -106,16 +134,16 @@ get_header();
 			<div class="adam-team-filter">
 				<label for="adam-team-association"><?php esc_html_e( 'Associação', 'adam-comunidade' ); ?></label>
 				<select id="adam-team-association" name="association">
-					<option value="all"><?php esc_html_e( 'Todas as Equipas', 'adam-comunidade' ); ?></option>
-					<option value="associated"><?php esc_html_e( 'Apenas Equipas Associadas', 'adam-comunidade' ); ?></option>
+					<option value="all" <?php selected( $adam_association, 'all' ); ?>><?php esc_html_e( 'Todas as Equipas', 'adam-comunidade' ); ?></option>
+					<option value="associated" <?php selected( $adam_association, 'associated' ); ?>><?php esc_html_e( 'Apenas Equipas Associadas', 'adam-comunidade' ); ?></option>
 				</select>
 			</div>
 			<div class="adam-team-filter">
 				<label for="adam-team-sort"><?php esc_html_e( 'Ordenar', 'adam-comunidade' ); ?></label>
 				<select id="adam-team-sort" name="sort">
-					<option value="alphabetical"><?php esc_html_e( 'Ordem alfabética', 'adam-comunidade' ); ?></option>
-					<option value="newest"><?php esc_html_e( 'Mais recentes', 'adam-comunidade' ); ?></option>
-					<option value="oldest"><?php esc_html_e( 'Mais antigas', 'adam-comunidade' ); ?></option>
+					<option value="alphabetical" <?php selected( $adam_sort, 'alphabetical' ); ?>><?php esc_html_e( 'Ordem alfabética', 'adam-comunidade' ); ?></option>
+					<option value="newest" <?php selected( $adam_sort, 'newest' ); ?>><?php esc_html_e( 'Mais recentes', 'adam-comunidade' ); ?></option>
+					<option value="oldest" <?php selected( $adam_sort, 'oldest' ); ?>><?php esc_html_e( 'Mais antigas', 'adam-comunidade' ); ?></option>
 				</select>
 			</div>
 			<button class="adam-team-button adam-directory-button" type="submit"><?php esc_html_e( 'Aplicar filtros', 'adam-comunidade' ); ?></button>
@@ -138,7 +166,7 @@ get_header();
 				</div>
 			<?php endif; ?>
 		</div>
-		<div class="adam-directory-pagination" id="adam-team-pagination"><?php echo View::pagination( 1, $adam_result['pages'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<div class="adam-directory-pagination" id="adam-team-pagination"><?php echo View::pagination( $adam_page, $adam_result['pages'], array_filter( array( 'search' => $adam_search, 'district' => $adam_district, 'municipality' => $adam_municipality, 'playing_style' => $adam_playing_style, 'recruitment' => $adam_recruitment, 'association' => $adam_association, 'sort' => $adam_sort ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 	</div>
 </main>
 <?php

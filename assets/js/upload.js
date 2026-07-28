@@ -65,6 +65,9 @@
 			if ( input ) {
 				input.setCustomValidity( '' );
 				input.removeAttribute( 'aria-invalid' );
+				if ( ( input.getAttribute( 'aria-describedby' ) || '' ).includes( '-client-error' ) ) {
+					input.removeAttribute( 'aria-describedby' );
+				}
 			}
 		}
 
@@ -72,11 +75,14 @@
 			clearClientError();
 			const error = document.createElement( 'span' );
 			error.className = 'adam-field-error adam-upload__error--client';
+			error.id = `${ upload.id || 'adam-upload' }-client-error`;
+			error.setAttribute( 'role', 'alert' );
 			error.textContent = message;
 			upload.appendChild( error );
 			if ( input ) {
 				input.setCustomValidity( message );
 				input.setAttribute( 'aria-invalid', 'true' );
+				input.setAttribute( 'aria-describedby', error.id );
 			}
 		}
 
@@ -111,6 +117,10 @@
 			card.dataset.id = item.id || '';
 			card.draggable = multiple;
 			card.setAttribute( 'role', 'listitem' );
+			if ( multiple ) {
+				card.tabIndex = 0;
+				card.setAttribute( 'aria-label', `${ item.filename }. ${ labels.dragHint || '' }` );
+			}
 
 			if ( 'library' === mode && multiple ) {
 				const hidden = document.createElement( 'input' );
@@ -369,6 +379,28 @@
 				const box = target.getBoundingClientRect();
 				list.insertBefore( dragged, event.clientX < box.left + box.width / 2 ? target : target.nextSibling );
 			}
+		} );
+		upload.addEventListener( 'keydown', ( event ) => {
+			const item = event.target.closest( '[data-adam-upload-item]' );
+			if ( ! multiple || ! item || ! event.altKey || ! [ 'ArrowLeft', 'ArrowRight' ].includes( event.key ) ) {
+				return;
+			}
+			const items = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) );
+			const from = items.indexOf( item );
+			const to = 'ArrowLeft' === event.key ? from - 1 : from + 1;
+			if ( from < 0 || to < 0 || to >= items.length ) {
+				return;
+			}
+			event.preventDefault();
+			if ( 'file' === mode ) {
+				[ files[ from ], files[ to ] ] = [ files[ to ], files[ from ] ];
+				renderFiles();
+				list.querySelectorAll( '[data-adam-upload-item]' )[ to ]?.focus();
+				return;
+			}
+			const reference = 'ArrowLeft' === event.key ? items[ to ] : items[ to ].nextSibling;
+			list.insertBefore( item, reference );
+			item.focus();
 		} );
 		upload.addEventListener( 'dragleave', ( event ) => {
 			if ( ! upload.contains( event.relatedTarget ) ) {

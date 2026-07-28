@@ -117,6 +117,6 @@ get_header();
 
 		<?php do_action( 'adam_comunidade_directory_entry_content', $entry ); ?>
 	</div>
-	<?php if ( $gallery ) : ?><div class="adam-community-lightbox" role="dialog" aria-modal="true" hidden><button type="button" aria-label="<?php esc_attr_e( 'Fechar', 'adam-comunidade' ); ?>">×</button><figure><img src="" alt=""><figcaption></figcaption></figure></div><?php endif; ?>
+	<?php if ( $gallery ) : ?><div class="adam-community-lightbox" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Visualizador de imagens', 'adam-comunidade' ); ?>" hidden><button type="button" aria-label="<?php esc_attr_e( 'Fechar visualizador de imagens', 'adam-comunidade' ); ?>">×</button><figure><img src="" alt=""><figcaption></figcaption></figure></div><?php endif; ?>
 </main>
 <?php get_footer(); ?>

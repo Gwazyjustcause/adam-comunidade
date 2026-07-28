@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit;
  * Encapsulates field, gallery, amenity, and team relationship queries.
  */
 final class Repository {
+	/** @var array<int,object[]> */
+	private array $amenities_cache = array();
+
 	/**
 	 * Finds one field by ID.
 	 *
@@ -179,6 +182,7 @@ final class Repository {
 		if ( ! is_admin() ) {
 			$cached = wp_cache_get( $cache_key, 'adam_comunidade_archives' );
 			if ( is_array( $cached ) ) {
+				$this->prime_amenities( array_map( static fn( object $item ): int => (int) $item->id, $cached['items'] ?? array() ) );
 				return $cached;
 			}
 		}
@@ -290,6 +294,7 @@ final class Repository {
 			'pages' => (int) ceil( $total / $per_page ),
 		);
 		if ( ! is_admin() ) {
+			$this->prime_amenities( array_map( static fn( object $item ): int => (int) $item->id, $result['items'] ) );
 			wp_cache_set( $cache_key, $result, 'adam_comunidade_archives', 300 );
 		}
 		return $result;
@@ -501,6 +506,9 @@ final class Repository {
 	 */
 	public function amenities( int $field_id ): array {
 		global $wpdb;
+		if ( array_key_exists( $field_id, $this->amenities_cache ) ) {
+			return $this->amenities_cache[ $field_id ];
+		}
 
 		$sql = $wpdb->prepare(
 			'SELECT a.* FROM ' . Schema::amenities_table() . ' a'
@@ -510,7 +518,38 @@ final class Repository {
 			$field_id
 		);
 
-		return $wpdb->get_results( $sql ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$this->amenities_cache[ $field_id ] = $wpdb->get_results( $sql ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return $this->amenities_cache[ $field_id ];
+	}
+
+	/**
+	 * Loads amenities for a card collection in one query.
+	 *
+	 * @param int[] $field_ids Field IDs.
+	 */
+	public function prime_amenities( array $field_ids ): void {
+		global $wpdb;
+		$field_ids = array_values( array_unique( array_filter( array_map( 'absint', $field_ids ) ) ) );
+		$missing = array_values( array_filter( $field_ids, fn( int $id ): bool => ! array_key_exists( $id, $this->amenities_cache ) ) );
+		if ( ! $missing ) {
+			return;
+		}
+		foreach ( $missing as $field_id ) {
+			$this->amenities_cache[ $field_id ] = array();
+		}
+		$placeholders = implode( ',', array_fill( 0, count( $missing ), '%d' ) );
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT fa.field_id,a.* FROM ' . Schema::amenities_table() . ' a'
+					. ' INNER JOIN ' . Schema::field_amenities_table() . ' fa ON fa.amenity_id=a.id'
+					. " WHERE fa.field_id IN ({$placeholders}) AND a.status='active'"
+					. ' ORDER BY a.sort_order ASC,a.label ASC',
+				...$missing
+			)
+		); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$this->amenities_cache[ (int) $row->field_id ][] = $row;
+		}
 	}
 
 	/**
@@ -522,6 +561,7 @@ final class Repository {
 	 */
 	public function sync_amenities( int $field_id, array $amenity_ids ): bool {
 		global $wpdb;
+		unset( $this->amenities_cache[ $field_id ] );
 
 		if ( false === $wpdb->delete( Schema::field_amenities_table(), array( 'field_id' => $field_id ), array( '%d' ) ) ) {
 			return false;

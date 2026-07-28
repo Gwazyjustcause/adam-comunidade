@@ -32,7 +32,7 @@ get_header();
 			<?php if ( $event->full_description() ) : ?><div class="adam-event__description"><?php echo wp_kses_post( wpautop( $event->full_description() ) ); ?></div><?php endif; ?>
 			<div class="adam-event__actions">
 				<?php if ( $event->map_link() ) : ?><a class="button" href="<?php echo esc_url( $event->map_link() ); ?>" rel="noopener noreferrer" target="_blank"><?php esc_html_e( 'Ver no mapa', 'adam-comunidade' ); ?></a><?php endif; ?>
-				<?php if ( $event->external_registration_url() && $event->is_registration_open() ) : ?><a class="button button-primary" href="<?php echo esc_url( $event->external_registration_url() ); ?>" rel="noopener noreferrer" target="_blank"><?php echo esc_html( sprintf( __( 'Inscrever em %s', 'adam-comunidade' ), $event->external_provider_name() ) ); ?></a><?php endif; ?>
+				<?php if ( $event->external_registration_url() && $event->is_registration_open() ) : ?><a class="button button-primary" href="<?php echo esc_url( $event->external_registration_url() ); ?>" rel="noopener noreferrer" target="_blank"><?php echo $event->external_provider_name() ? esc_html( sprintf( __( 'Inscrever em %s', 'adam-comunidade' ), $event->external_provider_name() ) ) : esc_html__( 'Inscrever no evento', 'adam-comunidade' ); ?></a><?php endif; ?>
 			</div>
 		</div>
 	</article>

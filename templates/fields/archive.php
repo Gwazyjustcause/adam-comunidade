@@ -26,6 +26,7 @@ $query_style           = sanitize_key( (string) filter_input( INPUT_GET, 'playin
 $query_amenity         = absint( filter_input( INPUT_GET, 'amenity_id', FILTER_VALIDATE_INT ) ?: 0 );
 $query_associated      = sanitize_key( (string) filter_input( INPUT_GET, 'associated' ) );
 $query_sort            = sanitize_key( (string) filter_input( INPUT_GET, 'sort' ) );
+$query_page            = max( 1, absint( filter_input( INPUT_GET, 'pagina', FILTER_VALIDATE_INT ) ?: 1 ) );
 $route_district        = Router::archive_location();
 $selected_district     = $route_district ?: $query_district;
 $sorts                 = array(
@@ -47,6 +48,7 @@ $result                = $repository->query(
 		'amenity_id'             => $query_amenity,
 		'orderby'                => $selected_sort[0],
 		'order'                  => $selected_sort[1],
+		'page'                   => $query_page,
 		'per_page'               => 12,
 	)
 );
@@ -86,7 +88,7 @@ get_header();
 			<?php endif; ?>
 			<?php foreach ( $hero_slides as $hero_index => $hero_slide ) : ?>
 				<div class="adam-fields-hero-slide<?php echo 0 === $hero_index ? ' is-active' : ''; ?>" data-adam-fields-slide aria-hidden="<?php echo 0 === $hero_index ? 'false' : 'true'; ?>">
-					<img src="<?php echo esc_url( (string) $hero_slide['url'] ); ?>" alt="<?php echo esc_attr( (string) $hero_slide['alt'] ); ?>" <?php echo 0 === $hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
+					<img src="<?php echo esc_url( (string) $hero_slide['url'] ); ?>" alt="<?php echo esc_attr( (string) $hero_slide['alt'] ); ?>" decoding="async" <?php echo 0 === $hero_index ? 'fetchpriority="high"' : 'loading="lazy"'; ?>>
 				</div>
 			<?php endforeach; ?>
 		</div>
@@ -116,7 +118,7 @@ get_header();
 	</section>
 
 	<div class="adam-fields-container adam-fields-directory-body">
-		<form class="adam-field-filters adam-directory-filters" id="adam-field-filters">
+		<form class="adam-field-filters adam-directory-filters" id="adam-field-filters" method="get">
 			<label class="adam-field-filter-search"><span><?php esc_html_e( 'Pesquisar', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $query_search ); ?>" placeholder="<?php esc_attr_e( 'Nome do campo, localização…', 'adam-comunidade' ); ?>"></label>
 			<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><select name="district"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $districts as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $selected_district, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label>
 			<label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><select name="municipality"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $municipalities as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $query_municipality, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label>
@@ -143,7 +145,7 @@ get_header();
 			<?php endif; ?>
 			<?php if ( ! $result['items'] ) : ?><div class="adam-comunidade__empty adam-fields-empty adam-directory-empty"><?php esc_html_e( 'Nenhum campo corresponde aos filtros selecionados.', 'adam-comunidade' ); ?></div><?php endif; ?>
 		</div>
-		<div class="adam-directory-pagination" id="adam-field-pagination"><?php echo View::pagination( 1, $result['pages'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<div class="adam-directory-pagination" id="adam-field-pagination"><?php echo View::pagination( $query_page, $result['pages'], array_filter( array( 'search' => $query_search, 'district' => $query_district, 'municipality' => $query_municipality, 'playing_style' => $query_style, 'amenity_id' => $query_amenity, 'associated' => $query_associated, 'sort' => $query_sort ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 
 		<section class="adam-field-submission-cta">
 			<div>

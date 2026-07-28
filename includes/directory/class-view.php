@@ -49,14 +49,27 @@ final class View {
 		return (string) ob_get_clean();
 	}
 
-	public static function pagination( int $page, int $pages ): string {
+	/**
+	 * Renders AJAX buttons or progressively enhanced pagination links.
+	 *
+	 * @param int                 $page       Current page.
+	 * @param int                 $pages      Total pages.
+	 * @param array<string,mixed> $query_args Query arguments for non-JavaScript links.
+	 */
+	public static function pagination( int $page, int $pages, array $query_args = array() ): string {
 		if ( $pages <= 1 ) {
 			return '';
 		}
 		$output = '<nav class="adam-community-pagination" aria-label="' . esc_attr__( 'Páginas do diretório', 'adam-comunidade' ) . '">';
 		for ( $number = 1; $number <= $pages; $number++ ) {
-			$output .= '<button type="button" data-page="' . esc_attr( (string) $number ) . '"'
-				. ( $number === $page ? ' aria-current="page"' : '' ) . '>' . esc_html( (string) $number ) . '</button>';
+			if ( $query_args ) {
+				$query_args['pagina'] = $number;
+				$output .= '<a href="' . esc_url( add_query_arg( $query_args, get_permalink() ) ) . '" data-page="' . esc_attr( (string) $number ) . '"'
+					. ( $number === $page ? ' aria-current="page"' : '' ) . '>' . esc_html( (string) $number ) . '</a>';
+			} else {
+				$output .= '<button type="button" data-page="' . esc_attr( (string) $number ) . '"'
+					. ( $number === $page ? ' aria-current="page"' : '' ) . '>' . esc_html( (string) $number ) . '</button>';
+			}
 		}
 		return $output . '</nav>';
 	}

@@ -509,11 +509,17 @@ final class Portal {
 		if ( $cover ) { $input['cover_id'] = $cover; $uploaded[] = $cover; }
 		if ( 'field' !== $type ) {
 			$logo = $this->upload_one( 'manager_logo' );
-			if ( is_wp_error( $logo ) ) { wp_die( esc_html( $logo->get_error_message() ) ); }
+			if ( is_wp_error( $logo ) ) {
+				$this->delete_uploaded( $uploaded );
+				wp_die( esc_html( $logo->get_error_message() ) );
+			}
 			if ( $logo ) { $input['logo_id'] = $logo; $uploaded[] = $logo; }
 		}
 		$gallery = $this->upload_many( 'manager_gallery', 20 );
-		if ( is_wp_error( $gallery ) ) { wp_die( esc_html( $gallery->get_error_message() ) ); }
+		if ( is_wp_error( $gallery ) ) {
+			$this->delete_uploaded( $uploaded );
+			wp_die( esc_html( $gallery->get_error_message() ) );
+		}
 		$uploaded = array_merge( $uploaded, $gallery );
 		$current_record = $this->service->record( $type, $id );
 		$current_gallery_ids = isset( $pending_payload['gallery_ids'] )
@@ -535,7 +541,7 @@ final class Portal {
 		}
 		$result = $this->service->submit_revision( (int) $manager->id, $type, $id, $input, $relations );
 		if ( is_wp_error( $result ) ) {
-			foreach ( $uploaded as $attachment_id ) { wp_delete_attachment( $attachment_id, true ); }
+			$this->delete_uploaded( $uploaded );
 			wp_die( esc_html( $result->get_error_message() ) );
 		}
 		$this->redirect_status( 'revision-sent' );
@@ -593,6 +599,17 @@ final class Portal {
 		}
 		$_FILES[ $name ] = $original;
 		return $ids;
+	}
+
+	/**
+	 * Removes media created by an unsuccessful revision request.
+	 *
+	 * @param int[] $attachment_ids Attachment IDs.
+	 */
+	private function delete_uploaded( array $attachment_ids ): void {
+		foreach ( array_unique( array_filter( array_map( 'absint', $attachment_ids ) ) ) as $attachment_id ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
 	}
 
 	private function gallery_ids( string $type, object $record ): array {

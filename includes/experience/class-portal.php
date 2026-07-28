@@ -848,9 +848,9 @@ final class Portal {
 						<input type="hidden" name="submission_id" value="<?php echo esc_attr( $row->id ); ?>">
 						<label><?php esc_html_e( 'Notas internas', 'adam-comunidade' ); ?><textarea name="admin_note" rows="3" placeholder="<?php esc_attr_e( 'Registe observações apenas visíveis para a administração.', 'adam-comunidade' ); ?>"><?php echo esc_textarea( $row->admin_note ); ?></textarea></label>
 						<div>
-							<button class="button button-primary" name="decision" value="approve"><?php esc_html_e( 'Aprovar e publicar', 'adam-comunidade' ); ?></button>
-							<button class="button" name="decision" value="changes"><?php esc_html_e( 'Pedir alterações', 'adam-comunidade' ); ?></button>
-							<button class="button button-link-delete" name="decision" value="reject" onclick="return confirm('<?php echo esc_js( __( 'Tem a certeza de que pretende rejeitar esta submissão?', 'adam-comunidade' ) ); ?>');"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button>
+							<button class="button button-primary" name="decision" value="approve" data-adam-confirm="<?php esc_attr_e( 'Aprovar esta submissão e publicar imediatamente o conteúdo?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Aprovar e publicar', 'adam-comunidade' ); ?></button>
+							<button class="button" name="decision" value="changes" data-adam-confirm="<?php esc_attr_e( 'Pedir alterações ao autor da submissão?', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Pedir alterações', 'adam-comunidade' ); ?></button>
+							<button class="button button-link-delete" name="decision" value="reject" data-adam-confirm="<?php esc_attr_e( 'Rejeitar esta submissão? O conteúdo não será publicado.', 'adam-comunidade' ); ?>"><?php esc_html_e( 'Rejeitar', 'adam-comunidade' ); ?></button>
 						</div>
 					</form>
 				</article>
@@ -865,27 +865,40 @@ final class Portal {
 		global $wpdb;
 		$id = absint( $_POST['submission_id'] ?? 0 );
 		check_admin_referer( 'adam_moderate_' . $id, 'adam_nonce' );
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::submissions_table() . ' WHERE id = %d', $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		if ( ! $row || ! in_array( $row->status, array( 'pending', 'changes_requested' ), true ) ) {
-			wp_die( esc_html__( 'A submissão já não está disponível.', 'adam-comunidade' ) );
-		}
 		$decision = sanitize_key( wp_unslash( $_POST['decision'] ?? '' ) );
 		$status   = array( 'approve' => 'published', 'changes' => 'changes_requested', 'reject' => 'rejected' )[ $decision ] ?? '';
 		if ( ! $status ) {
 			wp_die( esc_html__( 'A decisão selecionada não é válida.', 'adam-comunidade' ) );
 		}
+		$admin_note = sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) );
+		if ( in_array( $decision, array( 'changes', 'reject' ), true ) && '' === trim( $admin_note ) ) {
+			wp_die( esc_html__( 'Indique o motivo da decisão ou a informação que deve ser corrigida.', 'adam-comunidade' ) );
+		}
+		if ( false === $wpdb->query( 'START TRANSACTION' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			wp_die( esc_html__( 'Não foi possível iniciar a decisão de moderação.', 'adam-comunidade' ) );
+		}
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . Schema::submissions_table() . ' WHERE id = %d FOR UPDATE', $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( ! $row || ! in_array( $row->status, array( 'pending', 'changes_requested' ), true ) ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			wp_die( esc_html__( 'A submissão já não está disponível.', 'adam-comunidade' ) );
+		}
 		$object_id = (int) $row->object_id;
 		if ( 'approve' === $decision ) {
 			$result = $this->apply_approval( $row );
 			if ( is_wp_error( $result ) ) {
+				$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				wp_die( esc_html( $result->get_error_message() ) );
 			}
 			$object_id = (int) $result;
 		}
-		$admin_note = sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) );
 		$updated = $wpdb->update( Schema::submissions_table(), array( 'status' => $status, 'object_id' => $object_id, 'admin_note' => $admin_note, 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => $id ) );
 		if ( false === $updated ) {
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			wp_die( esc_html__( 'Não foi possível guardar a decisão. Tente novamente.', 'adam-comunidade' ) );
+		}
+		if ( false === $wpdb->query( 'COMMIT' ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			wp_die( esc_html__( 'Não foi possível concluir a decisão. Nenhuma alteração foi aplicada.', 'adam-comunidade' ) );
 		}
 		$this->notify( (int) $row->user_id, __( 'Submissão revista', 'adam-comunidade' ), __( 'A administração da ADAM concluiu a revisão da sua submissão.', 'adam-comunidade' ) );
 		$manager_invite_url = '';
@@ -938,7 +951,10 @@ final class Portal {
 			if ( ! $row->user_id ) {
 				return new \WP_Error( 'login_required', __( 'Os pedidos de gestão exigem uma conta de utilizador.', 'adam-comunidade' ) );
 			}
-			$wpdb->replace( Schema::owners_table(), array( 'object_type' => $row->object_type, 'object_id' => $row->object_id, 'user_id' => $row->user_id, 'status' => 'verified', 'created_at' => current_time( 'mysql', true ) ) );
+			$stored = $wpdb->replace( Schema::owners_table(), array( 'object_type' => $row->object_type, 'object_id' => $row->object_id, 'user_id' => $row->user_id, 'status' => 'verified', 'created_at' => current_time( 'mysql', true ) ) );
+			if ( false === $stored ) {
+				return new \WP_Error( 'save_failed', __( 'Não foi possível guardar a atribuição.', 'adam-comunidade' ) );
+			}
 			return (int) $row->object_id;
 		}
 		$payload = json_decode( $row->payload, true ) ?: array();
@@ -984,19 +1000,25 @@ final class Portal {
 		}
 		$result_id = $record ? (int) $row->object_id : (int) $result;
 		if ( 'field' === $row->object_type && ! empty( $payload['gallery_ids'] ) ) {
-			$repo->sync_gallery(
+			$synced = $repo->sync_gallery(
 				$result_id,
 				array_map(
 					static fn( int $attachment_id ): array => array( 'id' => $attachment_id, 'caption' => '' ),
 					array_slice( array_filter( array_map( 'absint', (array) $payload['gallery_ids'] ) ), 0, 5 )
 				)
 			);
+			if ( ! $synced ) {
+				return new \WP_Error( 'gallery_failed', __( 'Não foi possível guardar a galeria da submissão.', 'adam-comunidade' ) );
+			}
 		}
 		if ( 'field' === $row->object_type && array_key_exists( 'amenity_ids', $payload ) ) {
-			$repo->sync_amenities(
+			$synced = $repo->sync_amenities(
 				$result_id,
 				array_values( array_filter( array_map( 'absint', (array) $payload['amenity_ids'] ) ) )
 			);
+			if ( ! $synced ) {
+				return new \WP_Error( 'amenities_failed', __( 'Não foi possível guardar as comodidades da submissão.', 'adam-comunidade' ) );
+			}
 		}
 		return $result_id;
 	}

@@ -13,6 +13,9 @@ defined( 'ABSPATH' ) || exit;
  * Encapsulates organisation and media queries.
  */
 final class Repository {
+	/** @var array<int,object[]> */
+	private array $gallery_cache = array();
+
 	/**
 	 * Finds an entry by ID, optionally constrained by type.
 	 *
@@ -257,8 +260,39 @@ final class Repository {
 	 */
 	public function gallery( int $entry_id ): array {
 		global $wpdb;
+		if ( array_key_exists( $entry_id, $this->gallery_cache ) ) {
+			return $this->gallery_cache[ $entry_id ];
+		}
 		$sql = $wpdb->prepare( 'SELECT * FROM ' . Schema::galleries_table() . ' WHERE entry_id = %d ORDER BY sort_order,id', $entry_id );
-		return $wpdb->get_results( $sql ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$this->gallery_cache[ $entry_id ] = $wpdb->get_results( $sql ) ?: array(); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return $this->gallery_cache[ $entry_id ];
+	}
+
+	/**
+	 * Loads galleries for an API collection in one query.
+	 *
+	 * @param int[] $entry_ids Entry IDs.
+	 */
+	public function prime_galleries( array $entry_ids ): void {
+		global $wpdb;
+		$entry_ids = array_values( array_unique( array_filter( array_map( 'absint', $entry_ids ) ) ) );
+		$missing = array_values( array_filter( $entry_ids, fn( int $id ): bool => ! array_key_exists( $id, $this->gallery_cache ) ) );
+		if ( ! $missing ) {
+			return;
+		}
+		foreach ( $missing as $entry_id ) {
+			$this->gallery_cache[ $entry_id ] = array();
+		}
+		$placeholders = implode( ',', array_fill( 0, count( $missing ), '%d' ) );
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT * FROM ' . Schema::galleries_table() . " WHERE entry_id IN ({$placeholders}) ORDER BY entry_id,sort_order,id",
+				...$missing
+			)
+		); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+			$this->gallery_cache[ (int) $row->entry_id ][] = $row;
+		}
 	}
 
 	/**
@@ -269,6 +303,7 @@ final class Repository {
 	 */
 	public function sync_gallery( int $entry_id, array $items ): bool {
 		global $wpdb;
+		unset( $this->gallery_cache[ $entry_id ] );
 		if ( false === $wpdb->delete( Schema::galleries_table(), array( 'entry_id' => $entry_id ), array( '%d' ) ) ) {
 			return false;
 		}

@@ -70,7 +70,7 @@ final class Api_V2 {
 		if ( 'statistics' === $endpoint ) {
 			$stats = $this->discovery->statistics( (string) $request['district'] );
 			foreach ( array( 'newest_team' => 'team', 'newest_field' => 'field', 'largest_team' => 'team', 'newest_partner' => 'partner' ) as $key => $type ) {
-				$item = $stats[ $key ];
+				$item = $stats[ $key ] ?? null;
 				if ( $item ) {
 					$url = 'team' === $type ? Team_Router::team_url( $item ) : ( 'field' === $type ? Field_Router::field_url( $item ) : Directory_Router::entry_url( $item ) );
 					$stats[ $key ] = array( 'id' => (int) $item->id, 'name' => $item->name, 'url' => $url );

@@ -70,6 +70,7 @@ final class Rest_API {
 				$args['category'] = 'brand';
 			}
 			$result = $this->repository->query( $type, $args );
+			$this->repository->prime_galleries( array_map( static fn( object $item ): int => (int) $item->id, $result['items'] ) );
 			$data   = array_map( fn( object $item ): array => $this->directory_item( $item ), $result['items'] );
 		}
 		$response = new \WP_REST_Response( $data );

@@ -83,6 +83,12 @@
 	opacity: .48;
 }
 
+.adam-upload__item:focus-visible {
+	border-color: var(--adam-upload-accent);
+	box-shadow: 0 0 0 3px rgba(49, 92, 37, .24);
+	outline: 0;
+}
+
 .adam-upload__preview {
 	align-items: center;
 	background: #e8eeea;

@@ -47,7 +47,7 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 		</div>
 		<div class="adam-team-card__meta">
 			<?php if ( $team->members ) : ?><span><?php echo esc_html( sprintf( _n( '%d membro', '%d membros', (int) $team->members, 'adam-comunidade' ), (int) $team->members ) ); ?></span><?php endif; ?>
-			<span><?php echo esc_html( View::label( $team->recruitment_status, Options::recruitment_statuses() ) ); ?></span>
+			<?php if ( $team->recruitment_status ) : ?><span><?php echo esc_html( View::label( $team->recruitment_status, Options::recruitment_statuses() ) ); ?></span><?php endif; ?>
 		</div>
 		<?php if ( $adam_card_styles ) : ?>
 			<div class="adam-team-badges">

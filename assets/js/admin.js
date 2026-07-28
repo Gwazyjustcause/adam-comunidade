@@ -24,7 +24,7 @@
 				target.focus();
 				return;
 			}
-			if ( [ 'reject', 'info' ].includes( decision ) && note && ! note.value.trim() ) {
+			if ( [ 'reject', 'info', 'changes' ].includes( decision ) && note && ! note.value.trim() ) {
 				event.preventDefault();
 				window.alert( 'Indique ao Gestor o motivo da decisão ou a informação necessária.' );
 				note.focus();

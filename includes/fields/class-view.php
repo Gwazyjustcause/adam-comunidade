@@ -35,9 +35,10 @@ final class View {
 	 *
 	 * @param int $current Current page.
 	 * @param int $pages   Total pages.
+	 * @param array<string,mixed> $query_args Query arguments for non-JavaScript links.
 	 * @return string
 	 */
-	public static function pagination( int $current, int $pages ): string {
+	public static function pagination( int $current, int $pages, array $query_args = array() ): string {
 		if ( $pages <= 1 ) {
 			return '';
 		}
@@ -48,13 +49,13 @@ final class View {
 		$end   = min( $pages, $current + 2 );
 
 		if ( $current > 1 ) {
-			$html .= self::page_button( $current - 1, __( 'Anterior', 'adam-comunidade' ) );
+			$html .= self::page_button( $current - 1, __( 'Anterior', 'adam-comunidade' ), false, $query_args );
 		}
 		for ( $page = $start; $page <= $end; ++$page ) {
-			$html .= self::page_button( $page, (string) $page, $page === $current );
+			$html .= self::page_button( $page, (string) $page, $page === $current, $query_args );
 		}
 		if ( $current < $pages ) {
-			$html .= self::page_button( $current + 1, __( 'Seguinte', 'adam-comunidade' ) );
+			$html .= self::page_button( $current + 1, __( 'Seguinte', 'adam-comunidade' ), false, $query_args );
 		}
 
 		return $html . '</nav>';
@@ -115,9 +116,20 @@ final class View {
 	 * @param int    $page    Page.
 	 * @param string $label   Label.
 	 * @param bool   $current Current state.
+	 * @param array<string,mixed> $query_args Query arguments for non-JavaScript links.
 	 * @return string
 	 */
-	private static function page_button( int $page, string $label, bool $current = false ): string {
+	private static function page_button( int $page, string $label, bool $current = false, array $query_args = array() ): string {
+		if ( $query_args ) {
+			$query_args['pagina'] = $page;
+			return sprintf(
+				'<a href="%1$s" data-page="%2$d"%3$s>%4$s</a>',
+				esc_url( add_query_arg( $query_args, get_permalink() ) ),
+				$page,
+				$current ? ' aria-current="page"' : '',
+				esc_html( $label )
+			);
+		}
 		return sprintf(
 			'<button type="button" data-page="%1$d"%2$s>%3$s</button>',
 			$page,

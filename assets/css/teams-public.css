@@ -100,8 +100,8 @@
 
 .adam-team-button:hover,
 .adam-team-button:focus {
-	background: #1e40af;
-	border-color: #1e40af;
+	background: #24491d;
+	border-color: #24491d;
 	color: #fff;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .adam-team-card__media {
-	background: #dbeafe;
+	background: #e9f4dc;
 	display: block;
 	height: 180px;
 }
@@ -180,7 +180,7 @@
 }
 
 .adam-team-card__cover-placeholder {
-	background: linear-gradient(135deg, #dbeafe, #e2e8f0);
+	background: linear-gradient(135deg, #e9f4dc, #e2e8f0);
 }
 
 .adam-team-card__body {
@@ -246,9 +246,9 @@
 }
 
 .adam-team-badges span {
-	background: #eff6ff;
+	background: #eef8df;
 	border-radius: 999px;
-	color: #1d4ed8;
+	color: #315c25;
 	font-size: 0.7rem;
 	font-weight: 700;
 	padding: 4px 8px;
@@ -269,16 +269,20 @@
 	margin-top: 32px;
 }
 
-.adam-teams-pagination button {
+.adam-teams-pagination :is(button, a) {
+	align-items: center;
 	background: #fff;
 	border: 1px solid #cbd5e1;
 	border-radius: 7px;
 	cursor: pointer;
+	display: inline-flex;
+	justify-content: center;
 	min-height: 38px;
 	padding: 0 12px;
+	text-decoration: none;
 }
 
-.adam-teams-pagination button[aria-current="page"] {
+.adam-teams-pagination [aria-current="page"] {
 	background: var(--adam-primary);
 	border-color: var(--adam-primary);
 	color: #fff;
