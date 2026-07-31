@@ -30,7 +30,7 @@ final class Smart_Blocks {
 	public function assets(): void {
 		global $post;
 		$content = $post instanceof \WP_Post ? $post->post_content : '';
-		if ( ! str_contains( $content, '[adam_' ) && ! has_block( 'adam-comunidade/community-home', $content ) && ! has_block( 'adam-comunidade/community-map', $content ) && ! has_block( 'adam-comunidade/live-statistics', $content ) && ! has_block( 'adam-comunidade/latest-news', $content ) ) {
+		if ( ! str_contains( $content, '[adam_' ) && ! has_block( 'adam-comunidade/community-home', $content ) && ! has_block( 'adam-comunidade/community-map', $content ) && ! has_block( 'adam-comunidade/community-search', $content ) && ! has_block( 'adam-comunidade/recent-records', $content ) && ! has_block( 'adam-comunidade/newest-teams', $content ) && ! has_block( 'adam-comunidade/featured-fields', $content ) && ! has_block( 'adam-comunidade/live-statistics', $content ) && ! has_block( 'adam-comunidade/latest-news', $content ) ) {
 			return;
 		}
 		wp_enqueue_style( 'adam-experience', Helpers::url( 'assets/css/experience.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
@@ -82,6 +82,41 @@ final class Smart_Blocks {
 				'api_version'     => 3,
 				'editor_script'   => 'adam-comunidade-blocks',
 				'render_callback' => fn(): string => $this->statistics(),
+			)
+		);
+		register_block_type(
+			'adam-comunidade/community-search',
+			array(
+				'api_version'     => 3,
+				'editor_script'   => 'adam-comunidade-blocks',
+				'render_callback' => static fn(): string => Builder::search_form(),
+			)
+		);
+		register_block_type(
+			'adam-comunidade/recent-records',
+			array(
+				'api_version'   => 3,
+				'editor_script' => 'adam-comunidade-blocks',
+				'attributes'    => array( 'number' => array( 'type' => 'number', 'default' => 3 ) ),
+				'render_callback' => static fn( array $attributes ): string => Builder::recent_records( absint( $attributes['number'] ?? 3 ) ),
+			)
+		);
+		register_block_type(
+			'adam-comunidade/newest-teams',
+			array(
+				'api_version'   => 3,
+				'editor_script' => 'adam-comunidade-blocks',
+				'attributes'    => array( 'number' => array( 'type' => 'number', 'default' => 6 ) ),
+				'render_callback' => static fn( array $attributes ): string => do_shortcode( sprintf( '[adam_newest_teams number="%d"]', max( 1, min( 24, absint( $attributes['number'] ?? 6 ) ) ) ) ),
+			)
+		);
+		register_block_type(
+			'adam-comunidade/featured-fields',
+			array(
+				'api_version'   => 3,
+				'editor_script' => 'adam-comunidade-blocks',
+				'attributes'    => array( 'number' => array( 'type' => 'number', 'default' => 3 ) ),
+				'render_callback' => static fn( array $attributes ): string => do_shortcode( sprintf( '[adam_community_section type="fields" number="%d" order="newest" featured="1"]', max( 1, min( 24, absint( $attributes['number'] ?? 3 ) ) ) ) ),
 			)
 		);
 		register_block_type(

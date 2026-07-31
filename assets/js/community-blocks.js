@@ -63,6 +63,34 @@
 		save: function () { return null; }
 	});
 
+	blocks.registerBlockType('adam-comunidade/community-search', {
+		title: i18n.__('Pesquisa da Comunidade ADAM', 'adam-comunidade'),
+		icon: 'search',
+		category: 'widgets',
+		edit: function () { return el('div', { className: 'adam-block-placeholder' }, el('strong', {}, i18n.__('Pesquisa da Comunidade', 'adam-comunidade')), el('p', {}, i18n.__('Pesquisa equipas, campos, parceiros, instituições, notícias e eventos.', 'adam-comunidade'))); },
+		save: function () { return null; }
+	});
+
+	function cardCountBlock(name, title, icon, description, maximum) {
+		blocks.registerBlockType(name, {
+			title: title,
+			icon: icon,
+			category: 'widgets',
+			edit: function (props) {
+				return el('div', { className: 'adam-block-placeholder' },
+					el('strong', {}, title),
+					el('p', {}, description),
+					el(RangeControl, { label: i18n.__('Número de cartões', 'adam-comunidade'), min: 1, max: maximum, value: props.attributes.number, onChange: function (value) { props.setAttributes({ number: value }); } })
+				);
+			},
+			save: function () { return null; }
+		});
+	}
+
+	cardCountBlock('adam-comunidade/recent-records', i18n.__('Registos recentes da Comunidade', 'adam-comunidade'), 'clock', i18n.__('Apresenta os registos mais recentes de cada diretório.', 'adam-comunidade'), 6);
+	cardCountBlock('adam-comunidade/newest-teams', i18n.__('Equipas recentes', 'adam-comunidade'), 'groups', i18n.__('Apresenta as equipas publicadas mais recentemente.', 'adam-comunidade'), 24);
+	cardCountBlock('adam-comunidade/featured-fields', i18n.__('Campos destacados', 'adam-comunidade'), 'location', i18n.__('Apresenta apenas campos assinalados como destaque.', 'adam-comunidade'), 24);
+
 	blocks.registerBlockType('adam-comunidade/latest-news', {
 		title: i18n.__('Notícias recentes da ADAM', 'adam-comunidade'),
 		icon: 'megaphone',

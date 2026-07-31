@@ -15,7 +15,7 @@ use ADAM\Comunidade\Admin\Router as Admin_Router;
  * Stores, resolves, recovers and updates module pages exclusively by post ID.
  */
 final class Managed_Pages {
-	private const VERSION = '1.5.0';
+	private const VERSION = '1.6.0';
 	private const META_KEY = '_adam_comunidade_managed_module';
 	private static bool $synchronizing = false;
 	private bool $managed_page_deleting = false;
@@ -148,6 +148,7 @@ final class Managed_Pages {
 		foreach ( array_keys( self::definitions() ) as $module ) {
 			self::ensure( $module );
 		}
+		self::install_community_landing();
 		update_option( 'adam_comunidade_managed_pages_version', self::VERSION, false );
 		self::$synchronizing = false;
 	}
@@ -455,12 +456,73 @@ final class Managed_Pages {
 	 */
 	public function editor_notice(): void {
 		$page_id = absint( $_GET['post'] ?? 0 );
-		if ( ! $page_id || ! self::module_for_id( $page_id ) ) {
+		$module  = $page_id ? self::module_for_id( $page_id ) : '';
+		if ( ! $module ) {
+			return;
+		}
+		if ( 'community' === $module ) {
+			echo '<div class="notice notice-success"><p>'
+				. esc_html__( 'Esta landing page é totalmente editável. Pode alterar, mover ou remover os blocos e inserir os componentes dinâmicos da Comunidade onde quiser.', 'adam-comunidade' )
+				. '</p></div>';
 			return;
 		}
 		echo '<div class="notice notice-info"><p>'
 			. esc_html__( 'Esta página é gerida pelo ADAM Comunidade. O conteúdo é gerado automaticamente.', 'adam-comunidade' )
 			. '</p></div>';
+	}
+
+	/**
+	 * Adds the editable starter composition only to a blank Community page.
+	 *
+	 * Existing editorial content is never replaced during upgrades.
+	 */
+	private static function install_community_landing(): void {
+		$page_id = self::id( 'community', true );
+		$page    = $page_id ? get_post( $page_id ) : null;
+		if ( ! $page || '' !== trim( (string) $page->post_content ) ) {
+			return;
+		}
+
+		$urls = array(
+			'hero'             => defined( 'ADAM_COMUNIDADE_URL' ) ? ADAM_COMUNIDADE_URL . 'assets/images/community-hero.webp' : '',
+			'teams'            => self::url( 'teams' ),
+			'fields'           => self::url( 'fields' ),
+			'partners'         => self::url( 'partners' ),
+			'institutions'     => self::url( 'institutions' ),
+			'add_team'         => home_url( '/submeter-equipa/' ),
+			'add_field'        => home_url( '/submeter-campo/' ),
+			'add_partner'      => home_url( '/submeter-parceiro/' ),
+			'add_institution'  => home_url( '/submeter-instituicao/' ),
+		);
+
+		$content = self::community_landing_content( $urls );
+		wp_update_post( array( 'ID' => $page_id, 'post_content' => $content ) );
+	}
+
+	/**
+	 * Returns a native Gutenberg composition whose copy, media and order remain editable.
+	 *
+	 * @param array<string,string> $urls Landing destinations.
+	 */
+	private static function community_landing_content( array $urls ): string {
+		$button = static function ( string $label, string $url, bool $outline = false ): string {
+			$class   = $outline ? ' is-style-outline' : '';
+			$opening = $outline ? '<!-- wp:button {"className":"is-style-outline"} -->' : '<!-- wp:button -->';
+			return $opening . '<div class="wp-block-button' . $class . '"><a class="wp-block-button__link wp-element-button" href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></div><!-- /wp:button -->';
+		};
+		$buttons = static fn( string $view_label, string $view_url, string $add_label, string $add_url ): string => '<!-- wp:buttons --><div class="wp-block-buttons">' . $button( $view_label, $view_url ) . $button( $add_label, $add_url, true ) . '</div><!-- /wp:buttons -->';
+
+		$hero = '<!-- wp:cover {"url":"' . esc_url( $urls['hero'] ) . '","dimRatio":70,"minHeight":680,"minHeightUnit":"px","align":"full","className":"adam-community-landing__hero"} --><div class="wp-block-cover alignfull adam-community-landing__hero" style="min-height:680px"><span aria-hidden="true" class="wp-block-cover__background has-background-dim-70 has-background-dim"></span><img class="wp-block-cover__image-background" alt="" src="' . esc_url( $urls['hero'] ) . '" data-object-fit="cover"/><div class="wp-block-cover__inner-container"><!-- wp:group {"layout":{"type":"constrained"}} --><div class="wp-block-group"><!-- wp:paragraph {"className":"adam-community-landing__eyebrow"} --><p class="adam-community-landing__eyebrow">ADAM Comunidade</p><!-- /wp:paragraph --><!-- wp:heading {"level":1} --><h1 class="wp-block-heading">A comunidade constrói-se com todos.</h1><!-- /wp:heading --><!-- wp:paragraph {"fontSize":"large"} --><p class="has-large-font-size">Um ponto de encontro público para descobrir quem faz parte do airsoft, dar visibilidade a projetos locais e aproximar pessoas, espaços e organizações.</p><!-- /wp:paragraph -->' . $buttons( 'Explorar a comunidade', $urls['teams'], 'Adicionar o meu projeto', $urls['add_team'] ) . '</div><!-- /wp:group --></div></div><!-- /wp:cover -->';
+
+		$teams = '<!-- wp:group {"align":"full","className":"adam-community-landing__section adam-community-landing__section--teams","layout":{"type":"constrained"}} --><div class="wp-block-group alignfull adam-community-landing__section adam-community-landing__section--teams"><!-- wp:columns {"verticalAlignment":"center"} --><div class="wp-block-columns are-vertically-aligned-center"><!-- wp:column {"verticalAlignment":"center"} --><div class="wp-block-column is-vertically-aligned-center"><!-- wp:paragraph {"className":"adam-community-landing__eyebrow"} --><p class="adam-community-landing__eyebrow">01 · Equipas</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class="wp-block-heading">Todas as equipas têm lugar</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Grandes ou pequenas, recentes ou experientes, competitivas ou descontraídas: queremos mostrar a diversidade de formas de viver o airsoft e facilitar novas ligações.</p><!-- /wp:paragraph -->' . $buttons( 'Ver equipas', $urls['teams'], 'Adicionar equipa', $urls['add_team'] ) . '</div><!-- /wp:column --><!-- wp:column {"verticalAlignment":"center","className":"adam-community-landing__visual"} --><div class="wp-block-column is-vertically-aligned-center adam-community-landing__visual"><!-- wp:heading {"level":3} --><h3 class="wp-block-heading">Diferentes dimensões.<br>Diferentes estilos.<br>A mesma comunidade.</h3><!-- /wp:heading --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->';
+
+		$fields = '<!-- wp:group {"align":"full","className":"adam-community-landing__section adam-community-landing__section--fields","layout":{"type":"constrained"}} --><div class="wp-block-group alignfull adam-community-landing__section adam-community-landing__section--fields"><!-- wp:columns {"verticalAlignment":"center"} --><div class="wp-block-columns are-vertically-aligned-center"><!-- wp:column {"verticalAlignment":"center","className":"adam-community-landing__visual"} --><div class="wp-block-column is-vertically-aligned-center adam-community-landing__visual"><!-- wp:heading {"level":3} --><h3 class="wp-block-heading">Espaços que dão vida à modalidade.</h3><!-- /wp:heading --></div><!-- /wp:column --><!-- wp:column {"verticalAlignment":"center"} --><div class="wp-block-column is-vertically-aligned-center"><!-- wp:paragraph {"className":"adam-community-landing__eyebrow"} --><p class="adam-community-landing__eyebrow">02 · Campos</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class="wp-block-heading">Dar visibilidade a cada campo</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Mapeamos os espaços onde se pratica airsoft para ajudar jogadores e equipas a descobrir locais, conhecer condições e preparar novas experiências.</p><!-- /wp:paragraph -->' . $buttons( 'Ver campos', $urls['fields'], 'Adicionar campo', $urls['add_field'] ) . '</div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->';
+
+		$network = '<!-- wp:group {"align":"full","className":"adam-community-landing__section adam-community-landing__section--network","layout":{"type":"constrained"}} --><div class="wp-block-group alignfull adam-community-landing__section adam-community-landing__section--network"><!-- wp:paragraph {"align":"center","className":"adam-community-landing__eyebrow"} --><p class="has-text-align-center adam-community-landing__eyebrow">Uma rede que cresce em conjunto</p><!-- /wp:paragraph --><!-- wp:heading {"textAlign":"center"} --><h2 class="wp-block-heading has-text-align-center">Parceiros e instituições</h2><!-- /wp:heading --><!-- wp:columns --><div class="wp-block-columns"><!-- wp:column {"className":"adam-community-landing__card"} --><div class="wp-block-column adam-community-landing__card"><!-- wp:heading {"level":3} --><h3 class="wp-block-heading">Parceiros</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Projetos, lojas, marcas e serviços que apoiam a comunidade e contribuem para uma prática mais informada e sustentável.</p><!-- /wp:paragraph -->' . $buttons( 'Ver parceiros', $urls['partners'], 'Adicionar parceiro', $urls['add_partner'] ) . '</div><!-- /wp:column --><!-- wp:column {"className":"adam-community-landing__card"} --><div class="wp-block-column adam-community-landing__card"><!-- wp:heading {"level":3} --><h3 class="wp-block-heading">Instituições</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Associações, entidades públicas e organizações que ajudam a criar pontes, contexto e reconhecimento para a modalidade.</p><!-- /wp:paragraph -->' . $buttons( 'Ver instituições', $urls['institutions'], 'Adicionar instituição', $urls['add_institution'] ) . '</div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->';
+
+		$cta = '<!-- wp:group {"align":"full","className":"adam-community-landing__cta","layout":{"type":"constrained"}} --><div class="wp-block-group alignfull adam-community-landing__cta"><!-- wp:heading {"textAlign":"center"} --><h2 class="wp-block-heading has-text-align-center">A sua participação torna este mapa mais completo.</h2><!-- /wp:heading --><!-- wp:paragraph {"align":"center"} --><p class="has-text-align-center">Partilhe uma equipa, um campo ou uma organização. Todas as submissões são revistas pela ADAM antes da publicação.</p><!-- /wp:paragraph --><!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --><div class="wp-block-buttons">' . $button( 'Adicionar equipa', $urls['add_team'] ) . $button( 'Adicionar campo', $urls['add_field'], true ) . '</div><!-- /wp:buttons --></div><!-- /wp:group -->';
+
+		return '<!-- wp:group {"align":"full","className":"adam-community-landing","layout":{"type":"default"}} --><div class="wp-block-group alignfull adam-community-landing">' . $hero . $teams . $fields . $network . $cta . '</div><!-- /wp:group -->';
 	}
 
 	/**

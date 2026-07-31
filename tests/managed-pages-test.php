@@ -67,6 +67,14 @@ function home_url( string $path = '' ): string {
 	return 'https://example.test/' . ltrim( $path, '/' );
 }
 
+function esc_url( string $url ): string {
+	return $url;
+}
+
+function esc_html( string $text ): string {
+	return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+}
+
 function wp_insert_post( array $data, bool $wp_error = false ): int {
 	unset( $wp_error );
 	$id = ++$GLOBALS['adam_next_id'];
@@ -169,6 +177,11 @@ assert( 9 === count( $protected_page_ids ), 'Not every managed Community page wa
 
 $settings = get_option( Settings::OPTION_NAME, array() );
 assert( 9 === count( $GLOBALS['adam_posts'] ), 'Activation must create nine managed pages.' );
+$community_id = Managed_Pages::id( 'community' );
+assert( str_contains( $GLOBALS['adam_posts'][ $community_id ]->post_content, 'adam-community-landing' ), 'The blank Community page did not receive the editable starter composition.' );
+$GLOBALS['adam_posts'][ $community_id ]->post_content = '<!-- wp:paragraph --><p>Conteúdo editorial</p><!-- /wp:paragraph -->';
+Managed_Pages::activate();
+assert( '<!-- wp:paragraph --><p>Conteúdo editorial</p><!-- /wp:paragraph -->' === $GLOBALS['adam_posts'][ $community_id ]->post_content, 'Activation replaced existing Community page content.' );
 foreach ( Managed_Pages::definitions() as $module => $definition ) {
 	$page_id = absint( $settings[ $definition['option'] ] ?? 0 );
 	assert( $page_id > 0, 'Missing stored Page ID for ' . $module );

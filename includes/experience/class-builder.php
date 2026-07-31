@@ -23,6 +23,8 @@ final class Builder {
 
 	public function shortcode(): void {
 		add_shortcode( 'adam_community_home', fn(): string => $this->render() );
+		add_shortcode( 'adam_community_search', static fn(): string => self::search_form() );
+		add_shortcode( 'adam_recent_records', static fn( array $attributes = array() ): string => self::recent_records( absint( $attributes['number'] ?? 3 ) ) );
 	}
 
 	public function render(): string {
@@ -61,6 +63,18 @@ final class Builder {
 
 	public static function search_form(): string {
 		return '<section class="adam-universal-search"><label for="adam-universal-query">' . esc_html__( 'Pesquisar na comunidade', 'adam-comunidade' ) . '</label><div><input id="adam-universal-query" type="search" data-adam-universal-query placeholder="' . esc_attr__( 'Equipas, campos, parceiros, notícias…', 'adam-comunidade' ) . '"><button class="adam-community-button" type="button" data-adam-universal-submit>' . esc_html__( 'Pesquisar', 'adam-comunidade' ) . '</button></div><div data-adam-universal-results aria-live="polite"></div></section>';
+	}
+
+	/**
+	 * Renders the newest published records from every public directory.
+	 */
+	public static function recent_records( int $number = 3 ): string {
+		$number = max( 1, min( 6, $number ) );
+		$output = '<div class="adam-recent-records">';
+		foreach ( array( 'teams', 'fields', 'partners', 'institutions' ) as $type ) {
+			$output .= do_shortcode( sprintf( '[adam_community_section type="%s" number="%d" order="newest"]', $type, $number ) );
+		}
+		return $output . '</div>';
 	}
 
 	public static function news_cards( int $number = 6 ): string {

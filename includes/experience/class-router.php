@@ -24,6 +24,7 @@ final class Router {
 		add_filter( 'template_include', array( $this, 'template' ), 40 );
 		add_filter( 'pre_get_document_title', array( $this, 'title' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ), 30 );
+		add_action( 'enqueue_block_editor_assets', array( $this, 'editor_assets' ) );
 		add_action( 'wp_ajax_adam_universal_search', array( $this, 'ajax_search' ) );
 		add_action( 'wp_ajax_nopriv_adam_universal_search', array( $this, 'ajax_search' ) );
 		add_action( 'wp_ajax_adam_community_map', array( $this, 'ajax_map' ) );
@@ -63,9 +64,6 @@ final class Router {
 		if ( get_query_var( 'adam_compare' ) ) {
 			return Templates::locate( 'experience/compare.php' );
 		}
-		if ( Managed_Pages::is_current( 'community' ) ) {
-			return Templates::locate( 'experience/community.php' );
-		}
 		if ( get_query_var( 'adam_region' ) ) {
 			return Templates::locate( 'experience/region.php' );
 		}
@@ -89,6 +87,9 @@ final class Router {
 		wp_enqueue_style( 'adam-experience', Helpers::url( 'assets/css/experience.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-experience' ), ADAM_COMUNIDADE_VERSION );
 		wp_enqueue_style( 'adam-comunidade-map', Helpers::url( 'assets/css/community-map.css' ), array( 'adam-comunidade-directory' ), ADAM_COMUNIDADE_VERSION );
+		if ( Managed_Pages::is_current( 'community' ) ) {
+			wp_enqueue_style( 'adam-community-landing', Helpers::url( 'assets/css/community-landing.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
+		}
 		wp_enqueue_script( 'adam-experience', Helpers::url( 'assets/js/experience.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
 		wp_localize_script(
 			'adam-experience',
@@ -100,6 +101,17 @@ final class Router {
 				'groupLabels' => array( 'teams' => __( 'Equipas', 'adam-comunidade' ), 'fields' => __( 'Campos', 'adam-comunidade' ), 'partners' => __( 'Parceiros', 'adam-comunidade' ), 'institutions' => __( 'Instituições', 'adam-comunidade' ), 'news' => __( 'Notícias', 'adam-comunidade' ), 'events' => __( 'Eventos', 'adam-comunidade' ) ),
 			)
 		);
+	}
+
+	/**
+	 * Mirrors the landing styles inside the block editor for the Community page.
+	 */
+	public function editor_assets(): void {
+		$page_id = absint( $_GET['post'] ?? $_POST['post_ID'] ?? 0 );
+		if ( $page_id !== Managed_Pages::id( 'community', true ) ) {
+			return;
+		}
+		wp_enqueue_style( 'adam-community-landing-editor', Helpers::url( 'assets/css/community-landing.css' ), array(), ADAM_COMUNIDADE_VERSION );
 	}
 
 	public function ajax_search(): void {
