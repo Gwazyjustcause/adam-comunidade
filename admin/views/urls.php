@@ -27,6 +27,9 @@ defined( 'ABSPATH' ) || exit;
 					<th><?php esc_html_e( 'Página atual', 'adam-comunidade' ); ?></th>
 					<th><?php esc_html_e( 'Endereço atual', 'adam-comunidade' ); ?></th>
 					<th><?php esc_html_e( 'Slug', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'ID', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Estado', 'adam-comunidade' ); ?></th>
+					<th><?php esc_html_e( 'Página Protegida', 'adam-comunidade' ); ?></th>
 					<th><?php esc_html_e( 'Pré-visualizar', 'adam-comunidade' ); ?></th>
 					<th><?php esc_html_e( 'Página', 'adam-comunidade' ); ?></th>
 				</tr>
@@ -46,10 +49,15 @@ defined( 'ABSPATH' ) || exit;
 						</td>
 						<td><?php if ( $row['url'] ) : ?><a href="<?php echo esc_url( $row['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $row['url'] ); ?></a><?php else : ?>—<?php endif; ?></td>
 						<td><input type="text" name="slugs[<?php echo esc_attr( $module ); ?>]" value="<?php echo esc_attr( $page ? $page->post_name : '' ); ?>" <?php disabled( ! $row['url'] ); ?>></td>
+						<td><?php echo $row['id'] ? esc_html( (string) $row['id'] ) : '—'; ?></td>
+						<td><?php if ( $row['url'] ) : ?><span class="adam-badge adam-badge-success"><?php esc_html_e( 'Existe', 'adam-comunidade' ); ?></span><?php else : ?><span class="adam-badge adam-badge-warning"><?php esc_html_e( 'Em falta', 'adam-comunidade' ); ?></span><?php endif; ?></td>
+						<td><label><input type="checkbox" name="protected[<?php echo esc_attr( $module ); ?>]" value="1" <?php checked( ! empty( $row['protected'] ) ); ?> <?php disabled( ! $row['url'] ); ?>> <?php esc_html_e( 'Ativa', 'adam-comunidade' ); ?></label></td>
 						<td><?php if ( $row['url'] ) : ?><a href="<?php echo esc_url( $row['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( '/' . $page->post_name ); ?></a><?php else : ?>—<?php endif; ?></td>
 						<td>
-							<?php if ( $page ) : ?>
+							<?php if ( $row['url'] ) : ?>
 								<a class="button" href="<?php echo esc_url( get_edit_post_link( $row['id'], 'raw' ) ); ?>"><?php esc_html_e( 'Editar página', 'adam-comunidade' ); ?></a>
+							<?php else : ?>
+								<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'adam_comunidade_recover_page', 'module' => $module ), admin_url( 'admin-post.php' ) ), 'adam_comunidade_recover_page_' . $module ) ); ?>"><?php esc_html_e( 'Recriar página', 'adam-comunidade' ); ?></a>
 							<?php endif; ?>
 						</td>
 					</tr>

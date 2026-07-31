@@ -36,6 +36,10 @@ final class Managed_Pages {
 		add_filter( 'redirect_canonical', array( $this, 'preserve_child_routes' ) );
 		add_action( 'template_redirect', array( $this, 'redirect_legacy_brands_page' ) );
 
+		if ( function_exists( 'adam_ui_register_system_pages' ) ) {
+			adam_ui_register_system_pages( 'adam-comunidade', array( $this, 'protection_definitions' ) );
+		}
+
 		if ( is_admin() ) {
 			Admin_Router::register_page(
 				'urls',
@@ -300,6 +304,7 @@ final class Managed_Pages {
 				'id'         => $page_id,
 				'page'       => $page,
 				'url'        => $page && 'trash' !== $page->post_status ? get_permalink( $page_id ) : '',
+				'protected'  => $page_id && function_exists( 'adam_ui_is_system_page_protected' ) ? adam_ui_is_system_page_protected( $page_id ) : false,
 			);
 		}
 		require Helpers::path( 'admin/views/urls.php' );
@@ -315,6 +320,7 @@ final class Managed_Pages {
 		check_admin_referer( 'adam_comunidade_save_urls' );
 		$slugs    = isset( $_POST['slugs'] ) && is_array( $_POST['slugs'] ) ? wp_unslash( $_POST['slugs'] ) : array();
 		$page_ids = isset( $_POST['page_ids'] ) && is_array( $_POST['page_ids'] ) ? wp_unslash( $_POST['page_ids'] ) : array();
+		$protected = isset( $_POST['protected'] ) && is_array( $_POST['protected'] ) ? wp_unslash( $_POST['protected'] ) : array();
 		$settings = wp_parse_args( get_option( Settings::OPTION_NAME, array() ), Settings::defaults() );
 		$changed  = false;
 		$requested_ids = array_filter( array_map( 'absint', $page_ids ) );
@@ -350,6 +356,14 @@ final class Managed_Pages {
 			}
 		}
 		update_option( Settings::OPTION_NAME, $settings, false );
+		if ( function_exists( 'adam_ui_set_system_page_protected' ) ) {
+			foreach ( array_keys( self::definitions() ) as $module ) {
+				$page_id = self::id( $module );
+				if ( $page_id ) {
+					adam_ui_set_system_page_protected( $page_id, ! empty( $protected[ $module ] ) );
+				}
+			}
+		}
 		self::$synchronizing = false;
 
 		if ( $changed ) {
@@ -358,6 +372,29 @@ final class Managed_Pages {
 		}
 		wp_safe_redirect( Admin_Router::page_url( 'urls' ) );
 		exit;
+	}
+
+	/**
+	 * Registers managed page IDs and explicit token-entry journeys with ADAM UI.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function protection_definitions(): array {
+		$token_pages = array(
+			'manager_activation' => static fn (): bool => ! empty( $_GET['convite'] ) || (string) get_query_var( 'adam_manager_token' ) !== '',
+			'manager_recovery'   => static fn (): bool => ! empty( $_GET['codigo'] ),
+		);
+		$pages = array();
+		foreach ( array_keys( self::definitions() ) as $module ) {
+			$page_id = self::id( $module );
+			if ( $page_id ) {
+				$pages[] = array(
+					'id'           => $page_id,
+					'allow_access' => $token_pages[ $module ] ?? null,
+				);
+			}
+		}
+		return $pages;
 	}
 
 	/**

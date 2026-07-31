@@ -193,6 +193,10 @@ assert( isset( $GLOBALS['adam_rules']['^clubes/([^/]+)/?$'] ), 'Changing the Wor
 assert( 'Equipas Associadas Renomeadas' === $GLOBALS['adam_posts'][ $teams_id ]->post_title, 'Routing changed the editable page title.' );
 
 $source = (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-managed-pages.php' );
+$view   = (string) file_get_contents( dirname( __DIR__ ) . '/admin/views/urls.php' );
+assert( str_contains( $source, "adam_ui_register_system_pages( 'adam-comunidade'" ), 'Managed Community pages are not registered with shared protection.' );
+assert( str_contains( $source, 'protection_definitions' ), 'Protected token journeys are not defined.' );
+assert( str_contains( $view, 'Página Protegida' ) && str_contains( $view, 'Recriar página' ), 'Endereços is missing protection or recovery controls.' );
 assert( ! str_contains( $source, 'get_page_by_title' ) );
 assert( ! str_contains( $source, 'get_page_by_path' ) );
 
