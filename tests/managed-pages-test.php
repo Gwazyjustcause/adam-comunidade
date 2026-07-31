@@ -7,11 +7,12 @@ declare(strict_types=1);
 
 define( 'ABSPATH', __DIR__ );
 
-$GLOBALS['adam_options'] = array();
-$GLOBALS['adam_posts']   = array();
-$GLOBALS['adam_meta']    = array();
-$GLOBALS['adam_rules']   = array();
-$GLOBALS['adam_next_id'] = 100;
+$GLOBALS['adam_options']               = array();
+$GLOBALS['adam_posts']                 = array();
+$GLOBALS['adam_meta']                  = array();
+$GLOBALS['adam_rules']                 = array();
+$GLOBALS['adam_next_id']               = 100;
+$GLOBALS['adam_system_page_providers'] = array();
 
 function __( string $text, string $domain = '' ): string {
 	unset( $domain );
@@ -131,6 +132,24 @@ function apply_filters( string $hook, mixed $value ): mixed {
 	return $value;
 }
 
+function adam_ui_register_system_pages( string $provider, callable $resolver ): bool {
+	$GLOBALS['adam_system_page_providers'][ $provider ] = $resolver;
+	return true;
+}
+
+function adam_ui_is_system_page_protected( int $page_id ): bool {
+	return '1' === (string) ( $GLOBALS['adam_meta'][ $page_id ]['_adam_system_page_protected'] ?? '' );
+}
+
+function adam_ui_set_system_page_protected( int $page_id, bool $protected ): bool {
+	if ( $protected ) {
+		$GLOBALS['adam_meta'][ $page_id ]['_adam_system_page_protected'] = '1';
+	} else {
+		unset( $GLOBALS['adam_meta'][ $page_id ]['_adam_system_page_protected'] );
+	}
+	return true;
+}
+
 require dirname( __DIR__ ) . '/includes/class-settings.php';
 require dirname( __DIR__ ) . '/includes/class-managed-pages.php';
 require dirname( __DIR__ ) . '/includes/teams/class-router.php';
@@ -140,6 +159,13 @@ use ADAM\Comunidade\Settings;
 use ADAM\Comunidade\Teams\Router as Team_Router;
 
 Managed_Pages::activate();
+
+$managed_pages = new Managed_Pages();
+$managed_pages->register();
+$protection_resolver = $GLOBALS['adam_system_page_providers']['adam-comunidade'] ?? null;
+assert( is_callable( $protection_resolver ), 'Community pages were not registered with the shared protection service.' );
+$protected_page_ids = array_column( $protection_resolver(), 'id' );
+assert( 9 === count( $protected_page_ids ), 'Not every managed Community page was registered for protection.' );
 
 $settings = get_option( Settings::OPTION_NAME, array() );
 assert( 9 === count( $GLOBALS['adam_posts'] ), 'Activation must create nine managed pages.' );
@@ -179,6 +205,11 @@ unset( $GLOBALS['adam_posts'][ $teams_id ], $GLOBALS['adam_meta'][ $teams_id ] )
 $recreated_id = $ensure->invoke( null, 'teams', true );
 assert( $recreated_id !== $teams_id, 'Permanent deletion did not recreate the page.' );
 assert( 9 === count( $GLOBALS['adam_posts'] ), 'Permanent-deletion recovery created duplicates.' );
+$protected_page_ids = array_column( $protection_resolver(), 'id' );
+assert( in_array( $recreated_id, $protected_page_ids, true ), 'A recreated page was not registered for protection.' );
+assert( ! in_array( $teams_id, $protected_page_ids, true ), 'The deleted page remained registered for protection.' );
+adam_ui_set_system_page_protected( $recreated_id, true );
+assert( adam_ui_is_system_page_protected( $recreated_id ), 'Protection could not be stored for a recreated page.' );
 $teams_id = $recreated_id;
 $GLOBALS['adam_posts'][ $teams_id ]->post_title = 'Equipas Associadas Renomeadas';
 
