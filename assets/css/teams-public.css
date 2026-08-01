@@ -221,7 +221,11 @@
 }
 
 .adam-team-card__meta {
+	align-items: center;
 	border-top: 1px solid #f1f5f9;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 10px;
 	margin-top: 16px;
 	padding-top: 13px;
 }
@@ -338,19 +342,27 @@
 .adam-team-hero__meta {
 	align-items: center;
 	display: flex;
+	flex-wrap: wrap;
 	gap: 12px;
 }
 
 .adam-recruitment {
 	background: #334155;
 	border-radius: 999px;
+	color: #fff;
+	display: inline-flex;
 	font-size: 0.72rem;
 	font-weight: 700;
+	line-height: 1.35;
 	padding: 4px 9px;
 }
 
+.adam-recruitment--recruiting,
 .adam-recruitment--open { background: #15803d; }
-.adam-recruitment--invite_only { background: #b45309; }
+.adam-recruitment--limited,
+.adam-recruitment--invite_only { background: #2563eb; }
+.adam-recruitment--not_recruiting,
+.adam-recruitment--closed { background: #334155; }
 
 .adam-team-content {
 	display: grid;

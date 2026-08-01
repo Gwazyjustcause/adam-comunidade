@@ -12,7 +12,8 @@ use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Router;
 use ADAM\Comunidade\Teams\View;
 
-$adam_card_styles = Options::decode_list( $team->playing_styles );
+$adam_card_styles       = Options::decode_list( $team->playing_styles );
+$adam_recruitment_status = Options::normalize_recruitment_status( $team->recruitment_status ?? '' );
 ?>
 <article class="adam-team-card adam-directory-card<?php echo ! empty( $team->is_associated ) ? ' adam-team-card--associated' : ''; ?>">
 	<a class="adam-team-card__media" href="<?php echo esc_url( Router::team_url( $team ) ); ?>" tabindex="-1" aria-hidden="true">
@@ -41,8 +42,7 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 		</div>
 		<div class="adam-team-card__meta">
 			<?php if ( $team->members ) : ?><span><?php echo esc_html( sprintf( _n( '%d membro', '%d membros', (int) $team->members, 'adam-comunidade' ), (int) $team->members ) ); ?></span><?php endif; ?>
-			<?php $recruitment_status = Options::normalize_recruitment_status( $team->recruitment_status ?? '' ); ?>
-			<?php if ( $recruitment_status ) : ?><span><?php echo esc_html( View::label( $recruitment_status, Options::recruitment_statuses() ) ); ?></span><?php endif; ?>
+			<?php if ( $adam_recruitment_status ) : ?><span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_recruitment_status ); ?>"><?php echo esc_html( View::label( $adam_recruitment_status, Options::recruitment_statuses() ) ); ?></span><?php endif; ?>
 		</div>
 		<?php if ( $adam_card_styles ) : ?>
 			<div class="adam-team-badges">
