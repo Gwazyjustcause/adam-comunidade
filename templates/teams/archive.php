@@ -162,12 +162,17 @@ get_header();
 			<?php else : ?>
 				<div class="adam-comunidade__empty adam-teams-empty adam-directory-empty">
 					<h2><?php esc_html_e( 'Ainda não existem equipas publicadas.', 'adam-comunidade' ); ?></h2>
-					<p><?php esc_html_e( 'Conhece uma equipa do Centro de Portugal? Ajude-nos a construir este diretório.', 'adam-comunidade' ); ?></p>
-					<a class="adam-team-button adam-directory-button" href="<?php echo esc_url( Portal::submission_url( 'team' ) ); ?>"><?php esc_html_e( 'Submeter uma Equipa', 'adam-comunidade' ); ?></a>
 				</div>
 			<?php endif; ?>
 		</div>
 		<div class="adam-directory-pagination" id="adam-team-pagination"><?php echo View::pagination( $adam_page, $adam_result['pages'], array_filter( array( 'search' => $adam_search, 'district' => $adam_district, 'municipality' => $adam_municipality, 'playing_style' => $adam_playing_style, 'recruitment' => $adam_recruitment, 'association' => $adam_association, 'sort' => $adam_sort ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+
+		<section class="adam-directory-submission-cta" data-adam-submission-cta>
+			<span><?php esc_html_e( 'Diretório colaborativo', 'adam-comunidade' ); ?></span>
+			<h2><?php esc_html_e( 'Queres adicionar a tua equipa?', 'adam-comunidade' ); ?></h2>
+			<p><?php esc_html_e( 'Partilha os dados da tua equipa com a comunidade. Todas as submissões são revistas pela ADAM antes da publicação.', 'adam-comunidade' ); ?></p>
+			<a class="adam-team-button adam-directory-button" href="<?php echo esc_url( Portal::submission_url( 'team' ) ); ?>"><?php esc_html_e( 'Submeter uma Equipa', 'adam-comunidade' ); ?></a>
+		</section>
 	</div>
 </main>
 <?php

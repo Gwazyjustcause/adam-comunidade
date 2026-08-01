@@ -12,6 +12,7 @@ use ADAM\Comunidade\Directory\Repository;
 use ADAM\Comunidade\Directory\Router;
 use ADAM\Comunidade\Directory\Types;
 use ADAM\Comunidade\Directory\View;
+use ADAM\Comunidade\Experience\Portal;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
@@ -29,6 +30,17 @@ $sorts      = array( 'alphabetical' => array( 'name', 'ASC' ), 'newest' => array
 $selected_sort = $sorts[ $sort ] ?? $sorts['alphabetical'];
 $result     = $repository->query( $type, array( 'status' => 'published', 'search' => $search, 'district' => $district, 'category' => $category, 'featured' => $featured, 'orderby' => $selected_sort[0], 'order' => $selected_sort[1], 'page' => $page, 'per_page' => Config::PUBLIC_PAGE_SIZE ) );
 $directory_title = get_the_title( Managed_Pages::id( (string) $definition['module_id'] ) ) ?: (string) $definition['plural'];
+$submission_copy = 'institution' === $type
+	? array(
+		'title'  => __( 'Queres adicionar uma instituição?', 'adam-comunidade' ),
+		'text'   => __( 'Partilha uma instituição relevante para a comunidade. Todas as submissões são revistas pela ADAM antes da publicação.', 'adam-comunidade' ),
+		'button' => __( 'Submeter uma Instituição', 'adam-comunidade' ),
+	)
+	: array(
+		'title'  => __( 'Queres adicionar o teu parceiro?', 'adam-comunidade' ),
+		'text'   => __( 'Partilha um parceiro que apoia a comunidade. Todas as submissões são revistas pela ADAM antes da publicação.', 'adam-comunidade' ),
+		'button' => __( 'Submeter um Parceiro', 'adam-comunidade' ),
+	);
 
 get_header();
 ?>
@@ -58,6 +70,13 @@ get_header();
 			<?php else : ?><div class="adam-comunidade__empty"><?php esc_html_e( 'Ainda não existe conteúdo publicado.', 'adam-comunidade' ); ?></div><?php endif; ?>
 		</div>
 		<div data-directory-pagination><?php echo View::pagination( $page, $result['pages'], array_filter( array( 'search' => $search, 'district' => $district, 'category' => $category, 'featured' => $featured, 'sort' => $sort ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+
+		<section class="adam-directory-submission-cta" data-adam-submission-cta>
+			<span><?php esc_html_e( 'Diretório colaborativo', 'adam-comunidade' ); ?></span>
+			<h2><?php echo esc_html( $submission_copy['title'] ); ?></h2>
+			<p><?php echo esc_html( $submission_copy['text'] ); ?></p>
+			<a class="adam-community-button" href="<?php echo esc_url( Portal::submission_url( $type ) ); ?>"><?php echo esc_html( $submission_copy['button'] ); ?></a>
+		</section>
 	</div>
 </main>
 <?php get_footer(); ?>

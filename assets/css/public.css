@@ -888,3 +888,32 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.adam-directory-submission-cta {
+	background: #fff;
+	border: 1px solid #dfe3d9;
+	border-radius: 12px;
+	margin-top: 58px;
+	padding: clamp(24px, 4vw, 40px);
+}
+
+.adam-directory-submission-cta > span {
+	color: var(--adam-primary, #607608);
+	font-size: .76rem;
+	font-weight: 800;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+.adam-directory-submission-cta h2 {
+	font-size: clamp(1.55rem, 3vw, 2.1rem);
+	margin: 7px 0;
+}
+
+.adam-directory-submission-cta p {
+	max-width: 720px;
+}
+
+.adam-directory-submission-cta > a:last-child {
+	margin-top: 12px;
+}

@@ -148,7 +148,7 @@ get_header();
 		</div>
 		<div class="adam-directory-pagination" id="adam-field-pagination"><?php echo View::pagination( $query_page, $result['pages'], array_filter( array( 'search' => $query_search, 'district' => $query_district, 'municipality' => $query_municipality, 'playing_style' => $query_style, 'amenity_id' => $query_amenity, 'associated' => $query_associated, 'sort' => $query_sort ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
 
-		<section class="adam-field-submission-cta">
+		<section class="adam-directory-submission-cta adam-field-submission-cta" data-adam-submission-cta>
 			<div>
 				<span><?php esc_html_e( 'Diretório colaborativo', 'adam-comunidade' ); ?></span>
 				<h2><?php esc_html_e( 'Queres que o teu campo apareça aqui?', 'adam-comunidade' ); ?></h2>
