@@ -113,7 +113,7 @@
 	aspect-ratio: 1;
 	box-sizing: border-box;
 	height: auto;
-	padding: 10px;
+	padding: 0;
 }
 
 .adam-upload--team-logo .adam-upload__preview img {

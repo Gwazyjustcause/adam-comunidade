@@ -30,8 +30,15 @@ foreach ( array( $public_css, $admin_css ) as $css ) {
 	$assert( str_contains( $css, '.adam-team-logo {' ), 'The fixed square team-logo frame is missing.' );
 	$assert( str_contains( $css, 'aspect-ratio: 1' ), 'The team-logo frame must remain square.' );
 	$assert( str_contains( $css, 'object-fit: contain' ) && str_contains( $css, 'object-position: center' ), 'Team logos must be contained and centered.' );
+	$assert( str_contains( $css, 'padding: 0' ) && str_contains( $css, 'border: 0' ), 'The shared logo frame must not shrink square images with artificial padding or borders.' );
 }
 $assert( str_contains( $upload_css, '.adam-upload--team-logo .adam-upload__preview' ) && str_contains( $upload_css, 'object-fit: contain' ), 'Team logo upload previews must use the same contained square behavior.' );
+$assert( preg_match( '/\.adam-upload--team-logo \.adam-upload__preview\s*\{[^}]*padding:\s*0/s', $upload_css ), 'Team logo upload previews must not inset square images.' );
+
+$variant_css = implode( "\n", array( $read( 'assets/css/teams-public.css' ), $read( 'assets/css/teams-admin.css' ), $read( 'assets/css/fields-public.css' ), $read( 'assets/css/directory-public.css' ) ) );
+foreach ( array( 'adam-team-card__logo', 'adam-team-hero__logo', 'adam-team-table-logo', 'adam-associated-team-card__logo', 'adam-community-card__team-logo' ) as $selector ) {
+	$assert( ! preg_match( '/\.' . preg_quote( $selector, '/' ) . '\s*\{[^}]*(?:padding:\s*[1-9]|border:\s*[1-9])/s', $variant_css ), $selector . ' must not add an inset around square logos.' );
+}
 
 $call_sites = array(
 	'templates/teams/card.php'                       => 'View::logo(',

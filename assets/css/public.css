@@ -590,7 +590,6 @@
 .adam-team-logo.adam-manager-current-image__logo {
 	--adam-team-logo-size: 72px;
 	border-radius: 7px;
-	padding: 6px;
 }
 
 .adam-manager-current-image__logo > img {
@@ -910,13 +909,14 @@ body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
 	align-items: center;
 	aspect-ratio: 1;
 	background: #fff;
+	border: 0;
 	box-sizing: border-box;
 	display: inline-flex;
 	flex: 0 0 auto;
 	height: var(--adam-team-logo-size);
 	justify-content: center;
 	overflow: hidden;
-	padding: 7px;
+	padding: 0;
 	width: var(--adam-team-logo-size);
 }
 

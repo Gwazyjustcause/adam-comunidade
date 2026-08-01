@@ -235,7 +235,6 @@
 .adam-team-logo.adam-dashboard-team-logo {
 	--adam-team-logo-size: 38px;
 	border-radius: 7px;
-	padding: 4px;
 }
 
 .adam-dashboard-team-logo > img {
@@ -1513,13 +1512,14 @@
 	align-items: center;
 	aspect-ratio: 1;
 	background: #fff;
+	border: 0;
 	box-sizing: border-box;
 	display: inline-flex;
 	flex: 0 0 auto;
 	height: var(--adam-team-logo-size);
 	justify-content: center;
 	overflow: hidden;
-	padding: 5px;
+	padding: 0;
 	width: var(--adam-team-logo-size);
 }
 

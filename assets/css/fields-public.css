@@ -698,7 +698,6 @@
 	background: #f1f5f9;
 	border-radius: 12px;
 	overflow: hidden;
-	padding: 8px;
 }
 
 .adam-associated-team-card img,
@@ -918,7 +917,7 @@
 		grid-template-columns: 1fr;
 	}
 
-	.adam-associated-team-card__logo { --adam-team-logo-size: 72px; padding: 6px; }
+	.adam-associated-team-card__logo { --adam-team-logo-size: 72px; }
 
 	.adam-field-actions .adam-field-button {
 		min-height: 50px;
