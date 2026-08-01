@@ -118,6 +118,19 @@
 	width: calc(100% + 48px);
 }
 
+.adam-community-card__team-logo {
+	--adam-team-logo-size: 142px;
+	border-radius: 14px;
+	padding: 10px;
+}
+
+.adam-community-card__media .adam-community-card__team-logo .adam-generated-placeholder {
+	height: 100%;
+	margin: 0;
+	object-fit: contain;
+	width: 100%;
+}
+
 .adam-community-card__placeholder {
 	background: var(--adam-community-accent);
 	border-radius: 50%;

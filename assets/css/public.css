@@ -556,6 +556,18 @@
 	width: 90px;
 }
 
+.adam-team-logo.adam-manager-current-image__logo {
+	--adam-team-logo-size: 72px;
+	border-radius: 7px;
+	padding: 6px;
+}
+
+.adam-manager-current-image__logo > img {
+	height: 100%;
+	object-fit: contain;
+	width: 100%;
+}
+
 .adam-manager-current-image label {
 	align-items: center;
 	display: flex;
@@ -861,4 +873,28 @@ body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
 
 .adam-directory-submission-cta > a:last-child {
 	margin-top: 12px;
+}
+.adam-team-logo {
+	--adam-team-logo-size: 72px;
+	align-items: center;
+	aspect-ratio: 1;
+	background: #fff;
+	box-sizing: border-box;
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: var(--adam-team-logo-size);
+	justify-content: center;
+	overflow: hidden;
+	padding: 7px;
+	width: var(--adam-team-logo-size);
+}
+
+.adam-team-logo > :is(.adam-team-logo__image, .adam-generated-placeholder) {
+	display: block;
+	height: 100%;
+	max-height: 100%;
+	max-width: 100%;
+	object-fit: contain;
+	object-position: center;
+	width: 100%;
 }

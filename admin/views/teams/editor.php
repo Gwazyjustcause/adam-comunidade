@@ -104,7 +104,7 @@ if ( $team_id && $adam_slug ) {
 							<div>
 								<h3><?php esc_html_e( 'Logótipo', 'adam-comunidade' ); ?></h3>
 								<p><?php esc_html_e( 'Recomendado: 600×600 px, recorte quadrado.', 'adam-comunidade' ); ?></p>
-								<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[logo_id]', 'items' => $adam_value( 'logo_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'logo_id', 0 ) ) ) : array() ) ); ?>
+								<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[logo_id]', 'class' => 'adam-upload--team-logo', 'items' => $adam_value( 'logo_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'logo_id', 0 ) ) ) : array() ) ); ?>
 							</div>
 							<div>
 								<h3><?php esc_html_e( 'Imagem de capa', 'adam-comunidade' ); ?></h3>

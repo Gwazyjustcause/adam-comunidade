@@ -7,6 +7,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Teams\View as Team_View;
+
 $adam_comunidade_statistics = array(
 	array( 'label' => __( 'Equipas', 'adam-comunidade' ), 'value' => $team_counts['all'] ),
 	array( 'label' => __( 'Publicado', 'adam-comunidade' ), 'value' => $team_counts['published'] ),
@@ -153,7 +155,7 @@ $adam_type_labels = array(
 					<ul class="adam-dashboard-team-list">
 						<?php foreach ( $adam_list_teams as $adam_list_team ) : ?>
 							<li>
-								<?php echo wp_get_attachment_image( (int) $adam_list_team->logo_id, array( 38, 38 ) ); ?>
+								<?php echo Team_View::logo( $adam_list_team, array( 'class' => 'adam-dashboard-team-logo', 'loading' => 'lazy' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								<div>
 									<a href="<?php echo esc_url( \ADAM\Comunidade\Admin\Router::module_url( 'teams', 'edit', array( 'id' => absint( $adam_list_team->id ) ) ) ); ?>">
 										<?php echo esc_html( $adam_list_team->name ); ?>

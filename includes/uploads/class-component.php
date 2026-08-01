@@ -79,6 +79,7 @@ final class Component {
 			$config,
 			array(
 				'id'              => wp_unique_id( 'adam-upload-' ),
+				'class'           => '',
 				'mode'            => 'file',
 				'kind'            => 'image',
 				'name'            => '',
@@ -106,10 +107,11 @@ final class Component {
 		$items    = array_slice( (array) $config['items'], 0, $max );
 		$is_full  = count( $items ) >= $max;
 		$label    = trim( (string) $config['label'] ) ?: ( 'image' === $kind ? __( 'Selecionar fotografia', 'adam-comunidade' ) : __( 'Selecionar documento', 'adam-comunidade' ) );
+		$classes  = implode( ' ', array_map( 'sanitize_html_class', preg_split( '/\s+/', (string) $config['class'], -1, PREG_SPLIT_NO_EMPTY ) ?: array() ) );
 		?>
 		<div
 			id="<?php echo esc_attr( $id ); ?>"
-			class="adam-upload adam-upload--<?php echo esc_attr( $kind ); ?><?php echo $is_full ? ' is-full' : ''; ?><?php echo $config['error'] ? ' has-error' : ''; ?>"
+			class="adam-upload adam-upload--<?php echo esc_attr( $kind ); ?><?php echo $is_full ? ' is-full' : ''; ?><?php echo $config['error'] ? ' has-error' : ''; ?><?php echo $classes ? ' ' . esc_attr( $classes ) : ''; ?>"
 			data-adam-upload
 			data-mode="<?php echo esc_attr( $mode ); ?>"
 			data-kind="<?php echo esc_attr( $kind ); ?>"

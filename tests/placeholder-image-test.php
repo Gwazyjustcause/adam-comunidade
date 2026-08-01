@@ -64,12 +64,13 @@ $integrations = array(
 	'templates/fields/card.php'         => "Placeholder_Image::cover( 'field'",
 	'templates/fields/single.php'       => "Placeholder_Image::cover( 'field'",
 	'templates/fields/archive.php'      => "Placeholder_Image::cover( 'field'",
-	'templates/teams/card.php'          => "Placeholder_Image::avatar( 'team'",
-	'templates/teams/single.php'        => "Placeholder_Image::avatar( 'team'",
+	'templates/teams/card.php'          => 'View::logo(',
+	'templates/teams/single.php'        => 'View::logo(',
 	'templates/teams/archive.php'       => "Placeholder_Image::cover( 'team'",
 	'templates/directory/archive.php'   => 'Placeholder_Image::cover',
 	'templates/directory/single.php'    => 'Placeholder_Image::avatar',
 	'includes/directory/class-view.php' => 'Placeholder_Image::cover',
+	'includes/teams/class-view.php'     => "Placeholder_Image::avatar( 'team'",
 );
 
 foreach ( $integrations as $file => $contract ) {

@@ -706,17 +706,19 @@
 	grid-template-columns: 1fr;
 }
 
-.adam-associated-team-card > div:first-child {
+.adam-associated-team-card__logo {
+	--adam-team-logo-size: 100px;
 	background: #f1f5f9;
 	border-radius: 12px;
-	height: 100px;
 	overflow: hidden;
+	padding: 8px;
 }
 
 .adam-associated-team-card img,
 .adam-associated-team-card .adam-generated-placeholder {
 	height: 100%;
-	object-fit: cover;
+	object-fit: contain;
+	object-position: center;
 	width: 100%;
 }
 
@@ -934,9 +936,7 @@
 		grid-template-columns: 1fr;
 	}
 
-	.adam-associated-team-card > div:first-child {
-		height: 72px;
-	}
+	.adam-associated-team-card__logo { --adam-team-logo-size: 72px; padding: 6px; }
 
 	.adam-field-actions .adam-field-button {
 		min-height: 50px;

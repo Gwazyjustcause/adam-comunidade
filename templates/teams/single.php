@@ -69,13 +69,7 @@ get_header();
 			<?php endif; ?>
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-team-container adam-team-hero__content' ) ); ?>">
-			<div class="adam-team-hero__logo">
-				<?php if ( $adam_team->logo_id ) : ?>
-					<?php echo wp_get_attachment_image( (int) $adam_team->logo_id, 'adam-team-logo' ); ?>
-				<?php else : ?>
-					<?php echo Placeholder_Image::avatar( 'team', (string) $adam_team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				<?php endif; ?>
-			</div>
+			<?php echo View::logo( $adam_team, array( 'class' => 'adam-team-hero__logo' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<div>
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $adam_team->name ); ?></h1>
 				<?php if ( ! empty( $adam_team->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>

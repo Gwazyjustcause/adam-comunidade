@@ -16,6 +16,37 @@ use ADAM\Comunidade\Helpers;
  */
 final class View {
 	/**
+	 * Renders a primary team logo inside the shared contained square frame.
+	 *
+	 * @param object $team Team record with logo_id and name properties.
+	 * @param array<string,mixed> $args Optional class, loading, and image_size values.
+	 * @return string
+	 */
+	public static function logo( object $team, array $args = array() ): string {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'class'      => '',
+				'loading'    => '',
+				'image_size' => 'adam-team-logo-contain',
+			)
+		);
+		$classes = trim( 'adam-team-logo ' . implode( ' ', array_map( 'sanitize_html_class', preg_split( '/\s+/', (string) $args['class'], -1, PREG_SPLIT_NO_EMPTY ) ?: array() ) ) );
+
+		if ( ! empty( $team->logo_id ) ) {
+			$attributes = array( 'class' => 'adam-team-logo__image' );
+			if ( in_array( $args['loading'], array( 'lazy', 'eager' ), true ) ) {
+				$attributes['loading'] = $args['loading'];
+			}
+			$image = wp_get_attachment_image( (int) $team->logo_id, (string) $args['image_size'], false, $attributes );
+		} else {
+			$image = Placeholder_Image::avatar( 'team', (string) ( $team->name ?? '' ) );
+		}
+
+		return '<span class="' . esc_attr( $classes ) . '">' . $image . '</span>';
+	}
+
+	/**
 	 * Renders one team card.
 	 *
 	 * @param object $team Team record.

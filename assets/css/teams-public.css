@@ -196,21 +196,23 @@
 }
 
 .adam-team-card__logo {
+	--adam-team-logo-size: 72px;
 	align-items: center;
 	background: #fff;
 	border: 4px solid #fff;
+	box-sizing: border-box;
 	border-radius: 12px;
-	height: 72px;
 	display: flex;
 	justify-content: center;
 	overflow: hidden;
-	width: 72px;
+	padding: 5px;
 }
 
 .adam-team-card__logo img,
 .adam-team-card__logo .adam-generated-placeholder {
 	height: 100%;
-	object-fit: cover;
+	object-fit: contain;
+	object-position: center;
 	width: 100%;
 }
 
@@ -316,6 +318,7 @@
 }
 
 .adam-team-hero__logo {
+	--adam-team-logo-size: 150px;
 	align-items: center;
 	background: #fff;
 	border: 5px solid #fff;
@@ -323,16 +326,16 @@
 	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 	color: #64748b;
 	display: flex;
-	height: 150px;
 	overflow: hidden;
 	justify-content: center;
-	width: 150px;
+	padding: 11px;
 }
 
 .adam-team-hero__logo img,
 .adam-team-hero__logo .adam-generated-placeholder {
 	height: 100%;
-	object-fit: cover;
+	object-fit: contain;
+	object-position: center;
 	width: 100%;
 }
 
@@ -521,7 +524,7 @@
 	.adam-team-filters,
 	.adam-team-grid { grid-template-columns: 1fr; }
 	.adam-team-hero__content { align-items: flex-start; flex-direction: column; margin-top: -60px; }
-	.adam-team-hero__logo { height: 110px; width: 110px; }
+	.adam-team-hero__logo { --adam-team-logo-size: 110px; }
 	.adam-team-stats { grid-template-columns: 1fr; }
 	.adam-team-stats div,
 	.adam-team-stats div:first-child { border-left: 0; border-top: 1px solid #e2e8f0; padding: 14px 0; }

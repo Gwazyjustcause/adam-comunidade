@@ -10,9 +10,9 @@ namespace ADAM\Comunidade\Teams\Admin;
 defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Admin\Router as Admin_Router;
-use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
+use ADAM\Comunidade\Teams\View;
 
 if ( ! class_exists( '\WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
@@ -149,18 +149,7 @@ final class Team_List_Table extends \WP_List_Table {
 	 * @return string
 	 */
 	protected function column_logo( $item ): string {
-		if ( $item->logo_id ) {
-			return wp_get_attachment_image(
-				(int) $item->logo_id,
-				array( 48, 48 ),
-				false,
-				array( 'class' => 'adam-team-table-logo' )
-			);
-		}
-
-		return '<span class="adam-team-table-logo adam-team-table-logo--empty" aria-hidden="true">'
-			. Helpers::svg_icon( 'community', 22 )
-			. '</span>';
+		return View::logo( $item, array( 'class' => 'adam-team-table-logo', 'loading' => 'lazy' ) );
 	}
 
 	/**

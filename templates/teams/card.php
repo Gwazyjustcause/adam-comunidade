@@ -31,13 +31,7 @@ $adam_card_styles = Options::decode_list( $team->playing_styles );
 			<?php if ( 'verified_team' === ( $team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified adam-directory-badge"><?php esc_html_e( 'Equipa verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
 		</div>
 		<div class="adam-team-card__identity">
-			<div class="adam-team-card__logo">
-				<?php if ( $team->logo_id ) : ?>
-					<?php echo wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo', false, array( 'loading' => 'lazy' ) ); ?>
-				<?php else : ?>
-					<?php echo Placeholder_Image::avatar( 'team', (string) $team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				<?php endif; ?>
-			</div>
+			<?php echo View::logo( $team, array( 'class' => 'adam-team-card__logo', 'loading' => 'lazy' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			<div>
 				<h2><a href="<?php echo esc_url( Router::team_url( $team ) ); ?>"><?php echo esc_html( $team->name ); ?></a></h2>
 				<?php if ( $team->municipality || $team->district ) : ?>

@@ -55,21 +55,21 @@
 }
 
 .adam-team-table-logo {
+	--adam-team-logo-size: 48px;
 	align-items: center;
 	background: #f1f5f9;
 	border-radius: 8px;
 	display: inline-flex;
-	height: 48px;
 	justify-content: center;
-	object-fit: cover;
 	overflow: hidden;
-	width: 48px;
+	padding: 4px;
 }
 
 .adam-team-table-logo img,
 img.adam-team-table-logo {
 	height: 48px;
-	object-fit: cover;
+	object-fit: contain;
+	object-position: center;
 	width: 48px;
 }
 

@@ -16,6 +16,7 @@ use ADAM\Comunidade\Fields\Router;
 use ADAM\Comunidade\Fields\View;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
+use ADAM\Comunidade\Teams\View as Team_View;
 
 $field       = Router::current_field();
 $repository  = new Repository();
@@ -158,7 +159,7 @@ get_header();
 		<?php if ( $team ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Equipa Associada', 'adam-comunidade' ); ?></h2>
 			<div class="adam-associated-team-card">
-				<div><?php echo ! empty( $team->logo_id ) ? wp_get_attachment_image( (int) $team->logo_id, 'adam-team-logo' ) : Placeholder_Image::avatar( 'team', (string) $team->name ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+				<?php echo Team_View::logo( $team, array( 'class' => 'adam-associated-team-card__logo', 'loading' => 'lazy' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<div><h3><?php echo esc_html( $team->name ); ?></h3><?php if ( $team->short_description ) : ?><p><?php echo esc_html( $team->short_description ); ?></p><?php endif; ?><a class="adam-field-button" href="<?php echo esc_url( Team_Router::team_url( $team ) ); ?>"><?php esc_html_e( 'Ver Equipa', 'adam-comunidade' ); ?></a></div>
 			</div>
 		</section><?php endif; ?>

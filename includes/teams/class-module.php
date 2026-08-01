@@ -59,6 +59,8 @@ final class Module implements Module_Interface {
 	 */
 	public function register_image_sizes(): void {
 		add_image_size( 'adam-team-logo', 600, 600, true );
+		// A distinct uncropped rendition keeps every uploaded logo fully visible.
+		add_image_size( 'adam-team-logo-contain', 600, 600, false );
 		add_image_size( 'adam-team-cover', 1920, 600, true );
 		add_image_size( 'adam-team-card', 720, 360, true );
 	}

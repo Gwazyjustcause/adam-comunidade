@@ -273,6 +273,7 @@ final class Portal {
 				Upload_Component::render(
 					array(
 						'id'          => 'adam-upload-' . $key,
+						'class'       => 'team' === $object_type && in_array( $key, array( 'team_logo', 'logo_id' ), true ) ? 'adam-upload--team-logo' : '',
 						'mode'        => 'file',
 						'kind'        => str_contains( (string) $field['accept'], '.pdf' ) ? 'document' : 'image',
 						'name'        => $name,
