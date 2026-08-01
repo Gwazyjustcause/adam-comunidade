@@ -79,6 +79,7 @@ if ( $field_id && $adam_slug ) {
 						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'field[cover_id]', 'items' => $adam_value( 'cover_id', 0 ) ? array( Upload_Component::attachment( (int) $adam_value( 'cover_id', 0 ) ) ) : array() ) ); ?>
 						<h3><?php esc_html_e( 'Galeria', 'adam-comunidade' ); ?></h3>
 						<p><?php esc_html_e( 'Arraste para ordenar. As legendas aparecem na galeria pública.', 'adam-comunidade' ); ?></p>
+						<input type="hidden" name="field[gallery_reviewed]" value="1">
 						<?php
 						$adam_gallery_items = array();
 						foreach ( $gallery as $item ) {

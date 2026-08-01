@@ -329,7 +329,9 @@ final class Controller {
 			(int) $saved_id,
 			$team && 'published' === $team->status ? $team_id : 0
 		);
-		$this->repository->sync_gallery( (int) $saved_id, $this->gallery_items( $input ) );
+		if ( ! empty( $input['gallery_reviewed'] ) ) {
+			$this->repository->sync_gallery( (int) $saved_id, $this->gallery_items( $input ) );
+		}
 
 		/**
 		 * Fires after a field and its relationships have been saved.

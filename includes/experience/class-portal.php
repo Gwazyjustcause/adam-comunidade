@@ -501,7 +501,7 @@ final class Portal {
 			} elseif ( 'team_cover' === $key ) {
 				$payload['cover_id'] = absint( $result );
 			} elseif ( 'team_photos' === $key ) {
-				$payload['gallery'] = array_map( 'absint', (array) $result );
+				$payload['gallery'] = \ADAM\Comunidade\Teams\Options::decode_ids( $result );
 			} else {
 				$payload[ $key ] = $result;
 			}
@@ -1008,6 +1008,9 @@ final class Portal {
 		if ( isset( $input['gallery'] ) && is_string( $input['gallery'] ) ) {
 			$input['gallery'] = json_decode( $input['gallery'], true ) ?: array();
 		}
+		if ( 'team' === $row->object_type ) {
+			$input['gallery'] = \ADAM\Comunidade\Teams\Options::decode_ids( $input['gallery'] ?? array() );
+		}
 		if ( isset( $input['playing_styles'] ) && is_string( $input['playing_styles'] ) ) {
 			$input['playing_styles'] = json_decode( $input['playing_styles'], true ) ?: array();
 		}
@@ -1031,7 +1034,7 @@ final class Portal {
 			return new \WP_Error( 'save_failed', __( 'Não foi possível guardar o registo.', 'adam-comunidade' ) );
 		}
 		$result_id = $record ? (int) $row->object_id : (int) $result;
-		if ( 'field' === $row->object_type && ! empty( $payload['gallery_ids'] ) ) {
+		if ( 'field' === $row->object_type && array_key_exists( 'gallery_ids', $payload ) ) {
 			$synced = $repo->sync_gallery(
 				$result_id,
 				array_map(

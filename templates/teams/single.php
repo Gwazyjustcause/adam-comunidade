@@ -19,7 +19,13 @@ use ADAM\Comunidade\Fields\View as Field_View;
 $adam_team        = Router::current_team();
 $adam_styles      = Options::decode_list( $adam_team->playing_styles );
 $adam_equipment   = Options::decode_list( $adam_team->equipment_tags );
-$adam_gallery     = Options::decode_list( $adam_team->gallery );
+$adam_gallery     = array_values(
+	array_filter(
+		Options::decode_ids( $adam_team->gallery ),
+		static fn( int $attachment_id ): bool => wp_attachment_is_image( $attachment_id )
+			&& (bool) wp_get_attachment_image_url( $attachment_id, 'full' )
+	)
+);
 $adam_recruitment = View::label( $adam_team->recruitment_status, Options::recruitment_statuses() );
 $adam_has_description = '' !== trim( (string) $adam_team->short_description )
 	|| '' !== trim( wp_strip_all_tags( (string) $adam_team->full_description ) );

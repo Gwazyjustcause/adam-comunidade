@@ -97,4 +97,19 @@ final class Options {
 			? array_values( array_filter( array_map( 'sanitize_key', $decoded ) ) )
 			: array();
 	}
+
+	/**
+	 * Decodes an ordered list of Media Library attachment IDs.
+	 *
+	 * @param mixed $value JSON string or array.
+	 * @return int[]
+	 */
+	public static function decode_ids( mixed $value ): array {
+		if ( is_string( $value ) ) {
+			$decoded = json_decode( $value, true );
+			$value   = is_array( $decoded ) ? $decoded : array();
+		}
+
+		return array_values( array_unique( array_filter( array_map( 'absint', (array) $value ) ) ) );
+	}
 }

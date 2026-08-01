@@ -13,7 +13,7 @@ use ADAM\Comunidade\Uploads\Component as Upload_Component;
 $adam_value = static function ( string $key, mixed $default = '' ) use ( $team ): mixed {
 	return $team->{$key} ?? $default;
 };
-$adam_gallery          = Options::decode_list( $adam_value( 'gallery', array() ) );
+$adam_gallery          = Options::decode_ids( $adam_value( 'gallery', array() ) );
 $adam_playing_styles   = Options::decode_list( $adam_value( 'playing_styles', array() ) );
 $adam_equipment_tags   = Options::decode_list( $adam_value( 'equipment_tags', array() ) );
 $adam_status           = (string) $adam_value( 'status', 'draft' );
@@ -113,6 +113,7 @@ if ( $team_id && $adam_slug ) {
 						</div>
 						<h3><?php esc_html_e( 'Galeria', 'adam-comunidade' ); ?></h3>
 						<p><?php esc_html_e( 'Selecione várias imagens e arraste as miniaturas para alterar a ordem.', 'adam-comunidade' ); ?></p>
+						<input type="hidden" name="team[gallery_reviewed]" value="1">
 						<?php $adam_team_gallery_items = array_map( static fn( int $id ): array => Upload_Component::attachment( $id ), array_map( 'absint', $adam_gallery ) ); ?>
 						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[gallery][]', 'multiple' => true, 'max' => 20, 'items' => $adam_team_gallery_items ) ); ?>
 					<label class="adam-field adam-colour-field">

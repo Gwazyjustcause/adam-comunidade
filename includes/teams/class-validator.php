@@ -65,7 +65,14 @@ final class Validator {
 
 		$playing_styles = $this->sanitize_choices( $input['playing_styles'] ?? array(), Options::playing_styles() );
 		$equipment_tags = $this->sanitize_choices( $input['equipment_tags'] ?? array(), Options::equipment_tags() );
-		$gallery        = array_values( array_filter( array_map( 'absint', (array) ( $input['gallery'] ?? array() ) ) ) );
+		if ( array_key_exists( 'gallery', $input ) ) {
+			$gallery = Options::decode_ids( $input['gallery'] );
+		} elseif ( $team_id && empty( $input['gallery_reviewed'] ) ) {
+			$current = $this->repository->find( $team_id );
+			$gallery = $current ? Options::decode_ids( $current->gallery ?? array() ) : array();
+		} else {
+			$gallery = array();
+		}
 		$email          = sanitize_email( (string) ( $input['email'] ?? '' ) );
 
 		if ( ! empty( $input['email'] ) && ! is_email( $email ) ) {
