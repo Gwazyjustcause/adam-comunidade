@@ -248,7 +248,7 @@
 
 /* Dedicated Community Manager portal. */
 .adam-manager-portal {
-	background: var(--adam-bg, var(--theme-palette-color-8, #f4f7f3));
+	background: var(--theme-palette-color-5, var(--wp--preset--color--palette-color-5, #e9f4d4));
 	display: grid;
 	min-height: 70vh;
 	padding: clamp(32px, 6vw, 80px) 20px;

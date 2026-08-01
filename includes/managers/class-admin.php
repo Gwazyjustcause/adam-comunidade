@@ -510,21 +510,39 @@ final class Admin {
 		if ( in_array( $key, array( 'cover_id', 'logo_id' ), true ) ) {
 			$id = absint( $value );
 			if ( $id && wp_attachment_is_image( $id ) ) {
-				echo '<a class="adam-revision-image" href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener">' . wp_get_attachment_image( $id, 'medium' ) . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo '<figure class="adam-revision-image">' . wp_get_attachment_image( $id, 'medium' ) . '<figcaption><a href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ver em tamanho completo', 'adam-comunidade' ) . '</a></figcaption></figure>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				return;
 			}
 			echo '<em>' . esc_html__( 'Sem imagem', 'adam-comunidade' ) . '</em>';
 			return;
 		}
+		if ( 'authorization_document_id' === $key || str_ends_with( $key, '_attachment_id' ) ) {
+			$id  = absint( $value );
+			$url = $id && 'attachment' === get_post_type( $id ) ? wp_get_attachment_url( $id ) : false;
+			if ( $url && wp_attachment_is_image( $id ) ) {
+				echo '<figure class="adam-revision-image">' . wp_get_attachment_image( $id, 'medium' ) . '<figcaption><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ver em tamanho completo', 'adam-comunidade' ) . '</a></figcaption></figure>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				return;
+			}
+			if ( $url ) {
+				$file = get_attached_file( $id );
+				echo '<div class="adam-revision-document"><strong>' . esc_html( $file ? wp_basename( $file ) : (string) get_the_title( $id ) ) . '</strong><a class="button button-secondary" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Abrir documento', 'adam-comunidade' ) . '</a></div>';
+				return;
+			}
+			echo '<em>' . esc_html__( 'Sem documento', 'adam-comunidade' ) . '</em>';
+			return;
+		}
 		if ( in_array( $key, array( 'gallery', 'gallery_ids' ), true ) ) {
 			$ids = array_values( array_filter( array_map( 'absint', (array) $value ), 'wp_attachment_is_image' ) );
+			if ( in_array( $entity_type, array( 'team', 'field' ), true ) ) {
+				$ids = array_slice( $ids, 0, 5 );
+			}
 			if ( ! $ids ) {
 				echo '<em>' . esc_html__( 'Sem fotografias', 'adam-comunidade' ) . '</em>';
 				return;
 			}
 			echo '<div class="adam-revision-gallery">';
 			foreach ( $ids as $position => $id ) {
-				echo '<a href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener"><span>' . esc_html( (string) ( $position + 1 ) ) . '</span>' . wp_get_attachment_image( $id, 'thumbnail' ) . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo '<div><span class="adam-revision-gallery__position">' . esc_html( (string) ( $position + 1 ) ) . '</span>' . wp_get_attachment_image( $id, 'medium' ) . '<a href="' . esc_url( wp_get_attachment_url( $id ) ) . '" target="_blank" rel="noopener">' . esc_html__( 'Ver em tamanho completo', 'adam-comunidade' ) . '</a></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			echo '</div>';
 			return;

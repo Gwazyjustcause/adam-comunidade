@@ -746,6 +746,8 @@ final class Portal {
 				$labels['amenity_ids'] = $labels['amenities'] ?? __( 'Comodidades', 'adam-comunidade' );
 				$playing_style_labels  = Field_Options::playing_styles();
 				$amenity_labels        = array_column( ( new Amenity_Repository() )->all( 'field' ), 'label', 'id' );
+				$attachments           = $this->moderation_attachments( $payload, $form, (string) $row->object_type );
+				$attachment_keys       = $this->moderation_attachment_keys( $form, (string) $row->object_type );
 				?>
 				<article class="adam-card adam-approval-card">
 					<header class="adam-approval-card__header">
@@ -764,7 +766,7 @@ final class Portal {
 								<div><dt><?php esc_html_e( 'E-mail de contacto', 'adam-comunidade' ); ?></dt><dd><a href="mailto:<?php echo esc_attr( $row->contact_email ); ?>"><?php echo esc_html( $row->contact_email ); ?></a></dd></div>
 								<?php foreach ( $payload as $key => $value ) : ?>
 									<?php
-									if ( in_array( $key, array( 'authorization_document_id', 'gallery_ids', 'cover_id', 'verification', 'is_associated', 'slug', 'email' ), true ) ) {
+									if ( in_array( $key, array_merge( $attachment_keys, array( 'verification', 'is_associated', 'slug', 'email' ) ), true ) ) {
 										continue;
 									}
 									if ( is_array( $value ) ) {
@@ -787,17 +789,25 @@ final class Portal {
 
 						<aside>
 							<h3><?php esc_html_e( 'Documentos e imagens', 'adam-comunidade' ); ?></h3>
-							<?php if ( ! empty( $payload['authorization_document_id'] ) ) : ?>
-								<?php $document_id = absint( $payload['authorization_document_id'] ); ?>
-								<div class="adam-approval-document">
-									<span class="dashicons dashicons-media-document"></span>
-									<div><strong><?php esc_html_e( 'Comprovativo de autorização', 'adam-comunidade' ); ?></strong><br><a href="<?php echo esc_url( wp_get_attachment_url( $document_id ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Pré-visualizar', 'adam-comunidade' ); ?></a> · <a href="<?php echo esc_url( wp_get_attachment_url( $document_id ) ); ?>" download><?php esc_html_e( 'Descarregar', 'adam-comunidade' ); ?></a></div>
+							<?php if ( $attachments ) : ?>
+								<div class="adam-approval-attachments">
+									<?php foreach ( $attachments as $attachment ) : ?>
+										<?php if ( $attachment['is_image'] ) : ?>
+											<figure class="adam-approval-image">
+												<?php echo wp_get_attachment_image( $attachment['id'], 'medium_large' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+												<figcaption><strong><?php echo esc_html( $attachment['label'] ); ?></strong><a href="<?php echo esc_url( $attachment['url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Ver em tamanho completo', 'adam-comunidade' ); ?></a></figcaption>
+											</figure>
+										<?php else : ?>
+											<div class="adam-approval-document">
+												<span class="dashicons dashicons-media-document"></span>
+												<div><strong><?php echo esc_html( $attachment['label'] ); ?></strong><span class="adam-approval-document__filename"><?php echo esc_html( $attachment['filename'] ); ?></span><a class="button button-secondary" href="<?php echo esc_url( $attachment['url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Abrir documento', 'adam-comunidade' ); ?></a></div>
+											</div>
+										<?php endif; ?>
+									<?php endforeach; ?>
 								</div>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'Não foram anexados ficheiros.', 'adam-comunidade' ); ?></p>
 							<?php endif; ?>
-							<?php if ( ! empty( $payload['gallery_ids'] ) ) : ?>
-								<div class="adam-moderation-photos"><?php foreach ( array_map( 'absint', (array) $payload['gallery_ids'] ) as $photo_id ) : ?><a href="<?php echo esc_url( wp_get_attachment_url( $photo_id ) ); ?>" target="_blank" rel="noopener"><?php echo wp_get_attachment_image( $photo_id, 'medium' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></a><?php endforeach; ?></div>
-							<?php endif; ?>
-							<?php if ( empty( $payload['authorization_document_id'] ) && empty( $payload['gallery_ids'] ) ) : ?><p class="description"><?php esc_html_e( 'Não foram anexados ficheiros.', 'adam-comunidade' ); ?></p><?php endif; ?>
 						</aside>
 					</div>
 
@@ -825,6 +835,94 @@ final class Portal {
 			<?php do_action( 'adam_comunidade_moderation_after_submissions' ); ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Resolves valid Media Library attachments stored in a moderation payload.
+	 *
+	 * @return array<int,array{id:int,label:string,url:string,filename:string,is_image:bool}>
+	 */
+	private function moderation_attachments( array $payload, array $form, string $object_type ): array {
+		$groups = array();
+		if ( 'team' === $object_type ) {
+			$groups = array(
+				array( 'key' => 'logo_id', 'label' => __( 'Logótipo', 'adam-comunidade' ), 'max' => 1 ),
+				array( 'key' => 'cover_id', 'label' => __( 'Imagem de capa', 'adam-comunidade' ), 'max' => 1 ),
+				array( 'key' => 'gallery', 'label' => __( 'Fotografia da galeria', 'adam-comunidade' ), 'max' => 5 ),
+			);
+		} elseif ( 'field' === $object_type ) {
+			$groups = array(
+				array( 'key' => 'cover_id', 'label' => __( 'Imagem de capa', 'adam-comunidade' ), 'max' => 1 ),
+				array( 'key' => 'gallery_ids', 'label' => __( 'Fotografia da galeria', 'adam-comunidade' ), 'max' => 5 ),
+				array( 'key' => 'authorization_document_id', 'label' => __( 'Comprovativo de autorização legal', 'adam-comunidade' ), 'max' => 1 ),
+			);
+		}
+
+		$known_keys = array_column( $groups, 'key' );
+		foreach ( (array) ( $form['fields'] ?? array() ) as $key => $field ) {
+			if ( 'file' !== (string) ( $field['type'] ?? '' ) ) {
+				continue;
+			}
+			$payload_key = $this->moderation_file_payload_key( (string) $key );
+			if ( in_array( $payload_key, $known_keys, true ) ) {
+				continue;
+			}
+			$groups[] = array(
+				'key'   => $payload_key,
+				'label' => (string) ( $field['label'] ?? __( 'Documento anexo', 'adam-comunidade' ) ),
+				'max'   => max( 1, absint( $field['max_files'] ?? 1 ) ),
+			);
+			$known_keys[] = $payload_key;
+		}
+
+		$attachments = array();
+		foreach ( $groups as $group ) {
+			$value = $payload[ $group['key'] ] ?? array();
+			if ( is_string( $value ) && str_starts_with( ltrim( $value ), '[' ) ) {
+				$decoded = json_decode( $value, true );
+				$value   = is_array( $decoded ) ? $decoded : array();
+			}
+			$ids = array_slice( array_values( array_unique( array_filter( array_map( 'absint', (array) $value ) ) ) ), 0, (int) $group['max'] );
+			foreach ( $ids as $id ) {
+				$url = 'attachment' === get_post_type( $id ) ? wp_get_attachment_url( $id ) : false;
+				if ( ! $url ) {
+					continue;
+				}
+				$file = get_attached_file( $id );
+				$attachments[] = array(
+					'id'       => $id,
+					'label'    => (string) $group['label'],
+					'url'      => (string) $url,
+					'filename' => $file ? wp_basename( $file ) : (string) get_the_title( $id ),
+					'is_image' => wp_attachment_is_image( $id ),
+				);
+			}
+		}
+		return $attachments;
+	}
+
+	/** Returns payload keys that contain internal Media Library IDs. */
+	private function moderation_attachment_keys( array $form, string $object_type ): array {
+		$keys = 'team' === $object_type
+			? array( 'logo_id', 'cover_id', 'gallery' )
+			: ( 'field' === $object_type ? array( 'cover_id', 'gallery_ids', 'authorization_document_id' ) : array() );
+		foreach ( (array) ( $form['fields'] ?? array() ) as $key => $field ) {
+			if ( 'file' === (string) ( $field['type'] ?? '' ) ) {
+				$keys[] = $this->moderation_file_payload_key( (string) $key );
+			}
+		}
+		return array_values( array_unique( $keys ) );
+	}
+
+	/** Maps public upload controls to their persisted payload fields. */
+	private function moderation_file_payload_key( string $key ): string {
+		return array(
+			'authorization_document' => 'authorization_document_id',
+			'field_photos'            => 'gallery_ids',
+			'team_logo'               => 'logo_id',
+			'team_cover'              => 'cover_id',
+			'team_photos'             => 'gallery',
+		)[ $key ] ?? $key;
 	}
 
 	public function moderate(): void {

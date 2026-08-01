@@ -77,7 +77,7 @@ $assert(
 );
 $assert( str_contains( $hero, "'adam-public-hero--' . sanitize_html_class( \$variant )" ), 'Hero variants are not provided by the shared component.' );
 $assert(
-	str_contains( $styles, 'background: var(--adam-bg, var(--theme-palette-color-8, #f4f7f3));' )
+	str_contains( $styles, 'background: var(--theme-palette-color-5, var(--wp--preset--color--palette-color-5, #e9f4d4));' )
 	&& str_contains( $styles, 'body.adam-theme-dark .adam-manager-portal' )
 	&& str_contains( $uploads, 'body.adam-theme-dark .adam-manager-portal .adam-upload' )
 	&& ! str_contains( $styles . $uploads, '@media (prefers-color-scheme: dark)' ),

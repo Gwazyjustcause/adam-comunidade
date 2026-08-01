@@ -50,7 +50,7 @@ $assert( str_contains( $portal, 'authorization_document' ), 'Field submissions r
 $assert( str_contains( $forms, "'field_photos'" ), 'Field form schema must accept review photographs.' );
 $assert( str_contains( $portal, 'process_form_upload' ), 'Public uploads must be driven by the shared form schema.' );
 $assert( str_contains( $portal, "status' => 'pending'" ), 'Public submissions must enter Pending Review.' );
-$assert( str_contains( $portal, 'Pré-visualizar' ), 'Moderation must expose the legal document.' );
+$assert( str_contains( $portal, 'Abrir documento' ), 'Moderation must expose the legal document.' );
 $assert( str_contains( $portal, 'Upload_Handler' ) && str_contains( $uploads, 'media_handle_upload' ), 'Uploads must use the shared WordPress Media handler.' );
 
 echo "Fields directory tests passed.\n";
