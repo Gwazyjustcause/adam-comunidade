@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Installs and upgrades the Teams module tables.
  */
 final class Schema {
-	public const VERSION = '6.1.0';
+	public const VERSION = '6.1.1';
 
 	/**
 	 * Creates or upgrades the module tables.
@@ -60,7 +60,7 @@ final class Schema {
 			phone varchar(50) NOT NULL DEFAULT '',
 			founded smallint(4) unsigned NULL,
 			members int(10) unsigned NOT NULL DEFAULT 0,
-			recruitment_status varchar(30) NOT NULL DEFAULT 'closed',
+			recruitment_status varchar(30) NOT NULL DEFAULT '',
 			recruitment_min_age tinyint(3) unsigned NOT NULL DEFAULT 0,
 			recruitment_experience text NULL,
 			recruitment_equipment text NULL,
@@ -94,6 +94,10 @@ final class Schema {
 
 		dbDelta( $teams_sql );
 		dbDelta( $fields_sql );
+
+		$wpdb->query( "UPDATE {$teams_table} SET recruitment_status = 'recruiting' WHERE recruitment_status = 'open'" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "UPDATE {$teams_table} SET recruitment_status = 'limited' WHERE recruitment_status = 'invite_only'" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( "UPDATE {$teams_table} SET recruitment_status = 'not_recruiting' WHERE recruitment_status = 'closed'" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		update_option( 'adam_comunidade_db_version', ADAM_COMUNIDADE_DB_VERSION, false );
 		update_option( 'adam_comunidade_teams_db_version', self::VERSION, false );

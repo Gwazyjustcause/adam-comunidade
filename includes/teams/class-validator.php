@@ -58,10 +58,7 @@ final class Validator {
 			$status = 'draft';
 		}
 
-		$recruitment = sanitize_key( (string) ( $input['recruitment_status'] ?? 'closed' ) );
-		if ( ! isset( Options::recruitment_statuses()[ $recruitment ] ) ) {
-			$recruitment = 'closed';
-		}
+		$recruitment = Options::normalize_recruitment_status( $input['recruitment_status'] ?? '' );
 
 		$playing_styles = $this->sanitize_choices( $input['playing_styles'] ?? array(), Options::playing_styles() );
 		$equipment_tags = $this->sanitize_choices( $input['equipment_tags'] ?? array(), Options::equipment_tags() );

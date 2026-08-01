@@ -514,10 +514,7 @@ final class Portal {
 			$payload['is_associated'] = 0;
 		}
 		if ( 'team' === $type ) {
-			$recruitment = sanitize_key( (string) ( $payload['recruitment_status'] ?? '' ) );
-			$payload['recruitment_status'] = isset( \ADAM\Comunidade\Teams\Options::recruitment_statuses()[ $recruitment ] )
-				? $recruitment
-				: 'closed';
+			$payload['recruitment_status'] = \ADAM\Comunidade\Teams\Options::normalize_recruitment_status( $payload['recruitment_status'] ?? '' );
 			$payload['is_associated'] = 0;
 		}
 		$submission_id = $this->insert_submission( 'new', $type, 0, $payload, $email, sanitize_textarea_field( wp_unslash( $_POST['verification_details'] ?? '' ) ) );

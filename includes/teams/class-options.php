@@ -32,18 +32,35 @@ final class Options {
 	 * @return array<string,string>
 	 */
 	public static function recruitment_statuses(): array {
-		return (array) apply_filters(
-			'adam_comunidade_recruitment_statuses',
-			array(
-				'recruiting'     => __( 'A recrutar', 'adam-comunidade' ),
-				'limited'        => __( 'Recrutamento limitado', 'adam-comunidade' ),
-				'not_recruiting' => __( 'Sem recrutamento', 'adam-comunidade' ),
-				// Legacy values remain readable during upgrades.
-				'open'           => __( 'A recrutar', 'adam-comunidade' ),
-				'invite_only'    => __( 'Recrutamento limitado', 'adam-comunidade' ),
-				'closed'         => __( 'Sem recrutamento', 'adam-comunidade' ),
-			)
+		$defaults = array(
+			'recruiting'     => __( 'A recrutar', 'adam-comunidade' ),
+			'limited'        => __( 'Recrutamento limitado', 'adam-comunidade' ),
+			'not_recruiting' => __( 'Sem recrutamento', 'adam-comunidade' ),
 		);
+		$filtered = (array) apply_filters(
+			'adam_comunidade_recruitment_statuses',
+			$defaults
+		);
+
+		return array(
+			'recruiting'     => (string) ( $filtered['recruiting'] ?? $defaults['recruiting'] ),
+			'limited'        => (string) ( $filtered['limited'] ?? $defaults['limited'] ),
+			'not_recruiting' => (string) ( $filtered['not_recruiting'] ?? $defaults['not_recruiting'] ),
+		);
+	}
+
+	/**
+	 * Maps stored legacy values to the canonical recruitment statuses.
+	 */
+	public static function normalize_recruitment_status( mixed $value ): string {
+		$status = sanitize_key( (string) $value );
+		$status = array(
+			'open'        => 'recruiting',
+			'invite_only' => 'limited',
+			'closed'      => 'not_recruiting',
+		)[ $status ] ?? $status;
+
+		return isset( self::recruitment_statuses()[ $status ] ) ? $status : '';
 	}
 
 	/**

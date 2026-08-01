@@ -25,7 +25,7 @@ final class Notifications {
 	}
 
 	public function team_changed( int $id, array $data ): void {
-		$status = sanitize_key( $data['recruitment_status'] ?? '' );
+		$status = Team_Options::normalize_recruitment_status( $data['recruitment_status'] ?? '' );
 		$this->owners( 'team', $id, __( 'Perfil da equipa atualizado', 'adam-comunidade' ), sprintf( __( 'O estado do recrutamento é agora: %s.', 'adam-comunidade' ), Team_Options::recruitment_statuses()[ $status ] ?? __( 'Não indicado', 'adam-comunidade' ) ) );
 	}
 

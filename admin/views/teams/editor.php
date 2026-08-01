@@ -17,6 +17,7 @@ $adam_gallery          = Options::decode_ids( $adam_value( 'gallery', array() ) 
 $adam_playing_styles   = Options::decode_list( $adam_value( 'playing_styles', array() ) );
 $adam_equipment_tags   = Options::decode_list( $adam_value( 'equipment_tags', array() ) );
 $adam_status           = (string) $adam_value( 'status', 'draft' );
+$adam_recruitment_status = Options::normalize_recruitment_status( $adam_value( 'recruitment_status' ) );
 $adam_slug             = (string) $adam_value( 'slug' );
 $adam_preview_url      = '';
 
@@ -176,7 +177,8 @@ if ( $team_id && $adam_slug ) {
 						<label class="adam-field"><span><?php esc_html_e( 'Ano de fundação', 'adam-comunidade' ); ?></span><input type="number" min="1800" max="<?php echo esc_attr( gmdate( 'Y' ) ); ?>" name="team[founded]" value="<?php echo esc_attr( (string) $adam_value( 'founded' ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Número de membros', 'adam-comunidade' ); ?></span><input type="number" min="0" name="team[members]" value="<?php echo esc_attr( (string) $adam_value( 'members', 0 ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Estado do recrutamento', 'adam-comunidade' ); ?></span><select name="team[recruitment_status]">
-							<?php foreach ( Options::recruitment_statuses() as $adam_key => $adam_label ) : ?><option value="<?php echo esc_attr( $adam_key ); ?>" <?php selected( $adam_value( 'recruitment_status', 'closed' ), $adam_key ); ?>><?php echo esc_html( $adam_label ); ?></option><?php endforeach; ?>
+							<option value="" <?php selected( $adam_recruitment_status, '' ); ?>><?php esc_html_e( 'Não indicado', 'adam-comunidade' ); ?></option>
+							<?php foreach ( Options::recruitment_statuses() as $adam_key => $adam_label ) : ?><option value="<?php echo esc_attr( $adam_key ); ?>" <?php selected( $adam_recruitment_status, $adam_key ); ?>><?php echo esc_html( $adam_label ); ?></option><?php endforeach; ?>
 						</select></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Idade mínima', 'adam-comunidade' ); ?></span><input type="number" min="0" max="99" name="team[recruitment_min_age]" value="<?php echo esc_attr( (string) $adam_value( 'recruitment_min_age', 0 ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Experiência necessária', 'adam-comunidade' ); ?></span><textarea name="team[recruitment_experience]"><?php echo esc_textarea( (string) $adam_value( 'recruitment_experience' ) ); ?></textarea></label>

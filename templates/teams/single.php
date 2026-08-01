@@ -26,7 +26,10 @@ $adam_gallery     = array_values(
 			&& (bool) wp_get_attachment_image_url( $attachment_id, 'full' )
 	)
 );
-$adam_recruitment = View::label( $adam_team->recruitment_status, Options::recruitment_statuses() );
+$adam_recruitment_status = Options::normalize_recruitment_status( $adam_team->recruitment_status );
+$adam_recruitment = $adam_recruitment_status
+	? View::label( $adam_recruitment_status, Options::recruitment_statuses() )
+	: __( 'Não indicado', 'adam-comunidade' );
 $adam_has_description = '' !== trim( (string) $adam_team->short_description )
 	|| '' !== trim( wp_strip_all_tags( (string) $adam_team->full_description ) );
 $adam_field_repository = new Field_Repository();
@@ -80,7 +83,7 @@ get_header();
 				<p class="<?php echo esc_attr( Public_Hero::element( 'subtitle' ) ); ?>"><?php echo esc_html( implode( ', ', array_filter( array( $adam_team->municipality, $adam_team->district ) ) ) ); ?></p>
 				<div class="<?php echo esc_attr( Public_Hero::element( 'meta', 'adam-team-hero__meta' ) ); ?>">
 					<?php if ( $adam_team->members ) : ?><span><?php echo esc_html( sprintf( _n( '%d membro', '%d membros', (int) $adam_team->members, 'adam-comunidade' ), (int) $adam_team->members ) ); ?></span><?php endif; ?>
-					<span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_team->recruitment_status ); ?>"><?php echo esc_html( $adam_recruitment ); ?></span>
+					<span class="adam-recruitment adam-recruitment--<?php echo esc_attr( $adam_recruitment_status ?: 'unknown' ); ?>"><?php echo esc_html( $adam_recruitment ); ?></span>
 				</div>
 				<?php if ( $adam_team->recruitment_min_age || $adam_team->recruitment_experience || $adam_team->recruitment_equipment || $adam_team->recruitment_training ) : ?><div class="adam-recruitment-details"><strong><?php esc_html_e( 'Detalhes do recrutamento', 'adam-comunidade' ); ?></strong><?php if ( $adam_team->recruitment_min_age ) : ?><span><?php echo esc_html( sprintf( __( 'Idade mínima: %d', 'adam-comunidade' ), $adam_team->recruitment_min_age ) ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_experience ) : ?><span><?php echo esc_html( $adam_team->recruitment_experience ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_equipment ) : ?><span><?php echo esc_html( $adam_team->recruitment_equipment ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_training ) : ?><span><?php esc_html_e( 'Treino disponível', 'adam-comunidade' ); ?></span><?php endif; ?></div><?php endif; ?>
 			</div>

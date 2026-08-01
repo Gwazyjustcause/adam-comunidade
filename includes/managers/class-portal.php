@@ -458,12 +458,13 @@ final class Portal {
 	}
 
 	private function team_sections( object $record ): void {
+		$recruitment_status = Team_Options::normalize_recruitment_status( $record->recruitment_status ?? '' );
 		?>
 		<div class="adam-form-grid">
 			<label><span><?php esc_html_e( 'Nome abreviado', 'adam-comunidade' ); ?></span><input type="text" name="manager[short_name]" value="<?php echo esc_attr( (string) $record->short_name ); ?>"></label>
 			<label><span><?php esc_html_e( 'Ano de fundação', 'adam-comunidade' ); ?></span><input type="number" min="1800" max="<?php echo esc_attr( gmdate( 'Y' ) ); ?>" name="manager[founded]" value="<?php echo esc_attr( (string) $record->founded ); ?>"></label>
 			<label><span><?php esc_html_e( 'Número de elementos', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[members]" value="<?php echo esc_attr( (string) $record->members ); ?>"></label>
-			<label><span><?php esc_html_e( 'Estado do recrutamento', 'adam-comunidade' ); ?></span><select name="manager[recruitment_status]"><?php foreach ( Team_Options::recruitment_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $record->recruitment_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+			<label><span><?php esc_html_e( 'Estado do recrutamento', 'adam-comunidade' ); ?></span><select name="manager[recruitment_status]"><option value="" <?php selected( $recruitment_status, '' ); ?>><?php esc_html_e( 'Não indicado', 'adam-comunidade' ); ?></option><?php foreach ( Team_Options::recruitment_statuses() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $recruitment_status, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
 			<label class="adam-field--wide"><span><?php esc_html_e( 'Requisitos de experiência', 'adam-comunidade' ); ?></span><textarea name="manager[recruitment_experience]"><?php echo esc_textarea( (string) $record->recruitment_experience ); ?></textarea></label>
 			<label class="adam-field--wide"><span><?php esc_html_e( 'Equipamento obrigatório', 'adam-comunidade' ); ?></span><textarea name="manager[recruitment_equipment]"><?php echo esc_textarea( (string) $record->recruitment_equipment ); ?></textarea></label>
 		</div>
