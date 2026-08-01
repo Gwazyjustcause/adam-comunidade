@@ -16,6 +16,7 @@ $assert = static function ( bool $condition, string $message ): void {
 $portal = $read( 'includes/managers/class-portal.php' );
 $hero   = $read( 'includes/class-public-hero.php' );
 $styles = $read( 'assets/css/public.css' );
+$uploads = $read( 'assets/css/upload.css' );
 $script = $read( 'assets/js/public.js' );
 $assets = $read( 'includes/class-assets.php' );
 
@@ -75,5 +76,12 @@ $assert(
 	'Password control accessible labels are not localized.'
 );
 $assert( str_contains( $hero, "'adam-public-hero--' . sanitize_html_class( \$variant )" ), 'Hero variants are not provided by the shared component.' );
+$assert(
+	str_contains( $styles, 'background: var(--adam-bg, var(--theme-palette-color-8, #f4f7f3));' )
+	&& str_contains( $styles, 'body.adam-theme-dark .adam-manager-portal' )
+	&& str_contains( $uploads, 'body.adam-theme-dark .adam-manager-portal .adam-upload' )
+	&& ! str_contains( $styles . $uploads, '@media (prefers-color-scheme: dark)' ),
+	'The manager portal must inherit the shared Light canvas and activate its dark presentation only through ADAM UI.'
+);
 
 echo "Manager portal UI tests passed.\n";

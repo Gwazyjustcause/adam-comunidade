@@ -18,6 +18,7 @@ use ADAM\Comunidade\Fields\Validator as Field_Validator;
 use ADAM\Comunidade\Directory\Repository as Directory_Repository;
 use ADAM\Comunidade\Directory\Validator as Directory_Validator;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
+use ADAM\Comunidade\Teams\Media_Lifecycle as Team_Media_Lifecycle;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Logger;
 
@@ -1012,6 +1013,15 @@ final class Service {
 			$wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			Logger::error( 'community_manager_revision_commit_failed', array( 'revision_id' => $revision_id ) );
 			return new \WP_Error( 'moderation_failed', __( 'Não foi possível concluir a revisão.', 'adam-comunidade' ) );
+		}
+		if ( 'approved' === $status && 'team' === (string) $revision->entity_type ) {
+			$before = json_decode( (string) ( $revision->base_payload ?? '' ), true );
+			$after  = $this->revision_payload( $revision );
+			$before_ids = Team_Media_Lifecycle::team_ids( is_array( $before ) ? $before : array() );
+			$after_ids  = Team_Media_Lifecycle::team_ids( $after );
+			Team_Media_Lifecycle::claim( (int) $revision->entity_id, $before_ids );
+			Team_Media_Lifecycle::claim( (int) $revision->entity_id, $after_ids );
+			Team_Media_Lifecycle::delete_removed( (int) $revision->entity_id, $before_ids, $after_ids );
 		}
 		$manager = $wpdb->get_row( $wpdb->prepare( 'SELECT email FROM ' . Schema::managers_table() . ' WHERE id = %d', $revision->manager_id ) );
 		if ( $manager ) {

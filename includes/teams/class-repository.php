@@ -101,17 +101,26 @@ final class Repository {
 	/**
 	 * Deletes a team and its relationships.
 	 *
-	 * Media attachments are deliberately retained in the Media Library.
+	 * Media owned exclusively by the Team is permanently removed after the row.
 	 *
 	 * @param int $id Team ID.
 	 * @return bool
 	 */
 	public function delete( int $id ): bool {
 		global $wpdb;
+		$team = $this->find( $id );
+		if ( ! $team ) {
+			return false;
+		}
+		Media_Lifecycle::claim( $id, Media_Lifecycle::team_ids( $team ) );
 
 		$wpdb->delete( Schema::team_fields_table(), array( 'team_id' => $id ), array( '%d' ) );
 
-		return false !== $wpdb->delete( Schema::teams_table(), array( 'id' => $id ), array( '%d' ) );
+		$deleted = false !== $wpdb->delete( Schema::teams_table(), array( 'id' => $id ), array( '%d' ) );
+		if ( $deleted ) {
+			Media_Lifecycle::delete_team_media( $team );
+		}
+		return $deleted;
 	}
 
 	/**

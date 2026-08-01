@@ -329,49 +329,47 @@
 	}
 }
 
-@media (prefers-color-scheme: dark) {
-	.adam-manager-portal .adam-upload {
-		background: #111a13;
-		border-color: #405043;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload {
+	background: #111a13;
+	border-color: #405043;
+}
 
-	.adam-manager-portal .adam-upload.is-dragover,
-	.adam-manager-portal .adam-upload__add:hover,
-	.adam-manager-portal .adam-upload__add:focus-visible {
-		background: #213125;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload.is-dragover,
+body.adam-theme-dark .adam-manager-portal .adam-upload__add:hover,
+body.adam-theme-dark .adam-manager-portal .adam-upload__add:focus-visible {
+	background: #213125;
+}
 
-	.adam-manager-portal .adam-upload__item,
-	.adam-manager-portal .adam-upload__add {
-		background: #182219;
-		border-color: #526254;
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__item,
+body.adam-theme-dark .adam-manager-portal .adam-upload__add {
+	background: #182219;
+	border-color: #526254;
+	color: #eef4ec;
+}
 
-	.adam-manager-portal .adam-upload__preview {
-		background: #263329;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__preview {
+	background: #263329;
+}
 
-	.adam-manager-portal .adam-upload__toolbar strong,
-	.adam-manager-portal .adam-upload__meta strong {
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__toolbar strong,
+body.adam-theme-dark .adam-manager-portal .adam-upload__meta strong {
+	color: #eef4ec;
+}
 
-	.adam-manager-portal .adam-upload__toolbar span,
-	.adam-manager-portal .adam-upload__meta small,
-	.adam-manager-portal .adam-upload__add,
-	.adam-manager-portal .adam-upload__add small {
-		color: #b9c5b8;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__toolbar span,
+body.adam-theme-dark .adam-manager-portal .adam-upload__meta small,
+body.adam-theme-dark .adam-manager-portal .adam-upload__add,
+body.adam-theme-dark .adam-manager-portal .adam-upload__add small {
+	color: #b9c5b8;
+}
 
-	.adam-manager-portal .adam-upload__order button {
-		background: #263329;
-		border-color: #526254;
-		color: #dff0cf;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__order button {
+	background: #263329;
+	border-color: #526254;
+	color: #dff0cf;
+}
 
-	.adam-manager-portal .adam-upload__remove {
-		background: #182219;
-		border-color: #526254;
-	}
+body.adam-theme-dark .adam-manager-portal .adam-upload__remove {
+	background: #182219;
+	border-color: #526254;
 }

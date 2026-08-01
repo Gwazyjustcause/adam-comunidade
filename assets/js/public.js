@@ -169,5 +169,18 @@
 		}
 	} );
 
+	document.addEventListener( 'change', ( event ) => {
+		if ( ! ( event.target instanceof HTMLInputElement ) || 'keep_gallery_ids[]' !== event.target.name ) {
+			return;
+		}
+		const media = event.target.closest( '.adam-manager-media' );
+		const upload = media?.querySelector( '[data-adam-team-gallery-upload] [data-adam-upload]' );
+		if ( ! upload ) {
+			return;
+		}
+		upload.dataset.existingCount = String( media.querySelectorAll( 'input[name="keep_gallery_ids[]"]:checked' ).length );
+		upload.dispatchEvent( new CustomEvent( 'adam-upload-existing-count' ) );
+	} );
+
 	document.dispatchEvent( new CustomEvent( 'adamComunidadeReady' ) );
 }() );

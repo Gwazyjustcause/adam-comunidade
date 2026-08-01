@@ -87,6 +87,7 @@ final class Component {
 				'multiple'        => false,
 				'max'             => 1,
 				'max_size_mb'     => 10,
+				'existing_count'  => 0,
 				'required'        => false,
 				'items'           => array(),
 				'error'           => '',
@@ -111,6 +112,7 @@ final class Component {
 			data-mode="<?php echo esc_attr( $mode ); ?>"
 			data-kind="<?php echo esc_attr( $kind ); ?>"
 			data-max="<?php echo esc_attr( (string) $max ); ?>"
+			data-existing-count="<?php echo esc_attr( (string) max( 0, absint( $config['existing_count'] ) ) ); ?>"
 			data-name="<?php echo esc_attr( (string) $config['name'] ); ?>"
 			data-accept="<?php echo esc_attr( (string) $config['accept'] ); ?>"
 			data-max-size="<?php echo esc_attr( (string) max( 1, absint( $config['max_size_mb'] ) ) ); ?>"

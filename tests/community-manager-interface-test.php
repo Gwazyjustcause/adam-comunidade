@@ -58,7 +58,7 @@ $assert( str_contains( $portal, 'can_manage' ) && str_contains( $portal, 'verify
 $assert( str_contains( $admin, 'Admin_Router::authorize()' ), 'Administrative manager actions do not enforce the plugin capability.' );
 
 $assert( str_contains( $admin_css, '@media (max-width: 520px)' ) && str_contains( $public_css, '@media (max-width: 700px)' ), 'Manager screens are not responsive.' );
-$assert( str_contains( $admin_css, 'prefers-color-scheme: dark' ) && str_contains( $public_css, 'prefers-color-scheme: dark' ), 'Manager screens do not account for dark mode.' );
+$assert( str_contains( $admin_css, 'prefers-color-scheme: dark' ) && str_contains( $public_css, 'body.adam-theme-dark .adam-manager-portal' ) && ! str_contains( $public_css, '@media (prefers-color-scheme: dark)' ), 'The frontend manager portal does not follow the ADAM UI theme mode.' );
 $assert( str_contains( $admin_css, ':focus-visible' ) && str_contains( $public_css, ':focus-visible' ), 'Keyboard focus indicators are missing.' );
 $assert(
 	str_contains( $admin_assets, "'processing'" ) && str_contains( $public_assets, "'processing'" )

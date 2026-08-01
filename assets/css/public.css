@@ -248,9 +248,7 @@
 
 /* Dedicated Community Manager portal. */
 .adam-manager-portal {
-	background:
-		radial-gradient(circle at 10% 0, rgba(151, 196, 75, .16), transparent 32rem),
-		#f4f7f3;
+	background: var(--adam-bg, var(--theme-palette-color-8, #f4f7f3));
 	display: grid;
 	min-height: 70vh;
 	padding: clamp(32px, 6vw, 80px) 20px;
@@ -780,88 +778,86 @@
 	}
 }
 
-@media (prefers-color-scheme: dark) {
-	.adam-manager-portal {
-		background:
-			radial-gradient(circle at 10% 0, rgba(151, 196, 75, .12), transparent 32rem),
-			#101710;
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-manager-portal {
+	background:
+		radial-gradient(circle at 10% 0, rgba(151, 196, 75, .12), transparent 32rem),
+		#101710;
+	color: #eef4ec;
+}
 
-	.adam-manager-card,
-	.adam-manager-form,
-	.adam-manager-current-media,
-	.adam-manager-choices,
-	.adam-manager-current-image {
-		background: #182219;
-		border-color: #3c4c3d;
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-manager-card,
+body.adam-theme-dark .adam-manager-form,
+body.adam-theme-dark .adam-manager-current-media,
+body.adam-theme-dark .adam-manager-choices,
+body.adam-theme-dark .adam-manager-current-image {
+	background: #182219;
+	border-color: #3c4c3d;
+	color: #eef4ec;
+}
 
-	.adam-manager-card :is(h2, h3),
-	.adam-manager-form :is(h2, h3) {
-		color: #c9f6a1;
-	}
+body.adam-theme-dark .adam-manager-card :is(h2, h3),
+body.adam-theme-dark .adam-manager-form :is(h2, h3) {
+	color: #c9f6a1;
+}
 
-	.adam-manager-form input,
-	.adam-manager-form select,
-	.adam-manager-form textarea {
-		background: #101710;
-		border-color: #607161;
-		color: #fff;
-	}
+body.adam-theme-dark .adam-manager-form input,
+body.adam-theme-dark .adam-manager-form select,
+body.adam-theme-dark .adam-manager-form textarea {
+	background: #101710;
+	border-color: #607161;
+	color: #fff;
+}
 
-	.adam-manager-help,
-	.adam-manager-review-note {
-		color: #b9c5b8;
-	}
+body.adam-theme-dark .adam-manager-help,
+body.adam-theme-dark .adam-manager-review-note {
+	color: #b9c5b8;
+}
 
-	.adam-manager-pending-banner {
-		background: #26351d;
-		border-color: #52683c;
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-manager-pending-banner {
+	background: #26351d;
+	border-color: #52683c;
+	color: #eef4ec;
+}
 
-	.adam-manager-notice {
-		background: #26351d;
-		border-color: #6f9f24;
-		color: #f2f8ed;
-	}
+body.adam-theme-dark .adam-manager-notice {
+	background: #26351d;
+	border-color: #6f9f24;
+	color: #f2f8ed;
+}
 
-	.adam-manager-summary > div,
-	.adam-manager-submit-bar {
-		background: #182219;
-		border-color: #3c4c3d;
-	}
+body.adam-theme-dark .adam-manager-summary > div,
+body.adam-theme-dark .adam-manager-submit-bar {
+	background: #182219;
+	border-color: #3c4c3d;
+}
 
-	.adam-manager-summary .has-action,
-	.adam-manager-next-action {
-		background: #352d16;
-		border-color: #94751f;
-	}
+body.adam-theme-dark .adam-manager-summary .has-action,
+body.adam-theme-dark .adam-manager-next-action {
+	background: #352d16;
+	border-color: #94751f;
+}
 
-	.adam-manager-summary strong,
-	.adam-password-toggle,
-	.adam-manager-portal a:not(.adam-community-button) {
-		color: #b7dc59;
-	}
+body.adam-theme-dark .adam-manager-summary strong,
+body.adam-theme-dark .adam-password-toggle,
+body.adam-theme-dark .adam-manager-portal a:not(.adam-community-button) {
+	color: #b7dc59;
+}
 
-	.adam-password-toggle:hover,
-	.adam-password-toggle:focus-visible {
-		background: rgba(201, 246, 161, .12);
-	}
+body.adam-theme-dark .adam-password-toggle:hover,
+body.adam-theme-dark .adam-password-toggle:focus-visible {
+	background: rgba(201, 246, 161, .12);
+}
 
-	.adam-community-button--secondary,
-	.adam-community-button--ghost {
-		background: #263329;
-		border-color: #526254;
-		color: #eef4ec;
-	}
+body.adam-theme-dark .adam-community-button--secondary,
+body.adam-theme-dark .adam-community-button--ghost {
+	background: #263329;
+	border-color: #526254;
+	color: #eef4ec;
+}
 
-	.adam-manager-summary span,
-	.adam-manager-submit-bar [data-adam-save-state] {
-		color: #b9c5b8;
-	}
+body.adam-theme-dark .adam-manager-summary span,
+body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
+	color: #b9c5b8;
 }
 
 @media (prefers-reduced-motion: reduce) {

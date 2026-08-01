@@ -116,7 +116,7 @@ if ( $team_id && $adam_slug ) {
 						<p><?php esc_html_e( 'Selecione várias imagens e arraste as miniaturas para alterar a ordem.', 'adam-comunidade' ); ?></p>
 						<input type="hidden" name="team[gallery_reviewed]" value="1">
 						<?php $adam_team_gallery_items = array_map( static fn( int $id ): array => Upload_Component::attachment( $id ), array_map( 'absint', $adam_gallery ) ); ?>
-						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[gallery][]', 'multiple' => true, 'max' => 20, 'items' => $adam_team_gallery_items ) ); ?>
+						<?php Upload_Component::render( array( 'mode' => 'library', 'kind' => 'image', 'name' => 'team[gallery][]', 'multiple' => true, 'max' => 5, 'items' => $adam_team_gallery_items ) ); ?>
 					<label class="adam-field adam-colour-field">
 						<span><?php esc_html_e( 'Cor da equipa', 'adam-comunidade' ); ?></span>
 						<input class="adam-team-colour" type="text" name="team[team_colour]" value="<?php echo esc_attr( (string) $adam_value( 'team_colour' ) ); ?>" data-default-color="">

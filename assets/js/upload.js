@@ -49,14 +49,15 @@
 		let files = [];
 		let replaceIndex = null;
 		let dragged = null;
+		const existingCount = () => parseInt( upload.dataset.existingCount || '0', 10 );
 
 		function countLabel() {
-			return format( 'image' === kind ? labels.imageCount : labels.documentCount, list.querySelectorAll( '[data-adam-upload-item]' ).length, max );
+			return format( 'image' === kind ? labels.imageCount : labels.documentCount, existingCount() + list.querySelectorAll( '[data-adam-upload-item]' ).length, max );
 		}
 
 		function refresh() {
 			const items = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) );
-			const total = items.length;
+			const total = existingCount() + items.length;
 			count.textContent = countLabel();
 			upload.classList.toggle( 'is-full', total >= max );
 			add.hidden = total >= max;
@@ -295,7 +296,7 @@
 				mapped.slice( 1 ).forEach( ( item ) => item.url && URL.revokeObjectURL( item.url ) );
 				replaceIndex = null;
 			} else {
-				const remaining = max - files.length;
+				const remaining = Math.max( 0, max - existingCount() - files.length );
 				if ( mapped.length > remaining ) {
 					mapped.slice( remaining ).forEach( ( item ) => item.url && URL.revokeObjectURL( item.url ) );
 					showClientError( format( labels.limit, max ) );
@@ -397,6 +398,7 @@
 		if ( input ) {
 			input.addEventListener( 'change', () => addFiles( input.files ) );
 		}
+		upload.addEventListener( 'adam-upload-existing-count', refresh );
 
 		upload.addEventListener( 'click', ( event ) => {
 			const item = event.target.closest( '[data-adam-upload-item]' );

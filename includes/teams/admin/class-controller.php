@@ -16,6 +16,7 @@ use ADAM\Comunidade\Teams\Options;
 use ADAM\Comunidade\Teams\Repository;
 use ADAM\Comunidade\Teams\Validator;
 use ADAM\Comunidade\Teams\Hero_Carousel;
+use ADAM\Comunidade\Teams\Media_Lifecycle;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
 
@@ -144,7 +145,7 @@ final class Controller {
 			'adam-comunidade-teams-admin',
 			'adamTeamsAdmin',
 			array(
-				'confirmDelete' => __( 'Eliminar permanentemente esta equipa? Os ficheiros multimédia serão mantidos.', 'adam-comunidade' ),
+				'confirmDelete' => __( 'Eliminar permanentemente esta equipa e as imagens que lhe pertencem exclusivamente?', 'adam-comunidade' ),
 				'logoTitle'     => __( 'Escolher logótipo da equipa', 'adam-comunidade' ),
 				'coverTitle'    => __( 'Escolher imagem de capa', 'adam-comunidade' ),
 				'galleryTitle'  => __( 'Escolher imagens da galeria', 'adam-comunidade' ),
@@ -257,9 +258,13 @@ final class Controller {
 		Admin_Router::authorize();
 		check_admin_referer( 'adam_team_save' );
 
-		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
-		if ( $team_id && ! $this->repository->find( $team_id ) ) {
+		$team_id  = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
+		$previous = $team_id ? $this->repository->find( $team_id ) : null;
+		if ( $team_id && ! $previous ) {
 			wp_die( esc_html__( 'A equipa não foi encontrada.', 'adam-comunidade' ) );
+		}
+		if ( $previous ) {
+			Media_Lifecycle::claim( $team_id, Media_Lifecycle::team_ids( $previous ) );
 		}
 
 		$input   = isset( $_POST['team'] ) && is_array( $_POST['team'] )
@@ -288,6 +293,11 @@ final class Controller {
 		if ( ! $success ) {
 			Helpers::add_admin_notice( __( 'Não foi possível guardar a equipa.', 'adam-comunidade' ), 'error' );
 			$this->redirect_editor( $team_id );
+		}
+		$next_media_ids = Media_Lifecycle::team_ids( $result );
+		Media_Lifecycle::claim( (int) $saved_id, $next_media_ids );
+		if ( $previous ) {
+			Media_Lifecycle::delete_removed( $team_id, Media_Lifecycle::team_ids( $previous ), $next_media_ids );
 		}
 
 		$field_repository = new Field_Repository();
@@ -341,7 +351,7 @@ final class Controller {
 			Helpers::add_admin_notice( __( 'A equipa foi ocultada.', 'adam-comunidade' ), 'success' );
 		} else {
 			$this->repository->delete( $team_id );
-			Helpers::add_admin_notice( __( 'A equipa foi eliminada. Os ficheiros multimédia foram mantidos.', 'adam-comunidade' ), 'success' );
+			Helpers::add_admin_notice( __( 'A equipa e as imagens que lhe pertenciam exclusivamente foram eliminadas.', 'adam-comunidade' ), 'success' );
 		}
 
 		Logger::info( 'Team ' . $action, array( 'team_id' => $team_id, 'user_id' => get_current_user_id() ) );

@@ -26,6 +26,7 @@ use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Managers\Service as Manager_Service;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
+use ADAM\Comunidade\Teams\Media_Lifecycle as Team_Media_Lifecycle;
 use ADAM\Comunidade\Teams\Validator as Team_Validator;
 use ADAM\Comunidade\Uploads\Component as Upload_Component;
 use ADAM\Comunidade\Uploads\Handler as Upload_Handler;
@@ -1051,6 +1052,9 @@ final class Portal {
 			if ( ! $synced ) {
 				return new \WP_Error( 'amenities_failed', __( 'Não foi possível guardar as comodidades da submissão.', 'adam-comunidade' ) );
 			}
+		}
+		if ( 'team' === $row->object_type ) {
+			Team_Media_Lifecycle::claim( $result_id, Team_Media_Lifecycle::team_ids( $data ) );
 		}
 		return $result_id;
 	}

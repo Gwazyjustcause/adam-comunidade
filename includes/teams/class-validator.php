@@ -70,6 +70,9 @@ final class Validator {
 		} else {
 			$gallery = array();
 		}
+		if ( count( $gallery ) > 5 ) {
+			$errors->add( 'gallery_limit', __( 'A galeria da equipa pode ter no máximo 5 imagens. Remova uma imagem antes de adicionar outra.', 'adam-comunidade' ) );
+		}
 		$email          = sanitize_email( (string) ( $input['email'] ?? '' ) );
 
 		if ( ! empty( $input['email'] ) && ! is_email( $email ) ) {
