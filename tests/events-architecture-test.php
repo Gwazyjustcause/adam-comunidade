@@ -25,7 +25,7 @@ $builder = (string) file_get_contents( $root . '/includes/experience/class-build
 $api_v2 = (string) file_get_contents( $root . '/includes/experience/class-api-v2.php' );
 
 $assert( str_contains( $main, 'function adam_comunidade_events()' ), 'Stable PHP API facade is missing.' );
-$assert( str_contains( $loader, 'new Events\\Module()' ), 'Events is not owned by ADAM Comunidade.' );
+$assert( str_contains( $loader, '$this->register_module( Events\\Module::class );' ), 'Events is not registered through the guarded module loader.' );
 $assert( str_contains( $migration, "'adam_membership_events'" ), 'Legacy events are not imported.' );
 $assert( str_contains( $migration, 'legacy_events_preserved' ), 'Rollback data preservation is not documented in the migration.' );
 $assert( str_contains( $api, 'get_events' ) && str_contains( $api, 'get_event' ) && str_contains( $api, 'register_attendee' ) && str_contains( $api, 'attendance_status' ), 'Shared API contract is incomplete.' );

@@ -29,7 +29,7 @@ $field_page = (string) file_get_contents( $root . '/templates/fields/single.php'
 foreach ( array( 'managers_table', 'assignments_table', 'invitations_table', 'sessions_table', 'revisions_table' ) as $table_method ) {
 	$assert( str_contains( $schema, 'function ' . $table_method ), 'Missing isolated manager table: ' . $table_method );
 }
-$assert( str_contains( $loader, 'new Managers\\Module()' ), 'The manager module is not booted.' );
+$assert( str_contains( $loader, '$this->register_module( Managers\\Module::class );' ), 'The manager module is not registered through the guarded module loader.' );
 $assert( str_contains( $cleanup, 'adam_comunidade_manager_cleanup' ), 'The manager data lifecycle cleanup is not registered.' );
 $assert( str_contains( $auth, "private const COOKIE = 'adam_community_manager_session'" ), 'The manager session must use its own cookie.' );
 $assert( str_contains( $auth, "hash( 'sha256', \$raw )" ), 'Session tokens must be hashed at rest.' );
