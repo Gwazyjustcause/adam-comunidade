@@ -38,6 +38,7 @@ final class Portal {
 	private static ?Email_Service $emails = null;
 	private Upload_Handler $uploads;
 	private const ROUTES_VERSION = '1.1.0';
+	private const PUBLIC_SUBMISSION_ACTION = 'adam_public_submission';
 
 	private const TYPES = array(
 		'team'        => 'equipa',
@@ -226,13 +227,13 @@ final class Portal {
 			<?php self::status_notice( $type ); ?>
 			<?php if ( $errors ) : ?>
 				<div class="adam-form-error-summary" id="adam-first-error" role="alert" tabindex="-1" data-adam-error-summary>
-					<strong><?php esc_html_e( 'Corrija os campos assinalados e tente novamente.', 'adam-comunidade' ); ?></strong>
+					<strong><?php echo esc_html( (string) ( $errors['form'] ?? __( 'Corrija os campos assinalados e tente novamente.', 'adam-comunidade' ) ) ); ?></strong>
 				</div>
 			<?php endif; ?>
 			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" enctype="multipart/form-data" class="adam-portal-form" novalidate>
-				<input type="hidden" name="action" value="adam_public_submission">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::PUBLIC_SUBMISSION_ACTION ); ?>">
 				<input type="hidden" name="object_type" value="<?php echo esc_attr( $type ); ?>">
-				<?php wp_nonce_field( 'adam_public_submission', 'adam_nonce' ); ?>
+				<?php wp_nonce_field( self::PUBLIC_SUBMISSION_ACTION, 'adam_nonce' ); ?>
 				<?php foreach ( $form['fields'] as $key => $field ) : ?>
 					<?php if ( ! empty( $field['visible'] ) ) : ?>
 						<?php if ( 'field' === $type && 'recommended_players' === $key ) : ?><div class="adam-portal-form__wide adam-portal-section-heading"><h2><?php esc_html_e( 'Capacidade', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Indique valores aproximados para ajudar visitantes e o planeamento de eventos.', 'adam-comunidade' ); ?></p></div><?php endif; ?>
@@ -386,11 +387,18 @@ final class Portal {
 	}
 
 	public function submit(): void {
-		check_admin_referer( 'adam_public_submission', 'adam_nonce' );
 		$type = sanitize_key( wp_unslash( $_POST['object_type'] ?? '' ) );
 		if ( ! isset( self::TYPES[ $type ] ) ) {
 			wp_safe_redirect( home_url( '/' ) );
 			exit;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['adam_nonce'] ?? '' ) );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, self::PUBLIC_SUBMISSION_ACTION ) ) {
+			$this->redirect_form_errors(
+				$type,
+				array(),
+				array( 'form' => __( 'Não foi possível validar o envio. Atualize a página e tente novamente.', 'adam-comunidade' ) )
+			);
 		}
 		$form    = self::forms()->get( $type );
 		$payload = array();

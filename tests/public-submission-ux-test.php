@@ -21,6 +21,14 @@ $style  = (string) file_get_contents( $root . '/assets/css/experience.css' );
 $view   = (string) file_get_contents( $root . '/admin/views/forms/manager.php' );
 $module = (string) file_get_contents( $root . '/includes/experience/class-module.php' );
 
+$assert( str_contains( $portal, "add_action( 'admin_post_nopriv_adam_public_submission', array( \$this, 'submit' ) )" ), 'Public submissions must be registered for visitors.' );
+$assert( str_contains( $portal, "add_action( 'admin_post_adam_public_submission', array( \$this, 'submit' ) )" ), 'Public submissions must be registered for administrators and other authenticated users.' );
+$assert( 1 === substr_count( $portal, 'public function submit(): void' ), 'Visitors and authenticated users must not use separate submission implementations.' );
+foreach ( array( 'team', 'field', 'partner', 'institution' ) as $type ) {
+	$assert( str_contains( $portal, "'{$type}'" ), "The shared public submission flow is missing support for: {$type}." );
+}
+$assert( str_contains( $portal, 'wp_verify_nonce' ) && ! str_contains( substr( $portal, strpos( $portal, 'public function submit()' ), 400 ), 'check_admin_referer' ), 'Invalid public nonces must return to the front-end form instead of rendering an Admin error page.' );
+$assert( str_contains( $portal, "\$errors['form'] ??" ), 'General submission failures must render a readable message on the public form.' );
 $assert( ! str_contains( substr( $portal, strpos( $portal, 'public function submit()' ), 6500 ), 'wp_die(' ), 'Public validation must return to the form instead of rendering a blank error page.' );
 $assert( str_contains( $portal, 'redirect_form_errors' ), 'Server validation must preserve scalar form state.' );
 $assert( str_contains( $portal, 'adam-field-error' ), 'Validation errors must render beside their field.' );
