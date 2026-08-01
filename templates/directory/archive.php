@@ -56,7 +56,7 @@ get_header();
 		</div>
 	</header>
 	<div class="adam-community-container">
-		<form class="adam-community-filters" data-directory-filters method="get">
+		<form class="adam-community-filters adam-directory-filters" data-directory-filters method="get">
 			<label><span><?php esc_html_e( 'Pesquisar', 'adam-comunidade' ); ?></span><input type="search" name="search" value="<?php echo esc_attr( $search ); ?>"></label>
 			<?php if ( $definition['categories'] ) : ?><label><span><?php echo esc_html( 'institution' === $type ? __( 'Tipo', 'adam-comunidade' ) : __( 'Categoria', 'adam-comunidade' ) ); ?></span><select name="category"><option value=""><?php esc_html_e( 'Todas', 'adam-comunidade' ); ?></option><?php foreach ( $definition['categories'] as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>" <?php selected( $category, $key ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label><?php endif; ?>
 			<label><span><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?></span><select name="district"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( $repository->distinct( $type, 'district' ) as $value ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( $district, $value ); ?>><?php echo esc_html( $value ); ?></option><?php endforeach; ?></select></label>

@@ -36,9 +36,40 @@
  * Shared directory primitives used by Campos, Equipas and future archives.
  */
 .adam-directory-filters {
+	align-items: end;
 	background: #fff;
-	border: 1px solid var(--adam-border);
+	border: 1px solid var(--adam-border, #e2e8f0);
 	border-radius: 14px;
+	box-shadow: 0 10px 30px rgba(21, 32, 38, .07);
+	display: grid;
+	gap: 14px;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--adam-directory-filter-min, 13rem)), 1fr));
+	margin-bottom: 22px;
+	padding: 20px;
+}
+
+.adam-directory-filters > * {
+	min-width: 0;
+}
+
+.adam-directory-filters > :where(label, .adam-team-filter) {
+	align-content: start;
+	display: grid;
+	gap: 6px;
+}
+
+.adam-directory-filters :where(input:not([type="checkbox"]):not([type="radio"]), select) {
+	box-sizing: border-box;
+	max-width: 100%;
+	min-width: 0;
+	width: 100%;
+}
+
+.adam-directory-filters > :where(button, .adam-directory-button) {
+	align-self: end;
+	min-height: 42px;
+	white-space: normal;
+	width: 100%;
 }
 
 .adam-directory-card {

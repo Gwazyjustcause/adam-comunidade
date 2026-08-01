@@ -598,13 +598,6 @@
 	margin: 5px 0;
 }
 
-.adam-map-filters {
-	display: grid;
-	gap: 10px;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	margin-bottom: 18px;
-}
-
 .adam-map-filters label,
 .adam-compare-picker label {
 	display: grid;

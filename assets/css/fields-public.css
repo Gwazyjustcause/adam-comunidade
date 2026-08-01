@@ -175,19 +175,6 @@
 	position: relative;
 }
 
-.adam-field-filters {
-	align-items: end;
-	background: #fff;
-	border: 1px solid #e1e4dc;
-	border-radius: 12px;
-	box-shadow: 0 12px 30px rgba(22, 31, 20, .08);
-	display: grid;
-	gap: 12px;
-	grid-template-columns: 1.35fr repeat(4, minmax(110px, .85fr));
-	margin-bottom: 22px;
-	padding: 22px;
-}
-
 .adam-field-filters label {
 	display: flex;
 	flex-direction: column;
@@ -795,10 +782,6 @@
 }
 
 @media (max-width: 1050px) {
-	.adam-field-filters {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-	}
-
 	.adam-field-grid {
 		grid-template-columns: repeat(2, 1fr);
 	}
@@ -834,7 +817,6 @@
 		padding-left: 14px;
 	}
 
-	.adam-field-filters,
 	.adam-field-grid,
 	.adam-facilities-grid,
 	.adam-field-submission-cta {

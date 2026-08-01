@@ -35,7 +35,7 @@ get_header();
 
 		<section class="adam-advanced-map" data-adam-advanced-map data-markers="<?php echo esc_attr( wp_json_encode( $markers ) ); ?>">
 			<div class="adam-section-title"><div><span><?php esc_html_e( 'Diretório em direto', 'adam-comunidade' ); ?></span><h2><?php esc_html_e( 'Mapa da Comunidade', 'adam-comunidade' ); ?></h2></div><a class="adam-community-button adam-community-button--ghost" href="<?php echo esc_url( trailingslashit( Managed_Pages::url( 'community' ) ) . 'comparar/' ); ?>"><?php esc_html_e( 'Comparar registos', 'adam-comunidade' ); ?></a></div>
-			<form class="adam-map-filters" data-adam-map-filters>
+			<form class="adam-map-filters adam-directory-filters" data-adam-map-filters>
 				<label><?php esc_html_e( 'Distrito', 'adam-comunidade' ); ?><input name="district" type="text"></label>
 				<label><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?><input name="municipality" type="text"></label>
 				<label><?php esc_html_e( 'Estilo de jogo', 'adam-comunidade' ); ?><select name="playing_style"><option value=""><?php esc_html_e( 'Todos', 'adam-comunidade' ); ?></option><?php foreach ( Field_Options::playing_styles() as $key => $label ) : ?><option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
