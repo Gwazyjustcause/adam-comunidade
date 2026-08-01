@@ -19,6 +19,7 @@ $portal     = (string) file_get_contents( $root . '/includes/managers/class-port
 $admin      = (string) file_get_contents( $root . '/includes/managers/class-admin.php' );
 $admin_js   = (string) file_get_contents( $root . '/assets/js/admin.js' );
 $public_js  = (string) file_get_contents( $root . '/assets/js/public.js' );
+$upload_js  = (string) file_get_contents( $root . '/assets/js/upload.js' );
 $fields     = (string) file_get_contents( $root . '/includes/fields/class-repository.php' );
 $directory  = (string) file_get_contents( $root . '/includes/directory/class-repository.php' );
 $experience = (string) file_get_contents( $root . '/includes/experience/class-portal.php' );
@@ -47,7 +48,7 @@ $assert( str_contains( $policy, 'adam_comunidade_manager_revision_entity_types' 
 $assert( str_contains( $portal, 'active_revisions_for_manager' ) && str_contains( $portal, 'Editar proposta pendente' ), 'Managers cannot understand or continue a pending proposal.' );
 $assert( str_contains( $portal, 'Alterações pedidas pela ADAM:' ) && str_contains( $portal, 'O registo público mantém-se inalterado' ), 'Manager moderation status is not explained clearly.' );
 $assert( str_contains( $portal, 'remove_cover' ) && str_contains( $portal, 'remove_logo' ) && str_contains( $portal, 'keep_gallery_ids[]' ), 'Image removals are not preserved in proposals.' );
-$assert( str_contains( $public_js, '[data-adam-current-gallery]' ) && str_contains( $public_js, 'dragstart' ) && str_contains( $public_js, 'ArrowLeft' ), 'Proposed image ordering is not accessible or draggable.' );
+$assert( str_contains( $upload_js, "upload.addEventListener( 'dragstart'" ) && str_contains( $upload_js, "[ 'ArrowLeft', 'ArrowRight' ]" ) && str_contains( $portal, "'order_name' => 'gallery_order[]'" ), 'Proposed image ordering is not accessible, draggable, or persisted.' );
 
 $assert( str_contains( $admin, 'adam-revision-comparison' ) && str_contains( $admin, 'Versão publicada' ) && str_contains( $admin, 'Versão proposta' ), 'Administrators do not receive a side-by-side comparison.' );
 $assert( str_contains( $admin, 'adam-revision-conflict-comparison' ) && str_contains( $admin, 'Publicado agora' ) && str_contains( $admin, 'Proposta do Gestor' ), 'Administrators cannot inspect the current published value before forcing a conflicting proposal.' );

@@ -24,13 +24,12 @@ $repository      = (string) file_get_contents( $root . '/includes/teams/class-re
 $media           = (string) file_get_contents( $root . '/includes/teams/class-media-lifecycle.php' );
 $component       = (string) file_get_contents( $root . '/includes/uploads/class-component.php' );
 $upload_script   = (string) file_get_contents( $root . '/assets/js/upload.js' );
-$public_script   = (string) file_get_contents( $root . '/assets/js/public.js' );
 
 $assert( str_contains( $forms, "'team_photos'" ) && str_contains( $forms, "'.jpg,.jpeg,.png,.webp', 5" ), 'The public Team gallery must expose a five-image limit.' );
 $assert( str_contains( $admin_view, "'name' => 'team[gallery][]'" ) && str_contains( $admin_view, "'max' => 5" ), 'The administrative Team gallery must prevent selecting more than five images.' );
-$assert( str_contains( $manager_portal, "'team' === \$type ? 5" ) && str_contains( $manager_portal, "count( \$kept_gallery_ids ) + count( \$gallery ) > \$gallery_max" ), 'The Community Manager must count saved and newly selected Team images.' );
+$assert( str_contains( $manager_portal, "in_array( \$type, array( 'team', 'field' ), true ) ? 5" ) && str_contains( $manager_portal, 'count( $next_gallery_ids ) > $gallery_max' ), 'The Community Manager must enforce five combined saved and newly selected images.' );
 $assert( str_contains( $validator, 'count( $gallery ) > 5' ) && str_contains( $validator, 'no máximo 5 imagens' ), 'The server must reject Team galleries over five images with a clear message.' );
-$assert( str_contains( $component, 'data-existing-count' ) && str_contains( $upload_script, 'existingCount()' ) && str_contains( $public_script, 'keep_gallery_ids[]' ), 'The client-side limit must include existing saved images and react to removals.' );
+$assert( str_contains( $component, 'data-adam-upload-existing-value' ) && str_contains( $component, 'data-adam-upload-order-value' ) && str_contains( $upload_script, "list.querySelectorAll( '[data-adam-upload-item]' ).length" ), 'The client-side limit must count existing and new cards in the unified gallery.' );
 
 foreach ( array( "current_user_can( 'upload_files' )", 'get_post_meta', 'used_elsewhere', 'wp_delete_attachment( $attachment_id, true )' ) as $guard ) {
 	$assert( str_contains( $media, $guard ), "Missing permanent-deletion guard: {$guard}." );

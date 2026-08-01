@@ -499,56 +499,6 @@
 	padding-top: 24px;
 }
 
-.adam-manager-current-media {
-	border: 1px solid #dce5db;
-	border-radius: 12px;
-	margin: 18px 0 24px;
-	padding: 16px;
-}
-
-.adam-manager-current-media > div {
-	display: grid;
-	gap: 12px;
-	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-}
-
-.adam-manager-current-media label {
-	cursor: pointer;
-	position: relative;
-}
-
-.adam-manager-current-media label.is-dragging {
-	opacity: .45;
-}
-
-.adam-manager-current-media label:focus-visible {
-	border-radius: 9px;
-	outline: 3px solid #97c44b;
-	outline-offset: 3px;
-}
-
-.adam-manager-current-media img {
-	aspect-ratio: 1;
-	border-radius: 9px;
-	height: auto;
-	object-fit: cover;
-	width: 100%;
-}
-
-.adam-manager-current-media input {
-	accent-color: #5f8f20;
-	left: 7px;
-	position: absolute;
-	top: 7px;
-	width: auto;
-	z-index: 1;
-}
-
-.adam-manager-current-media input:not(:checked) + img {
-	filter: grayscale(1);
-	opacity: .35;
-}
-
 .adam-manager-review-note,
 .adam-manager-help {
 	color: #536153;
@@ -787,7 +737,6 @@ body.adam-theme-dark .adam-manager-portal {
 
 body.adam-theme-dark .adam-manager-card,
 body.adam-theme-dark .adam-manager-form,
-body.adam-theme-dark .adam-manager-current-media,
 body.adam-theme-dark .adam-manager-choices,
 body.adam-theme-dark .adam-manager-current-image {
 	background: #182219;

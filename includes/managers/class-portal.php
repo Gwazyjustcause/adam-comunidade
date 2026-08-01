@@ -380,6 +380,7 @@ final class Portal {
 			: ( isset( $pending_payload['gallery'] ) ? array_map( 'absint', (array) $pending_payload['gallery'] ) : $this->gallery_ids( $type, $record ) );
 		$image_policy   = Config::upload_policy( 'manager_image' );
 		$gallery_policy = Config::upload_policy( 'manager_gallery' );
+		$gallery_max    = in_array( $type, array( 'team', 'field' ), true ) ? 5 : $gallery_policy['max_files'];
 		$image_accept   = implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $image_policy['extensions'] ) );
 		?>
 		<form class="adam-card adam-manager-form" data-adam-manager-editor method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -412,21 +413,15 @@ final class Portal {
 			<?php if ( 'field' === $type ) { $this->field_sections( $record, $pending_payload ); } elseif ( 'team' === $type ) { $this->team_sections( $record ); } else { $this->directory_sections( $record ); } ?>
 			<div class="adam-manager-media">
 				<h3><?php esc_html_e( 'Imagens', 'adam-comunidade' ); ?></h3>
-				<?php if ( $current_gallery_ids ) : ?>
-					<fieldset class="adam-manager-current-media">
-						<legend><?php echo esc_html( $active_revision ? __( 'Fotografias da proposta pendente', 'adam-comunidade' ) : __( 'Fotografias atuais', 'adam-comunidade' ) ); ?></legend>
-						<p><?php esc_html_e( 'Desmarque para propor a remoção. Arraste as fotografias para alterar a ordem.', 'adam-comunidade' ); ?></p>
-						<div data-adam-current-gallery><?php foreach ( $current_gallery_ids as $attachment_id ) : ?><label draggable="true" tabindex="0" data-attachment-id="<?php echo esc_attr( (string) $attachment_id ); ?>"><input type="checkbox" name="keep_gallery_ids[]" value="<?php echo esc_attr( (string) $attachment_id ); ?>" checked><?php echo wp_get_attachment_image( $attachment_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><span class="screen-reader-text"><?php esc_html_e( 'Manter fotografia. Use Alt e as setas para alterar a ordem.', 'adam-comunidade' ); ?></span></label><?php endforeach; ?></div>
-					</fieldset>
-				<?php endif; ?>
 				<input type="hidden" name="gallery_reviewed" value="1">
 				<?php if ( ! empty( $record->cover_id ) && wp_attachment_is_image( (int) $record->cover_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Capa incluída na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->cover_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_cover" value="1"> <?php esc_html_e( 'Propor remoção da capa', 'adam-comunidade' ); ?></label></div><?php endif; ?>
 				<label><?php esc_html_e( 'Nova imagem de capa (opcional)', 'adam-comunidade' ); ?></label>
 				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_cover', 'accept' => $image_accept, 'max_size_mb' => $image_policy['max_size_mb'] ) ); ?>
 				<?php if ( 'field' !== $type && ! empty( $record->logo_id ) && wp_attachment_is_image( (int) $record->logo_id ) ) : ?><div class="adam-manager-current-image"><strong><?php esc_html_e( 'Logótipo incluído na proposta', 'adam-comunidade' ); ?></strong><?php echo wp_get_attachment_image( (int) $record->logo_id, 'thumbnail' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><label><input type="checkbox" name="remove_logo" value="1"> <?php esc_html_e( 'Propor remoção do logótipo', 'adam-comunidade' ); ?></label></div><?php endif; ?>
 				<?php if ( 'field' !== $type ) : ?><label><?php esc_html_e( 'Novo logótipo (opcional)', 'adam-comunidade' ); ?></label><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_logo', 'accept' => $image_accept, 'max_size_mb' => $image_policy['max_size_mb'] ) ); ?><?php endif; ?>
-				<label><?php esc_html_e( 'Novas fotografias para a galeria (opcional)', 'adam-comunidade' ); ?></label>
-				<div <?php echo 'team' === $type ? 'data-adam-team-gallery-upload' : ''; ?>><?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $gallery_policy['extensions'] ) ), 'multiple' => true, 'max' => 'team' === $type ? 5 : $gallery_policy['max_files'], 'existing_count' => 'team' === $type ? count( $current_gallery_ids ) : 0, 'max_size_mb' => $gallery_policy['max_size_mb'] ) ); ?></div>
+				<label><?php esc_html_e( 'Fotografias da galeria (opcional)', 'adam-comunidade' ); ?></label>
+				<?php $gallery_items = array_map( static fn( int $attachment_id ): array => Upload_Component::attachment( $attachment_id ), array_slice( $current_gallery_ids, 0, $gallery_max ) ); ?>
+				<?php Upload_Component::render( array( 'mode' => 'file', 'kind' => 'image', 'name' => 'manager_gallery[]', 'accept' => implode( ',', array_map( static fn( string $extension ): string => '.' . $extension, $gallery_policy['extensions'] ) ), 'multiple' => true, 'max' => $gallery_max, 'items' => $gallery_items, 'existing_name' => 'keep_gallery_ids[]', 'order_name' => 'gallery_order[]', 'max_size_mb' => $gallery_policy['max_size_mb'] ) ); ?>
 			</div>
 			<div class="adam-manager-submit-bar">
 				<div>
@@ -593,7 +588,7 @@ final class Portal {
 			if ( $logo ) { $input['logo_id'] = $logo; $uploaded[] = $logo; }
 		}
 		$gallery_policy = Config::upload_policy( 'manager_gallery' );
-		$gallery_max = 'team' === $type ? 5 : $gallery_policy['max_files'];
+		$gallery_max = in_array( $type, array( 'team', 'field' ), true ) ? 5 : $gallery_policy['max_files'];
 		$gallery = $this->uploads->upload_many(
 			'manager_gallery',
 			$gallery_policy['extensions'],
@@ -615,14 +610,26 @@ final class Portal {
 				array_filter( array_map( 'absint', (array) wp_unslash( $_POST['keep_gallery_ids'] ?? array() ) ) )
 			)
 		);
-		$next_gallery_ids = array_slice(
-			array_values( array_unique( array_merge( $kept_gallery_ids, $gallery ) ) ),
-			0,
-			$gallery_max
-		);
-		if ( 'team' === $type && count( $kept_gallery_ids ) + count( $gallery ) > $gallery_max ) {
+		$gallery_order = isset( $_POST['gallery_order'] ) && is_array( $_POST['gallery_order'] )
+			? array_map( 'sanitize_text_field', wp_unslash( $_POST['gallery_order'] ) )
+			: array();
+		$next_gallery_ids = array();
+		$new_index        = 0;
+		foreach ( $gallery_order as $token ) {
+			if ( str_starts_with( $token, 'existing:' ) ) {
+				$attachment_id = absint( substr( $token, 9 ) );
+				if ( in_array( $attachment_id, $kept_gallery_ids, true ) ) {
+					$next_gallery_ids[] = $attachment_id;
+				}
+			} elseif ( 'new' === $token && isset( $gallery[ $new_index ] ) ) {
+				$next_gallery_ids[] = absint( $gallery[ $new_index ] );
+				++$new_index;
+			}
+		}
+		$next_gallery_ids = array_values( array_unique( array_merge( $next_gallery_ids, $kept_gallery_ids, array_slice( $gallery, $new_index ) ) ) );
+		if ( count( $next_gallery_ids ) > $gallery_max ) {
 			$this->uploads->delete( $uploaded );
-			wp_die( esc_html__( 'A galeria da equipa pode ter no máximo 5 imagens. Remova uma imagem existente antes de adicionar outra.', 'adam-comunidade' ) );
+			wp_die( esc_html__( 'A galeria pode ter no máximo 5 imagens. Remova uma imagem existente antes de adicionar outra.', 'adam-comunidade' ) );
 		}
 		if ( 'team' === $type ) {
 			Team_Media_Lifecycle::claim( $id, $uploaded );

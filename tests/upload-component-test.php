@@ -21,7 +21,7 @@ $fields    = (string) file_get_contents( $root . '/admin/views/fields/editor.php
 $teams     = (string) file_get_contents( $root . '/admin/views/teams/editor.php' );
 $directory = (string) file_get_contents( $root . '/admin/views/directory/editor.php' );
 
-foreach ( array( "'mode'", "'kind'", "'multiple'", "'max'", "'items'" ) as $configuration ) {
+foreach ( array( "'mode'", "'kind'", "'multiple'", "'max'", "'items'", "'existing_name'", "'order_name'" ) as $configuration ) {
 	$assert( str_contains( $component, $configuration ), 'Missing uploader configuration: ' . $configuration );
 }
 
@@ -33,6 +33,7 @@ $assert( str_contains( $script, 'URL.createObjectURL' ), 'Images need immediate 
 $assert( str_contains( $script, 'DataTransfer' ), 'Local selections must remain synchronized after removal and ordering.' );
 $assert( str_contains( $script, "'dragover'" ) && str_contains( $script, "'drop'" ), 'Drag and drop support is missing.' );
 $assert( str_contains( $script, 'data-adam-upload-replace' ), 'Individual replacement support is missing.' );
+$assert( str_contains( $script, 'replaceTarget.replaceWith' ) && str_contains( $script, 'syncFileInput' ), 'Existing and local files cannot share replacement and ordering controls.' );
 $assert( str_contains( $style, '.adam-upload__actions' ), 'Hover actions are missing.' );
 $assert( str_contains( $style, '.adam-upload__document-icon' ), 'Document cards are missing.' );
 

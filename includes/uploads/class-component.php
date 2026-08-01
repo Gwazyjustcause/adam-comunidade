@@ -88,6 +88,8 @@ final class Component {
 				'max'             => 1,
 				'max_size_mb'     => 10,
 				'existing_count'  => 0,
+				'existing_name'   => '',
+				'order_name'      => '',
 				'required'        => false,
 				'items'           => array(),
 				'error'           => '',
@@ -119,6 +121,7 @@ final class Component {
 			data-caption-pattern="<?php echo esc_attr( (string) $config['caption_pattern'] ); ?>"
 			data-toggle-pattern="<?php echo esc_attr( (string) $config['toggle_pattern'] ); ?>"
 			data-toggle-label="<?php echo esc_attr( (string) $config['toggle_label'] ); ?>"
+			data-order-name="<?php echo esc_attr( (string) $config['order_name'] ); ?>"
 		>
 			<?php if ( 'file' === $mode ) : ?>
 				<input class="adam-upload__input" data-adam-upload-input type="file" name="<?php echo esc_attr( (string) $config['name'] ); ?>" aria-label="<?php echo esc_attr( $label ); ?>" accept="<?php echo esc_attr( (string) $config['accept'] ); ?>" <?php echo $multiple ? 'multiple' : ''; ?> <?php echo $config['required'] ? 'required' : ''; ?> <?php echo $config['error'] ? 'aria-invalid="true" aria-describedby="' . esc_attr( $id . '-error' ) . '"' : ''; ?>>
@@ -182,6 +185,8 @@ final class Component {
 		?>
 		<article class="adam-upload__item" data-adam-upload-item data-id="<?php echo esc_attr( (string) $id ); ?>" draggable="<?php echo $multiple ? 'true' : 'false'; ?>" role="listitem" <?php echo $multiple ? 'tabindex="0" aria-label="' . esc_attr( $filename . '. ' . __( 'Use Alt e as setas para alterar a ordem.', 'adam-comunidade' ) ) . '"' : ''; ?>>
 			<?php if ( $multiple && 'library' === $config['mode'] ) : ?><input data-adam-upload-item-value type="hidden" name="<?php echo esc_attr( (string) $config['name'] ); ?>" value="<?php echo esc_attr( (string) $id ); ?>"><?php endif; ?>
+			<?php if ( $multiple && 'file' === $config['mode'] && $id && ! empty( $config['existing_name'] ) ) : ?><input data-adam-upload-existing-value type="hidden" name="<?php echo esc_attr( (string) $config['existing_name'] ); ?>" value="<?php echo esc_attr( (string) $id ); ?>"><?php endif; ?>
+			<?php if ( $multiple && 'file' === $config['mode'] && $id && ! empty( $config['order_name'] ) ) : ?><input data-adam-upload-order-value type="hidden" name="<?php echo esc_attr( (string) $config['order_name'] ); ?>" value="existing:<?php echo esc_attr( (string) $id ); ?>"><?php endif; ?>
 			<div class="adam-upload__preview">
 				<?php if ( 'image' === $kind && ! empty( $item['url'] ) ) : ?>
 					<img src="<?php echo esc_url( (string) $item['url'] ); ?>" alt="">

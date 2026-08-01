@@ -47,7 +47,7 @@
 		const progress = upload.querySelector( '[data-adam-upload-progress]' );
 		const live = upload.querySelector( '[data-adam-upload-live]' );
 		let files = [];
-		let replaceIndex = null;
+		let replaceTarget = null;
 		let dragged = null;
 		const existingCount = () => parseInt( upload.dataset.existingCount || '0', 10 );
 
@@ -152,6 +152,14 @@
 				hidden.value = item.id;
 				card.appendChild( hidden );
 			}
+			if ( 'file' === mode && multiple && upload.dataset.orderName ) {
+				const order = document.createElement( 'input' );
+				order.type = 'hidden';
+				order.dataset.adamUploadOrderValue = '';
+				order.name = upload.dataset.orderName;
+				order.value = 'new';
+				card.appendChild( order );
+			}
 
 			const preview = document.createElement( 'div' );
 			preview.className = 'adam-upload__preview';
@@ -238,6 +246,7 @@
 			card.appendChild( remove );
 			if ( isLocal ) {
 				card._adamFile = item.file; // DOM-only reference; never serialized.
+				card._adamEntry = item;
 			}
 			return card;
 		}
@@ -246,16 +255,12 @@
 			if ( ! input || 'undefined' === typeof DataTransfer ) {
 				return;
 			}
+			files = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) )
+				.map( ( item ) => item._adamEntry )
+				.filter( Boolean );
 			const transfer = new DataTransfer();
 			files.forEach( ( item ) => transfer.items.add( item.file ) );
 			input.files = transfer.files;
-		}
-
-		function renderFiles() {
-			list.querySelectorAll( '[data-adam-upload-item]' ).forEach( ( item ) => item.remove() );
-			files.forEach( ( item, index ) => list.insertBefore( itemElement( item, index, true ), add ) );
-			syncFileInput();
-			refresh();
 		}
 
 		function addFiles( selected ) {
@@ -264,7 +269,7 @@
 			let duplicate = false;
 			const incoming = Array.from( selected || [] ).filter( accepted ).filter( ( file ) => {
 				const signature = `${ file.name }|${ file.size }|${ file.lastModified }`;
-				if ( null === replaceIndex && signatures.has( signature ) ) {
+				if ( null === replaceTarget && signatures.has( signature ) ) {
 					duplicate = true;
 					return false;
 				}
@@ -287,24 +292,24 @@
 				type: extension( file.name ),
 				url: 'image' === kind ? URL.createObjectURL( file ) : '',
 			} ) );
-			if ( null !== replaceIndex ) {
-				const old = files[ replaceIndex ];
-				if ( old?.url ) {
-					URL.revokeObjectURL( old.url );
+			if ( replaceTarget ) {
+				if ( replaceTarget._adamEntry?.url ) {
+					URL.revokeObjectURL( replaceTarget._adamEntry.url );
 				}
-				files.splice( replaceIndex, 1, mapped[ 0 ] );
+				replaceTarget.replaceWith( itemElement( mapped[ 0 ], 0, true ) );
 				mapped.slice( 1 ).forEach( ( item ) => item.url && URL.revokeObjectURL( item.url ) );
-				replaceIndex = null;
+				replaceTarget = null;
 			} else {
-				const remaining = Math.max( 0, max - existingCount() - files.length );
+				const remaining = Math.max( 0, max - existingCount() - list.querySelectorAll( '[data-adam-upload-item]' ).length );
 				if ( mapped.length > remaining ) {
 					mapped.slice( remaining ).forEach( ( item ) => item.url && URL.revokeObjectURL( item.url ) );
 					showClientError( format( labels.limit, max ) );
 					input?.setCustomValidity( '' );
 				}
-				files.push( ...mapped.slice( 0, remaining ) );
+				mapped.slice( 0, remaining ).forEach( ( item ) => list.insertBefore( itemElement( item, 0, true ), add ) );
 			}
-			renderFiles();
+			syncFileInput();
+			refresh();
 			if ( duplicate ) {
 				showClientError( labels.duplicate || '' );
 				input?.setCustomValidity( '' );
@@ -319,16 +324,13 @@
 			if ( from < 0 || to < 0 || to >= items.length ) {
 				return;
 			}
+			const reference = direction < 0 ? items[ to ] : items[ to ].nextSibling;
+			list.insertBefore( item, reference );
 			if ( 'file' === mode ) {
-				[ files[ from ], files[ to ] ] = [ files[ to ], files[ from ] ];
-				renderFiles();
-				list.querySelectorAll( '[data-adam-upload-item]' )[ to ]?.focus();
-			} else {
-				const reference = direction < 0 ? items[ to ] : items[ to ].nextSibling;
-				list.insertBefore( item, reference );
-				item.focus();
-				refresh();
+				syncFileInput();
 			}
+			item.focus();
+			refresh();
 			announce( labels.reordered || '' );
 		}
 
@@ -387,7 +389,7 @@
 		}
 
 		add.addEventListener( 'click', () => {
-			replaceIndex = null;
+			replaceTarget = null;
 			if ( 'file' === mode ) {
 				input.click();
 			} else {
@@ -411,26 +413,23 @@
 				return;
 			}
 			if ( event.target.closest( '[data-adam-upload-remove]' ) ) {
-				const index = parseInt( item.dataset.index || '-1', 10 );
-				if ( 'file' === mode && index >= 0 ) {
-					const removed = files.splice( index, 1 )[ 0 ];
-					if ( removed?.url ) {
-						URL.revokeObjectURL( removed.url );
-					}
-					renderFiles();
-				} else {
-					item.remove();
-					if ( ! multiple && singleValue ) {
-						singleValue.value = '0';
-					}
-					refresh();
+				if ( item._adamEntry?.url ) {
+					URL.revokeObjectURL( item._adamEntry.url );
 				}
+				item.remove();
+				if ( 'file' === mode ) {
+					syncFileInput();
+				}
+				if ( ! multiple && singleValue ) {
+					singleValue.value = '0';
+				}
+				refresh();
 				announce( labels.removed || '' );
 				return;
 			}
 			if ( event.target.closest( '[data-adam-upload-replace]' ) ) {
 				if ( 'file' === mode ) {
-					replaceIndex = parseInt( item.dataset.index || '0', 10 );
+					replaceTarget = item;
 					input.click();
 				} else {
 					openLibrary( item );
@@ -450,14 +449,9 @@
 			}
 			dragged = null;
 			if ( 'file' === mode ) {
-				files = Array.from( list.querySelectorAll( '[data-adam-upload-item]' ) ).map( ( item ) => {
-					const original = files.find( ( file ) => file.file === item._adamFile );
-					return original;
-				} ).filter( Boolean );
-				renderFiles();
-			} else {
-				refresh();
+				syncFileInput();
 			}
+			refresh();
 			announce( labels.reordered || '' );
 		} );
 		upload.addEventListener( 'dragover', ( event ) => {

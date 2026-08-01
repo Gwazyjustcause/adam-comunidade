@@ -3,16 +3,6 @@
 
 	const labels = window.adamPublicUx || {};
 
-	function announce( portal, message ) {
-		const region = portal.querySelector( '[data-adam-manager-live]' );
-		if ( region ) {
-			region.textContent = '';
-			window.requestAnimationFrame( () => {
-				region.textContent = message;
-			} );
-		}
-	}
-
 	function passwordIcon( visible ) {
 		const namespace = 'http://www.w3.org/2000/svg';
 		const svg = document.createElementNS( namespace, 'svg' );
@@ -112,74 +102,6 @@
 			button.dataset.originalLabel = button.textContent;
 			button.textContent = labels.processing || '…';
 		}
-	} );
-
-	let draggedGalleryItem = null;
-	document.addEventListener( 'dragstart', ( event ) => {
-		if ( ! ( event.target instanceof Element ) ) {
-			return;
-		}
-		const item = event.target.closest( '[data-adam-current-gallery] > label' );
-		if ( item ) {
-			draggedGalleryItem = item;
-			item.classList.add( 'is-dragging' );
-		}
-	} );
-	document.addEventListener( 'dragover', ( event ) => {
-		if ( ! ( event.target instanceof Element ) ) {
-			return;
-		}
-		const item = event.target.closest( '[data-adam-current-gallery] > label' );
-		if ( ! item || ! draggedGalleryItem || item === draggedGalleryItem ) {
-			return;
-		}
-		event.preventDefault();
-		const bounds = item.getBoundingClientRect();
-		item.parentElement.insertBefore( draggedGalleryItem, event.clientX < bounds.left + bounds.width / 2 ? item : item.nextSibling );
-	} );
-	document.addEventListener( 'dragend', () => {
-		if ( draggedGalleryItem ) {
-			const portal = draggedGalleryItem.closest( '.adam-manager-portal' );
-			draggedGalleryItem.classList.remove( 'is-dragging' );
-			draggedGalleryItem.focus();
-			if ( portal ) {
-				announce( portal, labels.reordered || '' );
-			}
-			draggedGalleryItem = null;
-		}
-	} );
-	document.addEventListener( 'keydown', ( event ) => {
-		if ( ! ( event.target instanceof Element ) ) {
-			return;
-		}
-		const item = event.target.closest( '[data-adam-current-gallery] > label' );
-		if ( ! item || ! event.altKey || ! [ 'ArrowLeft', 'ArrowRight' ].includes( event.key ) ) {
-			return;
-		}
-		const sibling = 'ArrowLeft' === event.key ? item.previousElementSibling : item.nextElementSibling;
-		if ( ! sibling ) {
-			return;
-		}
-		event.preventDefault();
-		item.parentElement.insertBefore( item, 'ArrowLeft' === event.key ? sibling : sibling.nextSibling );
-		item.focus();
-		const portal = item.closest( '.adam-manager-portal' );
-		if ( portal ) {
-			announce( portal, labels.reordered || '' );
-		}
-	} );
-
-	document.addEventListener( 'change', ( event ) => {
-		if ( ! ( event.target instanceof HTMLInputElement ) || 'keep_gallery_ids[]' !== event.target.name ) {
-			return;
-		}
-		const media = event.target.closest( '.adam-manager-media' );
-		const upload = media?.querySelector( '[data-adam-team-gallery-upload] [data-adam-upload]' );
-		if ( ! upload ) {
-			return;
-		}
-		upload.dataset.existingCount = String( media.querySelectorAll( 'input[name="keep_gallery_ids[]"]:checked' ).length );
-		upload.dispatchEvent( new CustomEvent( 'adam-upload-existing-count' ) );
 	} );
 
 	document.dispatchEvent( new CustomEvent( 'adamComunidadeReady' ) );
