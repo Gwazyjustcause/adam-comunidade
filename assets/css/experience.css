@@ -771,7 +771,7 @@ body.adam-theme-dark .adam-news-archive .adam-news-card time {
 }
 
 .adam-news-single h1 {
-	font-size: clamp(2.2rem, 7vw, 5rem);
+	font-size: clamp(1.87rem, 5.95vw, 4.25rem);
 	line-height: 1;
 }
 
