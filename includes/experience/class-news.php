@@ -147,6 +147,12 @@ final class News {
 		if ( is_admin() || Related_Content::is_member() || ! $query->is_main_query() || ( ! $query->is_post_type_archive( 'adam_news' ) && ! $query->is_singular( 'adam_news' ) ) ) {
 			return;
 		}
+		if ( $query->is_post_type_archive( 'adam_news' ) ) {
+			$query->set( 'posts_per_page', 9 );
+			$query->set( 'orderby', 'date' );
+			$query->set( 'order', 'DESC' );
+			$query->set( 'ignore_sticky_posts', true );
+		}
 		$query->set(
 			'meta_query',
 			array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
