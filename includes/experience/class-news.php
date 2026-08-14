@@ -164,6 +164,68 @@ final class News {
 	}
 
 	/**
+	 * Returns the image only when it is the first meaningful content block.
+	 *
+	 * @return array{html:string,has_image:bool}
+	 */
+	public static function archive_image( int $post_id ): array {
+		if ( has_post_thumbnail( $post_id ) ) {
+			return array(
+				'html'      => (string) get_the_post_thumbnail( $post_id, 'medium_large', array( 'loading' => 'lazy' ) ),
+				'has_image' => true,
+			);
+		}
+
+		$blocks = parse_blocks( (string) get_post_field( 'post_content', $post_id ) );
+		foreach ( $blocks as $block ) {
+			$html = (string) ( $block['innerHTML'] ?? '' );
+			if ( ! self::is_meaningful_archive_block( $html, $block ) ) {
+				continue;
+			}
+
+			if ( 'core/image' === (string) ( $block['blockName'] ?? '' ) ) {
+				$image = self::extract_archive_image( (string) render_block( $block ) );
+				return array( 'html' => $image, 'has_image' => '' !== $image );
+			}
+
+			if ( self::starts_with_archive_image( $html ) ) {
+				$image = self::extract_archive_image( $html );
+				return array( 'html' => $image, 'has_image' => '' !== $image );
+			}
+
+			return array( 'html' => '', 'has_image' => false );
+		}
+
+		return array( 'html' => '', 'has_image' => false );
+	}
+
+	/**
+	 * Determines whether a parsed block contains meaningful content.
+	 *
+	 * @param array<string,mixed> $block Parsed block.
+	 */
+	private static function is_meaningful_archive_block( string $html, array $block ): bool {
+		if ( ! empty( $block['innerBlocks'] ) ) {
+			return true;
+		}
+		$text = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$text = str_replace( "\xC2\xA0", ' ', $text );
+		return '' !== trim( $text ) || (bool) preg_match( '/<img\b/i', $html );
+	}
+
+	private static function starts_with_archive_image( string $html ): bool {
+		$html = preg_replace( '/^\s*(?:<!--.*?-->\s*)*(?:<figure\b[^>]*>\s*)?/is', '', $html );
+		return is_string( $html ) && (bool) preg_match( '/^<img\b/i', $html );
+	}
+
+	private static function extract_archive_image( string $html ): string {
+		if ( ! preg_match( '/<img\b[^>]*>/i', $html, $matches ) ) {
+			return '';
+		}
+		return wp_kses_post( $matches[0] );
+	}
+
+	/**
 	 * Returns published news for public components.
 	 *
 	 * @return \WP_Post[]
