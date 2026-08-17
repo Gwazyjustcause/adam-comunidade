@@ -397,6 +397,12 @@ final class Portal {
 					<?php if ( 'needs_info' === $active_revision->status && $active_revision->admin_note ) : ?><p><strong><?php esc_html_e( 'Alterações pedidas pela ADAM:', 'adam-comunidade' ); ?></strong><br><?php echo nl2br( esc_html( (string) $active_revision->admin_note ) ); ?></p><?php endif; ?>
 				</div>
 			<?php endif; ?>
+			<?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?>
+				<aside class="adam-public-contact-notice" role="note">
+					<strong><?php esc_html_e( 'Redes e contactos públicos', 'adam-comunidade' ); ?></strong>
+					<p><?php esc_html_e( 'O Website e os links de WhatsApp, Instagram e Facebook que adicionar abaixo serão apresentados publicamente na página do Campo ou da Equipa. Todos estes campos são opcionais. O email, o telefone e os restantes contactos administrativos não são publicados.', 'adam-comunidade' ); ?></p>
+				</aside>
+			<?php endif; ?>
 			<div class="adam-form-grid">
 				<label><span><?php esc_html_e( 'Nome', 'adam-comunidade' ); ?></span><input type="text" name="manager[name]" value="<?php echo esc_attr( (string) $record->name ); ?>" required></label>
 				<?php if ( in_array( $type, array( 'team', 'field' ), true ) ) : ?><label><span><?php esc_html_e( 'Concelho', 'adam-comunidade' ); ?></span><input type="text" name="manager[municipality]" value="<?php echo esc_attr( (string) ( $record->municipality ?? '' ) ); ?>"></label><?php endif; ?>
@@ -405,9 +411,10 @@ final class Portal {
 				<?php if ( 'field' === $type ) : ?><label class="adam-field--wide"><span><?php esc_html_e( 'Localização do Campo no Google Maps', 'adam-comunidade' ); ?></span><input type="url" name="manager[maps_url]" value="<?php echo esc_attr( (string) ( $record->maps_url ?? '' ) ); ?>"><small><?php esc_html_e( 'Cole o link da localização no Google Maps. Indique de preferência a entrada, estacionamento ou ponto de encontro utilizado pelos jogadores.', 'adam-comunidade' ); ?></small></label><?php endif; ?>
 				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição breve', 'adam-comunidade' ); ?></span><textarea name="manager[short_description]" rows="3"><?php echo esc_textarea( (string) ( $record->short_description ?? '' ) ); ?></textarea></label>
 				<label class="adam-field--wide"><span><?php esc_html_e( 'Descrição completa', 'adam-comunidade' ); ?></span><textarea name="manager[full_description]" rows="10"><?php echo esc_textarea( wp_strip_all_tags( (string) ( $record->full_description ?? '' ) ) ); ?></textarea></label>
-				<label><span><?php esc_html_e( 'Website', 'adam-comunidade' ); ?></span><input type="url" name="manager[website]" value="<?php echo esc_attr( (string) ( $record->website ?? '' ) ); ?>"></label>
-				<label><span><?php esc_html_e( 'Facebook', 'adam-comunidade' ); ?></span><input type="url" name="manager[facebook]" value="<?php echo esc_attr( (string) ( $record->facebook ?? '' ) ); ?>"></label>
-				<label><span><?php esc_html_e( 'Instagram', 'adam-comunidade' ); ?></span><input type="url" name="manager[instagram]" value="<?php echo esc_attr( (string) ( $record->instagram ?? '' ) ); ?>"></label>
+				<label><span><?php esc_html_e( 'Website', 'adam-comunidade' ); ?></span><input type="url" name="manager[website]" value="<?php echo esc_attr( (string) ( $record->website ?? '' ) ); ?>"><?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?><small><?php esc_html_e( 'Opcional.', 'adam-comunidade' ); ?></small><?php endif; ?></label>
+				<label><span><?php esc_html_e( 'Facebook', 'adam-comunidade' ); ?></span><input type="url" name="manager[facebook]" value="<?php echo esc_attr( (string) ( $record->facebook ?? '' ) ); ?>"><?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?><small><?php esc_html_e( 'Opcional.', 'adam-comunidade' ); ?></small><?php endif; ?></label>
+				<label><span><?php esc_html_e( 'Instagram', 'adam-comunidade' ); ?></span><input type="url" name="manager[instagram]" value="<?php echo esc_attr( (string) ( $record->instagram ?? '' ) ); ?>"><?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?><small><?php esc_html_e( 'Opcional.', 'adam-comunidade' ); ?></small><?php endif; ?></label>
+				<?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?><label><span><?php esc_html_e( 'WhatsApp', 'adam-comunidade' ); ?></span><input type="url" name="manager[whatsapp]" value="<?php echo esc_attr( (string) ( $record->whatsapp ?? '' ) ); ?>"><small><?php esc_html_e( 'Opcional.', 'adam-comunidade' ); ?></small></label><?php endif; ?>
 				<label><span><?php esc_html_e( 'E-mail de contacto interno', 'adam-comunidade' ); ?></span><input type="email" name="manager[email]" value="<?php echo esc_attr( (string) ( $record->email ?? '' ) ); ?>"></label>
 				<label><span><?php esc_html_e( 'Telefone de contacto interno', 'adam-comunidade' ); ?></span><input type="tel" name="manager[phone]" value="<?php echo esc_attr( (string) ( $record->phone ?? '' ) ); ?>"></label>
 			</div>

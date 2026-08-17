@@ -29,7 +29,7 @@ final class Policy {
 	 * @return string[]
 	 */
 	public static function editable_fields( string $type ): array {
-		$common = array( 'name', 'cover_id', 'short_description', 'full_description', 'district', 'municipality', 'address', 'latitude', 'longitude', 'maps_url', 'website', 'facebook', 'instagram', 'email', 'phone', 'playing_styles' );
+		$common = array( 'name', 'cover_id', 'short_description', 'full_description', 'district', 'municipality', 'address', 'latitude', 'longitude', 'maps_url', 'website', 'facebook', 'instagram', 'whatsapp', 'email', 'phone', 'playing_styles' );
 		if ( 'team' === $type ) {
 			$fields = array_merge( $common, array( 'short_name', 'logo_id', 'gallery', 'team_colour', 'discord', 'youtube', 'tiktok', 'founded', 'members', 'recruitment_status', 'recruitment_min_age', 'recruitment_experience', 'recruitment_equipment', 'recruitment_training', 'equipment_tags' ) );
 		} elseif ( 'field' === $type ) {

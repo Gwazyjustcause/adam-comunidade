@@ -55,6 +55,15 @@ final class Public_Privacy {
 	}
 
 	/**
+	 * Returns only the supported social/contact links for a public page.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function social_links( object $entity ): array {
+		return Social_Links::public_links( $entity );
+	}
+
+	/**
 	 * Removes personal contacts recursively from a public API record.
 	 *
 	 * @param array<string,mixed> $record Public record candidate.

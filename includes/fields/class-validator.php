@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Fields;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Social_Links;
+
 /**
  * Sanitizes and validates field editor data.
  */
@@ -70,7 +72,7 @@ final class Validator {
 			'facebook' => 'Facebook',
 			'instagram'=> 'Instagram',
 		);
-		foreach ( array( 'maps_url', 'website', 'facebook', 'instagram' ) as $key ) {
+		foreach ( array( 'maps_url', 'website', 'facebook', 'instagram', 'whatsapp' ) as $key ) {
 			$raw          = trim( (string) ( $input[ $key ] ?? '' ) );
 			$urls[ $key ] = esc_url_raw( $raw, array( 'http', 'https' ) );
 			if ( 'maps_url' === $key ) {
@@ -84,6 +86,15 @@ final class Validator {
 					}
 				} else {
 					$urls[ $key ] = $maps_result;
+				}
+				continue;
+			}
+			if ( in_array( $key, Social_Links::fields(), true ) ) {
+				$social_result = Social_Links::sanitize( $key, $raw );
+				if ( is_wp_error( $social_result ) ) {
+					$errors->add( 'invalid_' . $key, $social_result->get_error_message() );
+				} else {
+					$urls[ $key ] = $social_result;
 				}
 				continue;
 			}

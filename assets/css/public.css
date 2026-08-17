@@ -408,6 +408,24 @@
 	padding: 14px 18px;
 }
 
+.adam-public-contact-notice {
+	background: #f5f9ee;
+	border: 1px solid #c9dcb0;
+	border-left: 4px solid #6f9f24;
+	border-radius: 12px;
+	color: #31402d;
+	margin: 18px 0;
+	padding: 14px 18px;
+}
+
+.adam-public-contact-notice strong {
+	display: block;
+}
+
+.adam-public-contact-notice p {
+	margin: 6px 0 0;
+}
+
 .adam-manager-shell--auth .adam-manager-notice {
 	margin-inline: auto;
 	max-width: 520px;
@@ -928,4 +946,35 @@ body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
 	object-fit: contain;
 	object-position: center;
 	width: 100%;
+}
+.adam-social-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.adam-social-link {
+	align-items: center;
+	background: var(--adam-primary, #315c25);
+	border-radius: 999px;
+	color: #fff;
+	display: inline-flex;
+	height: 46px;
+	justify-content: center;
+	min-width: 46px;
+	text-decoration: none;
+	transition: background-color .2s ease, transform .2s ease;
+	width: 46px;
+}
+
+.adam-social-link:hover,
+.adam-social-link:focus-visible {
+	background: var(--adam-secondary, #17241a);
+	color: #fff;
+	transform: translateY(-1px);
+}
+
+.adam-social-link:focus-visible {
+	outline: 3px solid var(--adam-accent, #97c44b);
+	outline-offset: 3px;
 }

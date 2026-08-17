@@ -575,7 +575,7 @@ final class Admin {
 			echo '<div class="adam-revision-long-text">' . wp_kses_post( (string) $value ) . '</div>';
 			return;
 		}
-		if ( in_array( $key, array( 'website', 'facebook', 'instagram', 'discord', 'youtube', 'tiktok', 'maps_url' ), true ) ) {
+		if ( in_array( $key, array( 'website', 'facebook', 'instagram', 'whatsapp', 'discord', 'youtube', 'tiktok', 'maps_url' ), true ) ) {
 			echo '<a href="' . esc_url( (string) $value ) . '" target="_blank" rel="noopener">' . esc_html( (string) $value ) . '</a>';
 			return;
 		}
@@ -601,6 +601,7 @@ final class Admin {
 			'website'                => __( 'Website', 'adam-comunidade' ),
 			'facebook'               => 'Facebook',
 			'instagram'              => 'Instagram',
+			'whatsapp'               => 'WhatsApp',
 			'discord'                => 'Discord',
 			'youtube'                => 'YouTube',
 			'tiktok'                 => 'TikTok',

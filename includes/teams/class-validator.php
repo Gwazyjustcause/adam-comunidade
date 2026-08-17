@@ -9,6 +9,8 @@ namespace ADAM\Comunidade\Teams;
 
 defined( 'ABSPATH' ) || exit;
 
+use ADAM\Comunidade\Social_Links;
+
 /**
  * Converts untrusted editor input into repository-ready data.
  */
@@ -79,7 +81,7 @@ final class Validator {
 			$errors->add( 'invalid_email', __( 'Introduza um endereço de email válido.', 'adam-comunidade' ) );
 		}
 
-		$url_fields = array( 'maps_url', 'website', 'facebook', 'instagram', 'discord', 'youtube', 'tiktok' );
+		$url_fields = array( 'maps_url', 'website', 'facebook', 'instagram', 'whatsapp', 'discord', 'youtube', 'tiktok' );
 		$url_labels = array(
 			'maps_url' => __( 'Google Maps', 'adam-comunidade' ),
 			'website'  => __( 'página Web', 'adam-comunidade' ),
@@ -88,12 +90,22 @@ final class Validator {
 			'discord'  => 'Discord',
 			'youtube'  => 'YouTube',
 			'tiktok'   => 'TikTok',
+			'whatsapp' => 'WhatsApp',
 		);
 		$urls       = array();
 
 		foreach ( $url_fields as $field ) {
 			$raw            = trim( (string) ( $input[ $field ] ?? '' ) );
 			$urls[ $field ] = esc_url_raw( $raw, array( 'http', 'https' ) );
+			if ( in_array( $field, Social_Links::fields(), true ) ) {
+				$social_result = Social_Links::sanitize( $field, $raw );
+				if ( is_wp_error( $social_result ) ) {
+					$errors->add( 'invalid_' . $field, $social_result->get_error_message() );
+				} else {
+					$urls[ $field ] = $social_result;
+				}
+				continue;
+			}
 
 			if ( '' !== $raw && '' === $urls[ $field ] ) {
 				$errors->add(

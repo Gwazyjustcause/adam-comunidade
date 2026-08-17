@@ -16,7 +16,7 @@ final class Schema {
 	/**
 	 * Module schema version.
 	 */
-	public const VERSION = '6.2.0';
+	public const VERSION = '6.3.0';
 
 	/**
 	 * Creates or upgrades all Fields module tables.
@@ -63,6 +63,7 @@ final class Schema {
 			website varchar(500) NOT NULL DEFAULT '',
 			facebook varchar(500) NOT NULL DEFAULT '',
 			instagram varchar(500) NOT NULL DEFAULT '',
+			whatsapp varchar(500) NOT NULL DEFAULT '',
 			email varchar(190) NOT NULL DEFAULT '',
 			phone varchar(50) NOT NULL DEFAULT '',
 			meta_title varchar(255) NOT NULL DEFAULT '',

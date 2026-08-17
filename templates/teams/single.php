@@ -13,6 +13,7 @@ use ADAM\Comunidade\Teams\View;
 use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
 use ADAM\Comunidade\Public_Privacy;
+use ADAM\Comunidade\Social_Links;
 use ADAM\Comunidade\Fields\Repository as Field_Repository;
 use ADAM\Comunidade\Fields\View as Field_View;
 
@@ -42,11 +43,13 @@ $adam_associated_fields = $adam_field_repository->query(
 		'per_page' => 12,
 	)
 )['items'];
-$adam_public_links = Public_Privacy::public_links( $adam_team );
+$adam_social_links = Public_Privacy::social_links( $adam_team );
+$adam_public_links = array_diff_key( Public_Privacy::public_links( $adam_team ), $adam_social_links );
 $adam_link_labels  = array(
-	'website'   => __( 'Página Web', 'adam-comunidade' ),
+	'website'   => 'Website',
 	'facebook'  => 'Facebook',
 	'instagram' => 'Instagram',
+	'whatsapp'  => 'WhatsApp',
 	'discord'   => 'Discord',
 	'youtube'   => 'YouTube',
 	'tiktok'    => 'TikTok',
@@ -112,6 +115,16 @@ get_header();
 		<?php if ( $adam_public_links ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Presença online', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
 			<?php foreach ( $adam_public_links as $adam_link_key => $adam_link_url ) : ?><a href="<?php echo esc_url( $adam_link_url ); ?>" class="adam-team-button" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $adam_link_labels[ $adam_link_key ] ?? ucfirst( $adam_link_key ) ); ?></a><?php endforeach; ?>
 		</div></section><?php endif; ?>
+
+		<?php if ( $adam_social_links ) : ?><section class="adam-team-section adam-social-section">
+			<h2><?php esc_html_e( 'Redes e contactos', 'adam-comunidade' ); ?></h2>
+			<nav class="adam-social-links" aria-label="<?php esc_attr_e( 'Redes e contactos', 'adam-comunidade' ); ?>">
+				<?php foreach ( $adam_social_links as $adam_social_key => $adam_social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $adam_social_key ); ?>" href="<?php echo esc_url( $adam_social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>" title="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>">
+					<?php echo Social_Links::icon( $adam_social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="screen-reader-text"><?php echo esc_html( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?></span>
+				</a><?php endforeach; ?>
+			</nav>
+		</section><?php endif; ?>
 
 		<?php if ( $adam_team->address || $adam_team->maps_url || ( $adam_team->latitude && $adam_team->longitude ) ) : ?>
 			<section class="adam-team-section">

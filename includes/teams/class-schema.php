@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Installs and upgrades the Teams module tables.
  */
 final class Schema {
-	public const VERSION = '6.1.1';
+	public const VERSION = '6.2.0';
 
 	/**
 	 * Creates or upgrades the module tables.
@@ -53,6 +53,7 @@ final class Schema {
 			website varchar(500) NOT NULL DEFAULT '',
 			facebook varchar(500) NOT NULL DEFAULT '',
 			instagram varchar(500) NOT NULL DEFAULT '',
+			whatsapp varchar(500) NOT NULL DEFAULT '',
 			discord varchar(500) NOT NULL DEFAULT '',
 			youtube varchar(500) NOT NULL DEFAULT '',
 			tiktok varchar(500) NOT NULL DEFAULT '',

@@ -143,7 +143,7 @@ if ( $field_id && $adam_slug ) {
 				<section class="adam-card adam-field-panel" id="adam-field-panel-contacts" hidden>
 					<h2><?php esc_html_e( 'Contactos', 'adam-comunidade' ); ?></h2>
 					<div class="adam-form-grid">
-						<?php foreach ( array( 'website' => 'Website', 'facebook' => 'Facebook', 'instagram' => 'Instagram' ) as $key => $label ) : ?><label class="adam-field"><span><?php echo esc_html( $label ); ?></span><input type="url" name="field[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( (string) $adam_value( $key ) ); ?>"></label><?php endforeach; ?>
+						<?php foreach ( array( 'website' => 'Website', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'whatsapp' => 'WhatsApp' ) as $key => $label ) : ?><label class="adam-field"><span><?php echo esc_html( $label ); ?></span><input type="url" name="field[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( (string) $adam_value( $key ) ); ?>"><small><?php echo in_array( $key, array( 'website', 'whatsapp', 'instagram', 'facebook' ), true ) ? esc_html__( 'Opcional.', 'adam-comunidade' ) : ''; ?></small></label><?php endforeach; ?>
 						<label class="adam-field"><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="field[email]" value="<?php echo esc_attr( (string) $adam_value( 'email' ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Telefone', 'adam-comunidade' ); ?></span><input type="tel" name="field[phone]" value="<?php echo esc_attr( (string) $adam_value( 'phone' ) ); ?>"></label>
 					</div>

@@ -183,6 +183,9 @@ final class Manager {
 						array(
 							'address'   => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ),
 							'maps_url'  => $this->field( 'maps_url', __( 'Localização do Campo no Google Maps', 'adam-comunidade' ), 'url', false, 'https://', __( 'Cole o link da localização no Google Maps. Indique de preferência a entrada, estacionamento ou ponto de encontro utilizado pelos jogadores.' ) ),
+							'whatsapp'  => $this->field( 'whatsapp', __( 'WhatsApp', 'adam-comunidade' ), 'url', false, 'https://', __( 'Opcional.' ) ),
+							'instagram' => $this->field( 'instagram', 'Instagram', 'url', false, 'https://', __( 'Opcional.' ) ),
+							'facebook'  => $this->field( 'facebook', 'Facebook', 'url', false, 'https://', __( 'Opcional.' ) ),
 						),
 						array_slice( $common, 4, null, true ),
 						array(
@@ -213,8 +216,9 @@ final class Manager {
 							'members' => $this->field( 'members', __( 'Número de membros', 'adam-comunidade' ), 'number', false ),
 							'playing_styles' => $this->field( 'playing_styles', __( 'Estilos de jogo', 'adam-comunidade' ), 'playing_styles', false, '', __( 'Selecione todos os estilos praticados pela equipa.', 'adam-comunidade' ) ),
 							'recruitment_status' => $this->field( 'recruitment_status', __( 'Estado do recrutamento', 'adam-comunidade' ), 'team_recruitment', false ),
-							'facebook' => $this->field( 'facebook', 'Facebook', 'url', false, 'https://' ),
-							'instagram' => $this->field( 'instagram', 'Instagram', 'url', false, 'https://' ),
+							'facebook' => $this->field( 'facebook', 'Facebook', 'url', false, 'https://', __( 'Opcional.' ) ),
+							'instagram' => $this->field( 'instagram', 'Instagram', 'url', false, 'https://', __( 'Opcional.' ) ),
+							'whatsapp' => $this->field( 'whatsapp', 'WhatsApp', 'url', false, 'https://', __( 'Opcional.' ) ),
 							'team_logo' => $this->field( 'team_logo', __( 'Logótipo da equipa', 'adam-comunidade' ), 'file', false, '', __( 'JPG, PNG ou WebP.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 1 ),
 							'team_cover' => $this->field( 'team_cover', __( 'Imagem de capa', 'adam-comunidade' ), 'file', false, '', __( 'Imagem panorâmica em JPG, PNG ou WebP.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 1 ),
 							'team_photos' => $this->field( 'team_photos', __( 'Fotografias da equipa', 'adam-comunidade' ), 'file', false, '', __( 'Pode enviar até cinco fotografias.', 'adam-comunidade' ), '.jpg,.jpeg,.png,.webp', 5 ),

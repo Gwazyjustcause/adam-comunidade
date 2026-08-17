@@ -9,6 +9,8 @@ defined( 'ABSPATH' ) || exit;
 
 use ADAM\Comunidade\Placeholder_Image;
 use ADAM\Comunidade\Public_Hero;
+use ADAM\Comunidade\Public_Privacy;
+use ADAM\Comunidade\Social_Links;
 use ADAM\Comunidade\Fields\Map;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
@@ -64,6 +66,8 @@ $has_description    = '' !== trim( (string) $field->short_description )
 	|| '' !== trim( wp_strip_all_tags( (string) $field->full_description ) );
 $has_rules          = '' !== trim( wp_strip_all_tags( (string) $field->rules ) );
 $has_opening_hours  = '' !== trim( (string) ( $field->opening_hours ?? '' ) );
+$social_links        = Public_Privacy::social_links( $field );
+$social_labels       = array( 'website' => 'Website', 'whatsapp' => 'WhatsApp', 'instagram' => 'Instagram', 'facebook' => 'Facebook' );
 
 get_header();
 ?>
@@ -146,6 +150,16 @@ get_header();
 					</a>
 				<?php endforeach; ?>
 			</div>
+		</section><?php endif; ?>
+
+		<?php if ( $social_links ) : ?><section class="adam-field-section adam-social-section">
+			<h2><?php esc_html_e( 'Redes e contactos', 'adam-comunidade' ); ?></h2>
+			<nav class="adam-social-links" aria-label="<?php esc_attr_e( 'Redes e contactos', 'adam-comunidade' ); ?>">
+				<?php foreach ( $social_links as $social_key => $social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $social_key ); ?>" href="<?php echo esc_url( $social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>" title="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>">
+					<?php echo Social_Links::icon( $social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="screen-reader-text"><?php echo esc_html( $social_labels[ $social_key ] ?? $social_key ); ?></span>
+				</a><?php endforeach; ?>
+			</nav>
 		</section><?php endif; ?>
 
 		<?php if ( $field->address || $coordinates || $google_maps_url ) : ?><section class="adam-field-section">

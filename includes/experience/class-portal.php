@@ -24,6 +24,7 @@ use ADAM\Comunidade\Helpers;
 use ADAM\Comunidade\Logger;
 use ADAM\Comunidade\Managed_Pages;
 use ADAM\Comunidade\Managers\Service as Manager_Service;
+use ADAM\Comunidade\Social_Links;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
 use ADAM\Comunidade\Teams\Media_Lifecycle as Team_Media_Lifecycle;
@@ -226,6 +227,12 @@ final class Portal {
 			<?php endif; ?>
 			<?php if ( ! empty( $form['description'] ) ) : ?><p><?php echo nl2br( esc_html( $form['description'] ) ); ?></p><?php endif; ?>
 			<?php self::status_notice( $type ); ?>
+			<?php if ( in_array( $type, array( 'field', 'team' ), true ) ) : ?>
+				<aside class="adam-public-contact-notice" role="note">
+					<strong><?php esc_html_e( 'Redes e contactos públicos', 'adam-comunidade' ); ?></strong>
+					<p><?php esc_html_e( 'O Website e os links de WhatsApp, Instagram e Facebook que adicionar abaixo serão apresentados publicamente na página do Campo ou da Equipa. Todos estes campos são opcionais. O email, o telefone e os restantes contactos administrativos não são publicados.', 'adam-comunidade' ); ?></p>
+				</aside>
+			<?php endif; ?>
 			<?php if ( $errors ) : ?>
 				<div class="adam-form-error-summary" id="adam-first-error" role="alert" tabindex="-1" data-adam-error-summary>
 					<strong><?php echo esc_html( (string) ( $errors['form'] ?? __( 'Corrija os campos assinalados e tente novamente.', 'adam-comunidade' ) ) ); ?></strong>
@@ -260,6 +267,7 @@ final class Portal {
 	 */
 	private static function render_field( string $key, array $field, mixed $value = '', string $error = '', string $object_type = '' ): void {
 		$type     = (string) $field['type'];
+		$label    = 'website' === $key && in_array( $object_type, array( 'field', 'team' ), true ) ? __( 'Website', 'adam-comunidade' ) : (string) $field['label'];
 		$required = ! empty( $field['required'] );
 		$is_wide  = in_array( $type, array( 'textarea', 'richtext', 'playing_styles', 'amenities', 'file' ), true );
 		$multiple = 'file' === $type && absint( $field['max_files'] ) > 1;
@@ -267,7 +275,7 @@ final class Portal {
 		if ( 'file' === $type ) {
 			?>
 			<div class="<?php echo esc_attr( 'adam-portal-form__wide adam-portal-upload-field ' . ( $error ? 'has-error' : '' ) ); ?>">
-				<strong><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></strong>
+				<strong><?php echo esc_html( $label ); ?><?php echo $required ? ' *' : ''; ?></strong>
 				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
 				<?php
 				Upload_Component::render(
@@ -277,7 +285,7 @@ final class Portal {
 						'mode'        => 'file',
 						'kind'        => str_contains( (string) $field['accept'], '.pdf' ) ? 'document' : 'image',
 						'name'        => $name,
-						'label'       => (string) $field['label'],
+						'label'       => $label,
 						'accept'      => (string) $field['accept'],
 						'multiple'    => $multiple,
 						'max'         => absint( $field['max_files'] ),
@@ -299,7 +307,7 @@ final class Portal {
 				: array_column( ( new Amenity_Repository() )->all( 'field', true ), 'label', 'id' );
 			?>
 			<fieldset class="adam-portal-form__wide adam-portal-options<?php echo $error ? ' has-error' : ''; ?>">
-				<legend><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></legend>
+				<legend><?php echo esc_html( $label ); ?><?php echo $required ? ' *' : ''; ?></legend>
 				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
 				<div class="adam-portal-options__grid">
 					<?php foreach ( $options as $option_key => $option_label ) : ?>
@@ -314,7 +322,7 @@ final class Portal {
 		if ( 'richtext' === $type ) {
 			?>
 			<div class="adam-portal-form__wide adam-portal-richtext<?php echo $error ? ' has-error' : ''; ?>">
-				<h2><?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?></h2>
+				<h2><?php echo esc_html( $label ); ?><?php echo $required ? ' *' : ''; ?></h2>
 				<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
 				<?php wp_editor( wp_kses_post( (string) $value ), 'adam_public_' . sanitize_key( $key ), array( 'textarea_name' => $key, 'textarea_rows' => 9, 'media_buttons' => false, 'teeny' => true ) ); ?>
 				<?php if ( $error ) : ?><span class="adam-field-error" id="adam-error-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $error ); ?></span><?php endif; ?>
@@ -325,7 +333,7 @@ final class Portal {
 		if ( 'team_recruitment' === $type ) {
 			?>
 			<label class="<?php echo esc_attr( $error ? 'has-error' : '' ); ?>">
-				<?php echo esc_html( $field['label'] ); ?>
+				<?php echo esc_html( $label ); ?>
 				<select name="<?php echo esc_attr( $name ); ?>">
 					<option value=""><?php esc_html_e( 'Não indicado', 'adam-comunidade' ); ?></option>
 					<?php foreach ( \ADAM\Comunidade\Teams\Options::recruitment_statuses() as $option_key => $option_label ) : ?>
@@ -339,7 +347,7 @@ final class Portal {
 		}
 		?>
 		<label class="<?php echo esc_attr( ( $is_wide ? 'adam-portal-form__wide ' : '' ) . ( $error ? 'has-error' : '' ) ); ?>">
-			<?php echo esc_html( $field['label'] ); ?><?php echo $required ? ' *' : ''; ?>
+			<?php echo esc_html( $label ); ?><?php echo $required ? ' *' : ''; ?>
 			<?php if ( ! empty( $field['description'] ) ) : ?><span class="adam-portal-field-description"><?php echo esc_html( $field['description'] ); ?></span><?php endif; ?>
 			<?php if ( 'textarea' === $type ) : ?>
 				<textarea name="<?php echo esc_attr( $name ); ?>" rows="4" placeholder="<?php echo esc_attr( $field['placeholder'] ); ?>" <?php echo $required ? 'required' : ''; ?> <?php echo $error ? 'aria-invalid="true" aria-describedby="adam-error-' . esc_attr( $key ) . '"' : ''; ?>><?php echo esc_textarea( (string) $value ); ?></textarea>
@@ -455,6 +463,13 @@ final class Portal {
 			}
 			if ( 'field' === $type && 'maps_url' === $key ) {
 				$value = Field_Validator::sanitize_maps_url( $value );
+				if ( is_wp_error( $value ) ) {
+					$errors[ $key ] = $value->get_error_message();
+					continue;
+				}
+			}
+			if ( in_array( $key, Social_Links::fields(), true ) && in_array( $type, array( 'field', 'team' ), true ) ) {
+				$value = Social_Links::sanitize( $key, $value );
 				if ( is_wp_error( $value ) ) {
 					$errors[ $key ] = $value->get_error_message();
 					continue;

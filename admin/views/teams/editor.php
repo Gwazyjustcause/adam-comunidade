@@ -163,8 +163,8 @@ if ( $team_id && $adam_slug ) {
 				<section class="adam-card adam-editor-panel" id="adam-team-panel-contacts" role="tabpanel" aria-labelledby="adam-team-tab-contacts" hidden>
 					<h2><?php esc_html_e( 'Informações de contacto', 'adam-comunidade' ); ?></h2>
 					<div class="adam-form-grid">
-						<?php foreach ( array( 'website' => 'Website', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'discord' => 'Discord', 'youtube' => 'YouTube', 'tiktok' => 'TikTok' ) as $adam_key => $adam_label ) : ?>
-							<label class="adam-field"><span><?php echo esc_html( $adam_label ); ?></span><input type="url" name="team[<?php echo esc_attr( $adam_key ); ?>]" value="<?php echo esc_attr( (string) $adam_value( $adam_key ) ); ?>"></label>
+						<?php foreach ( array( 'website' => 'Website', 'facebook' => 'Facebook', 'instagram' => 'Instagram', 'whatsapp' => 'WhatsApp', 'discord' => 'Discord', 'youtube' => 'YouTube', 'tiktok' => 'TikTok' ) as $adam_key => $adam_label ) : ?>
+							<label class="adam-field"><span><?php echo esc_html( $adam_label ); ?></span><input type="url" name="team[<?php echo esc_attr( $adam_key ); ?>]" value="<?php echo esc_attr( (string) $adam_value( $adam_key ) ); ?>"><?php if ( in_array( $adam_key, array( 'website', 'facebook', 'instagram', 'whatsapp' ), true ) ) : ?><small><?php esc_html_e( 'Opcional.', 'adam-comunidade' ); ?></small><?php endif; ?></label>
 						<?php endforeach; ?>
 						<label class="adam-field"><span><?php esc_html_e( 'E-mail', 'adam-comunidade' ); ?></span><input type="email" name="team[email]" value="<?php echo esc_attr( (string) $adam_value( 'email' ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Telefone', 'adam-comunidade' ); ?></span><input type="tel" name="team[phone]" value="<?php echo esc_attr( (string) $adam_value( 'phone' ) ); ?>"></label>
