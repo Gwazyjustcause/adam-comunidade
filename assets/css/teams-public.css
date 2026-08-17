@@ -283,19 +283,33 @@
 .adam-team-hero {
 	background: #0f172a;
 	color: #fff;
+	overflow: hidden;
 	position: relative;
+}
+
+.adam-team-hero::before {
+	background: linear-gradient(180deg, rgba(2, 6, 23, .22) 0%, rgba(2, 6, 23, .5) 60%, rgba(2, 6, 23, .88) 100%);
+	content: "";
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+	z-index: 1;
 }
 
 .adam-team-hero__cover {
 	height: clamp(250px, 40vw, 520px);
-	overflow: hidden;
+	overflow: visible;
+	position: static;
 }
 
 .adam-team-hero__cover img,
 .adam-team-hero__cover .adam-generated-placeholder {
 	height: 100%;
+	inset: 0;
 	object-fit: cover;
+	position: absolute;
 	width: 100%;
+	z-index: 0;
 }
 
 .adam-team-hero__content {
@@ -305,6 +319,7 @@
 	margin-top: -86px;
 	padding-bottom: 38px;
 	position: relative;
+	z-index: 2;
 }
 
 .adam-team-hero__details {
