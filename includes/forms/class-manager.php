@@ -53,7 +53,7 @@ final class Manager {
 				$form['fields'][ $key ]['type'] = $field_type;
 			}
 		}
-		foreach ( array( 'playing_styles', 'amenities', 'rules', 'recommended_players', 'max_players' ) as $optional_key ) {
+		foreach ( array( 'playing_styles', 'amenities', 'rules', 'recommended_players', 'max_players', 'opening_hours' ) as $optional_key ) {
 			if ( isset( $form['fields'][ $optional_key ] ) ) {
 				$form['fields'][ $optional_key ]['required'] = false;
 			}
@@ -183,6 +183,7 @@ final class Manager {
 						array(
 							'address'   => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ),
 							'maps_url'  => $this->field( 'maps_url', __( 'Localização do Campo no Google Maps', 'adam-comunidade' ), 'url', false, 'https://', __( 'Cole o link da localização no Google Maps. Indique de preferência a entrada, estacionamento ou ponto de encontro utilizado pelos jogadores.' ) ),
+							'opening_hours' => $this->field( 'opening_hours', __( 'Funcionamento', 'adam-comunidade' ), 'textarea', false, __( 'Ex.: Jogos normalmente aos domingos, em datas anunciadas previamente nas nossas redes sociais.', 'adam-comunidade' ), __( 'Indica quando costumam realizar-se jogos ou como são anunciadas as datas. Não é necessário indicar um horário fixo.', 'adam-comunidade' ) ),
 							'whatsapp'  => $this->field( 'whatsapp', __( 'WhatsApp', 'adam-comunidade' ), 'url', false, 'https://', __( 'Opcional.' ) ),
 							'instagram' => $this->field( 'instagram', 'Instagram', 'url', false, 'https://', __( 'Opcional.' ) ),
 							'facebook'  => $this->field( 'facebook', 'Facebook', 'url', false, 'https://', __( 'Opcional.' ) ),
@@ -256,6 +257,18 @@ final class Manager {
 			$key = sanitize_key( (string) $key );
 			if ( isset( $defaults[ $key ] ) && is_array( $field ) ) {
 				$merged[ $key ] = wp_parse_args( $field, $defaults[ $key ] );
+				if ( 'opening_hours' === $key ) {
+					if ( in_array( (string) ( $field['label'] ?? '' ), array( '', 'Horários' ), true ) ) {
+						$merged[ $key ]['label'] = $defaults[ $key ]['label'];
+					}
+					if ( in_array( (string) ( $field['description'] ?? '' ), array( '', 'Indica quando costumam realizar-se jogos ou como são anunciadas as datas.' ), true ) ) {
+						$merged[ $key ]['description'] = $defaults[ $key ]['description'];
+					}
+					if ( in_array( (string) ( $field['placeholder'] ?? '' ), array( '', 'Ex.: Sábado e domingo, 09:00–18:00' ), true ) ) {
+						$merged[ $key ]['placeholder'] = $defaults[ $key ]['placeholder'];
+					}
+					$merged[ $key ]['required'] = false;
+				}
 			}
 		}
 		foreach ( $defaults as $key => $field ) {

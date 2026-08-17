@@ -132,7 +132,7 @@ if ( $field_id && $adam_slug ) {
 					<h2><?php esc_html_e( 'Regras', 'adam-comunidade' ); ?></h2>
 					<p><?php esc_html_e( 'Registe limites de FPS, regras de pirotecnia, requisitos de BB Bio, tabaco, álcool, animais e outras regras locais.', 'adam-comunidade' ); ?></p>
 					<?php wp_editor( wp_kses_post( (string) $adam_value( 'rules' ) ), 'adam_field_rules', array( 'textarea_name' => 'field[rules]', 'textarea_rows' => 12, 'media_buttons' => false ) ); ?>
-					<label class="adam-field"><span><?php esc_html_e( 'Horários', 'adam-comunidade' ); ?></span><textarea name="field[opening_hours]" rows="6" placeholder="<?php esc_attr_e( 'Ex.: Sábado e domingo, 09:00–18:00', 'adam-comunidade' ); ?>"><?php echo esc_textarea( (string) $adam_value( 'opening_hours' ) ); ?></textarea></label>
+					<label class="adam-field"><span><?php esc_html_e( 'Funcionamento', 'adam-comunidade' ); ?></span><textarea name="field[opening_hours]" rows="6" placeholder="<?php esc_attr_e( 'Ex.: Jogos normalmente aos domingos, em datas anunciadas previamente nas nossas redes sociais.', 'adam-comunidade' ); ?>"><?php echo esc_textarea( (string) $adam_value( 'opening_hours' ) ); ?></textarea><small><?php esc_html_e( 'Indica quando costumam realizar-se jogos ou como são anunciadas as datas. Não é necessário indicar um horário fixo.', 'adam-comunidade' ); ?></small></label>
 				</section>
 
 				<section class="adam-card adam-field-panel" id="adam-field-panel-capacity" hidden>

@@ -610,7 +610,7 @@ final class Admin {
 			'playing_styles'         => __( 'Estilos de jogo', 'adam-comunidade' ),
 			'amenity_ids'            => __( 'Comodidades', 'adam-comunidade' ),
 			'rules'                  => __( 'Regras', 'adam-comunidade' ),
-			'opening_hours'          => __( 'Horários', 'adam-comunidade' ),
+			'opening_hours'          => __( 'Funcionamento', 'adam-comunidade' ),
 			'max_players'            => __( 'Máximo de jogadores', 'adam-comunidade' ),
 			'min_players'            => __( 'Mínimo de jogadores', 'adam-comunidade' ),
 			'recommended_players'    => __( 'Jogadores recomendados', 'adam-comunidade' ),

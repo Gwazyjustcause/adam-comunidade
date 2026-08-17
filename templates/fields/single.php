@@ -141,7 +141,7 @@ get_header();
 		</details><?php endif; ?>
 
 		<?php if ( $has_opening_hours ) : ?><section class="adam-field-section">
-			<h2><?php esc_html_e( 'Horários', 'adam-comunidade' ); ?></h2>
+			<h2><?php esc_html_e( 'Funcionamento', 'adam-comunidade' ); ?></h2>
 			<p><?php echo nl2br( esc_html( (string) $field->opening_hours ) ); ?></p>
 		</section><?php endif; ?>
 

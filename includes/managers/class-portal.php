@@ -453,7 +453,7 @@ final class Portal {
 			<label><span><?php esc_html_e( 'Jogadores recomendados', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[recommended_players]" value="<?php echo esc_attr( (string) $record->recommended_players ); ?>"></label>
 			<label><span><?php esc_html_e( 'Máximo de jogadores', 'adam-comunidade' ); ?></span><input type="number" min="0" name="manager[max_players]" value="<?php echo esc_attr( (string) $record->max_players ); ?>"></label>
 			<label class="adam-field--wide"><span><?php esc_html_e( 'Regras', 'adam-comunidade' ); ?></span><textarea name="manager[rules]" rows="8"><?php echo esc_textarea( wp_strip_all_tags( (string) $record->rules ) ); ?></textarea></label>
-			<label class="adam-field--wide"><span><?php esc_html_e( 'Horários', 'adam-comunidade' ); ?></span><textarea name="manager[opening_hours]" rows="6" placeholder="<?php esc_attr_e( 'Ex.: Sábado e domingo, 09:00–18:00', 'adam-comunidade' ); ?>"><?php echo esc_textarea( (string) ( $record->opening_hours ?? '' ) ); ?></textarea></label>
+			<label class="adam-field--wide"><span><?php esc_html_e( 'Funcionamento', 'adam-comunidade' ); ?></span><textarea name="manager[opening_hours]" rows="6" placeholder="<?php esc_attr_e( 'Ex.: Jogos normalmente aos domingos, em datas anunciadas previamente nas nossas redes sociais.', 'adam-comunidade' ); ?>"><?php echo esc_textarea( (string) ( $record->opening_hours ?? '' ) ); ?></textarea><small><?php esc_html_e( 'Indica quando costumam realizar-se jogos ou como são anunciadas as datas. Não é necessário indicar um horário fixo.', 'adam-comunidade' ); ?></small></label>
 		</div>
 		<fieldset class="adam-manager-choices"><legend><?php esc_html_e( 'Comodidades', 'adam-comunidade' ); ?></legend><?php
 		global $wpdb;
