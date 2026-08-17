@@ -517,7 +517,7 @@
 
 .adam-field-hero .adam-hero-social-links {
 	flex: 0 0 auto;
-	margin-bottom: 4px;
+	margin-bottom: 0;
 }
 
 .adam-field-hero h1 {
@@ -843,6 +843,7 @@
 	}
 
 	.adam-field-hero .adam-hero-social-links {
+		align-self: flex-start;
 		margin: 0;
 	}
 

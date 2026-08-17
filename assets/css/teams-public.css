@@ -353,7 +353,7 @@
 
 .adam-team-hero .adam-hero-social-links {
 	flex: 0 0 auto;
-	margin-bottom: 4px;
+	margin-bottom: 0;
 }
 
 .adam-recruitment {
@@ -529,7 +529,7 @@
 	.adam-team-grid { grid-template-columns: 1fr; }
 	.adam-team-hero__content { align-items: flex-start; flex-direction: column; margin-top: -60px; }
 	.adam-team-hero__logo { --adam-team-logo-size: 110px; }
-	.adam-team-hero .adam-hero-social-links { margin: 4px 0 0; }
+	.adam-team-hero .adam-hero-social-links { align-self: flex-start; margin: 4px 0 0; }
 	.adam-team-stats { grid-template-columns: 1fr; }
 	.adam-team-stats div,
 	.adam-team-stats div:first-child { border-left: 0; border-top: 1px solid #e2e8f0; padding: 14px 0; }
