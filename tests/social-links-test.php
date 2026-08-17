@@ -103,6 +103,10 @@ foreach ( array( $fields_view, $teams_view ) as $template ) {
 }
 $assert( str_contains( $fields_view, "'website' => 'Website'" ) && str_contains( $teams_view, "'website'   => 'Website'" ), 'Public templates are missing the Website label.' );
 $assert( str_contains( $fields_view, 'target="_blank" rel="noopener noreferrer"' ) && str_contains( $teams_view, 'target="_blank" rel="noopener noreferrer"' ), 'Website/social links are missing safe new-tab attributes.' );
+$assert( str_contains( $fields_view, 'adam-field-hero__details' ) && str_contains( $fields_view, 'adam-hero-social-links' ), 'Field public contacts are not rendered in the hero.' );
+$assert( str_contains( $teams_view, 'adam-team-hero__details' ) && str_contains( $teams_view, 'adam-hero-social-links' ), 'Team public contacts are not rendered in the hero.' );
+$assert( ! str_contains( $fields_view, 'adam-social-section' ) && ! str_contains( $teams_view, 'adam-social-section' ), 'The standalone public contacts section was not removed.' );
+$assert( ! str_contains( $fields_view, 'Redes e contactos' ) && ! str_contains( $teams_view, 'Redes e contactos' ), 'The standalone public contacts heading remains in a single template.' );
 $assert( str_contains( $fields_admin, "'whatsapp' => 'WhatsApp'" ), 'Field admin editor is missing WhatsApp.' );
 $assert( str_contains( $teams_admin, "'whatsapp' => 'WhatsApp'" ), 'Team admin editor is missing WhatsApp.' );
 

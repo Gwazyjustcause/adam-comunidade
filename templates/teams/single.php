@@ -73,7 +73,7 @@ get_header();
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-team-container adam-team-hero__content' ) ); ?>">
 			<?php echo View::logo( $adam_team, array( 'class' => 'adam-team-hero__logo' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<div>
+			<div class="adam-team-hero__details">
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $adam_team->name ); ?></h1>
 				<?php if ( ! empty( $adam_team->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Equipa Associada ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( 'verified_team' === ( $adam_team->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Equipa verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
@@ -84,6 +84,12 @@ get_header();
 				</div>
 				<?php if ( $adam_team->recruitment_min_age || $adam_team->recruitment_experience || $adam_team->recruitment_equipment || $adam_team->recruitment_training ) : ?><div class="adam-recruitment-details"><strong><?php esc_html_e( 'Detalhes do recrutamento', 'adam-comunidade' ); ?></strong><?php if ( $adam_team->recruitment_min_age ) : ?><span><?php echo esc_html( sprintf( __( 'Idade mínima: %d', 'adam-comunidade' ), $adam_team->recruitment_min_age ) ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_experience ) : ?><span><?php echo esc_html( $adam_team->recruitment_experience ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_equipment ) : ?><span><?php echo esc_html( $adam_team->recruitment_equipment ); ?></span><?php endif; ?><?php if ( $adam_team->recruitment_training ) : ?><span><?php esc_html_e( 'Treino disponível', 'adam-comunidade' ); ?></span><?php endif; ?></div><?php endif; ?>
 			</div>
+			<?php if ( $adam_social_links ) : ?><nav class="adam-social-links adam-hero-social-links" aria-label="<?php esc_attr_e( 'Contactos públicos', 'adam-comunidade' ); ?>">
+				<?php foreach ( $adam_social_links as $adam_social_key => $adam_social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $adam_social_key ); ?>" href="<?php echo esc_url( $adam_social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>" title="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>">
+					<?php echo Social_Links::icon( $adam_social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="screen-reader-text"><?php echo esc_html( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?></span>
+				</a><?php endforeach; ?>
+			</nav><?php endif; ?>
 		</div>
 	</section>
 
@@ -115,16 +121,6 @@ get_header();
 		<?php if ( $adam_public_links ) : ?><section class="adam-team-section"><h2><?php esc_html_e( 'Presença online', 'adam-comunidade' ); ?></h2><div class="adam-team-contact-buttons">
 			<?php foreach ( $adam_public_links as $adam_link_key => $adam_link_url ) : ?><a href="<?php echo esc_url( $adam_link_url ); ?>" class="adam-team-button" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $adam_link_labels[ $adam_link_key ] ?? ucfirst( $adam_link_key ) ); ?></a><?php endforeach; ?>
 		</div></section><?php endif; ?>
-
-		<?php if ( $adam_social_links ) : ?><section class="adam-team-section adam-social-section">
-			<h2><?php esc_html_e( 'Redes e contactos', 'adam-comunidade' ); ?></h2>
-			<nav class="adam-social-links" aria-label="<?php esc_attr_e( 'Redes e contactos', 'adam-comunidade' ); ?>">
-				<?php foreach ( $adam_social_links as $adam_social_key => $adam_social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $adam_social_key ); ?>" href="<?php echo esc_url( $adam_social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>" title="<?php echo esc_attr( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?>">
-					<?php echo Social_Links::icon( $adam_social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<span class="screen-reader-text"><?php echo esc_html( $adam_link_labels[ $adam_social_key ] ?? $adam_social_key ); ?></span>
-				</a><?php endforeach; ?>
-			</nav>
-		</section><?php endif; ?>
 
 		<?php if ( $adam_team->address || $adam_team->maps_url || ( $adam_team->latitude && $adam_team->longitude ) ) : ?>
 			<section class="adam-team-section">

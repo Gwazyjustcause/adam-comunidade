@@ -978,3 +978,20 @@ body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
 	outline: 3px solid var(--adam-accent, #97c44b);
 	outline-offset: 3px;
 }
+
+.adam-hero-social-links {
+	align-items: center;
+	gap: 12px;
+}
+
+.adam-hero-social-links .adam-social-link {
+	background: rgba(15, 23, 42, .3);
+	border: 1px solid rgba(190, 242, 100, .5);
+	color: #bef264;
+}
+
+.adam-hero-social-links .adam-social-link:hover,
+.adam-hero-social-links .adam-social-link:focus-visible {
+	background: #bef264;
+	color: #0f172a;
+}

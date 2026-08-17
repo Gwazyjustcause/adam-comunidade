@@ -502,9 +502,22 @@
 }
 
 .adam-field-hero__content {
+	align-items: flex-end;
+	display: flex;
+	gap: 24px;
 	margin-top: -165px;
 	padding-bottom: 42px;
 	position: relative;
+}
+
+.adam-field-hero__details {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.adam-field-hero .adam-hero-social-links {
+	flex: 0 0 auto;
+	margin-bottom: 4px;
 }
 
 .adam-field-hero h1 {
@@ -823,7 +836,14 @@
 	}
 
 	.adam-field-hero__content {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 12px;
 		margin-top: -115px;
+	}
+
+	.adam-field-hero .adam-hero-social-links {
+		margin: 0;
 	}
 
 	.adam-field-mobile-actions {

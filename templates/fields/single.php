@@ -81,7 +81,7 @@ get_header();
 			<?php endif; ?>
 		</div>
 		<div class="<?php echo esc_attr( Public_Hero::element( 'content', 'adam-field-container adam-field-hero__content' ) ); ?>">
-			<div>
+			<div class="adam-field-hero__details">
 				<h1 class="<?php echo esc_attr( Public_Hero::element( 'title' ) ); ?>"><?php echo esc_html( $field->name ); ?></h1>
 				<?php if ( ! empty( $field->is_associated ) ) : ?><span class="adam-badge adam-badge--associated"><?php esc_html_e( 'Associado ADAM', 'adam-comunidade' ); ?></span><?php endif; ?>
 				<?php if ( 'verified_field' === ( $field->verification ?? '' ) ) : ?><span class="adam-badge adam-badge--verified"><?php esc_html_e( 'Autorização verificada', 'adam-comunidade' ); ?></span><?php endif; ?>
@@ -92,6 +92,12 @@ get_header();
 				</div><?php endif; ?>
 				<?php if ( $team ) : ?><a class="adam-field-team-badge" href="<?php echo esc_url( Team_Router::team_url( $team ) ); ?>"><?php echo esc_html( $team->name ); ?></a><?php endif; ?>
 			</div>
+			<?php if ( $social_links ) : ?><nav class="adam-social-links adam-hero-social-links" aria-label="<?php esc_attr_e( 'Contactos públicos', 'adam-comunidade' ); ?>">
+				<?php foreach ( $social_links as $social_key => $social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $social_key ); ?>" href="<?php echo esc_url( $social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>" title="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>">
+					<?php echo Social_Links::icon( $social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span class="screen-reader-text"><?php echo esc_html( $social_labels[ $social_key ] ?? $social_key ); ?></span>
+				</a><?php endforeach; ?>
+			</nav><?php endif; ?>
 		</div>
 	</section>
 
@@ -150,16 +156,6 @@ get_header();
 					</a>
 				<?php endforeach; ?>
 			</div>
-		</section><?php endif; ?>
-
-		<?php if ( $social_links ) : ?><section class="adam-field-section adam-social-section">
-			<h2><?php esc_html_e( 'Redes e contactos', 'adam-comunidade' ); ?></h2>
-			<nav class="adam-social-links" aria-label="<?php esc_attr_e( 'Redes e contactos', 'adam-comunidade' ); ?>">
-				<?php foreach ( $social_links as $social_key => $social_url ) : ?><a class="adam-social-link adam-social-link--<?php echo esc_attr( $social_key ); ?>" href="<?php echo esc_url( $social_url ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>" title="<?php echo esc_attr( $social_labels[ $social_key ] ?? $social_key ); ?>">
-					<?php echo Social_Links::icon( $social_key, 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<span class="screen-reader-text"><?php echo esc_html( $social_labels[ $social_key ] ?? $social_key ); ?></span>
-				</a><?php endforeach; ?>
-			</nav>
 		</section><?php endif; ?>
 
 		<?php if ( $field->address || $coordinates || $google_maps_url ) : ?><section class="adam-field-section">
