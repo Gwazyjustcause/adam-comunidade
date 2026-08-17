@@ -13,6 +13,7 @@ use ADAM\Comunidade\Fields\Map;
 use ADAM\Comunidade\Fields\Options;
 use ADAM\Comunidade\Fields\Repository;
 use ADAM\Comunidade\Fields\Router;
+use ADAM\Comunidade\Fields\Validator;
 use ADAM\Comunidade\Fields\View;
 use ADAM\Comunidade\Teams\Repository as Team_Repository;
 use ADAM\Comunidade\Teams\Router as Team_Router;
@@ -32,10 +33,14 @@ $gallery     = array_values(
 $team_id     = $repository->associated_team_id( (int) $field->id );
 $team        = $team_id ? ( new Team_Repository() )->find( $team_id ) : null;
 $team        = $team && 'published' === $team->status ? $team : null;
-$coordinates = null !== $field->latitude && null !== $field->longitude
-	? $field->latitude . ', ' . $field->longitude
+$has_coordinates = is_numeric( $field->latitude ) && is_numeric( $field->longitude )
+	&& (float) $field->latitude >= -90 && (float) $field->latitude <= 90
+	&& (float) $field->longitude >= -180 && (float) $field->longitude <= 180;
+$coordinates = $has_coordinates
+	? (string) $field->latitude . ', ' . (string) $field->longitude
 	: '';
-$google_maps_url = $field->maps_url;
+$google_maps_url = Validator::sanitize_maps_url( (string) $field->maps_url );
+$google_maps_url = is_wp_error( $google_maps_url ) ? '' : $google_maps_url;
 $directions_url  = '';
 if ( $coordinates ) {
 	$directions_url = 'https://www.google.com/maps/dir/?api=1&destination='
@@ -143,7 +148,7 @@ get_header();
 			</div>
 		</section><?php endif; ?>
 
-		<?php if ( $field->address || $coordinates || $field->maps_url ) : ?><section class="adam-field-section">
+		<?php if ( $field->address || $coordinates || $google_maps_url ) : ?><section class="adam-field-section">
 			<h2><?php esc_html_e( 'Mapa e direções', 'adam-comunidade' ); ?></h2>
 			<?php if ( $field->address ) : ?><p class="adam-field-address"><?php echo esc_html( $field->address ); ?></p><?php endif; ?>
 			<?php if ( $coordinates ) : ?><div class="adam-field-map">

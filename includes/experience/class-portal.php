@@ -453,6 +453,13 @@ final class Portal {
 				$errors[ $key ] = $value->get_error_message();
 				continue;
 			}
+			if ( 'field' === $type && 'maps_url' === $key ) {
+				$value = Field_Validator::sanitize_maps_url( $value );
+				if ( is_wp_error( $value ) ) {
+					$errors[ $key ] = $value->get_error_message();
+					continue;
+				}
+			}
 			if ( 'contact_email' === $key ) {
 				$email            = (string) $value;
 				$payload['email'] = $email;

@@ -857,6 +857,18 @@ final class Service {
 		if ( is_wp_error( $data ) ) {
 			return $data;
 		}
+		if ( 'field' === $type && array_key_exists( 'maps_url', $input ) && (string) $input['maps_url'] !== (string) ( $current->maps_url ?? '' ) && '' !== trim( (string) $input['maps_url'] ) && ! array_key_exists( 'latitude', $input ) && ! array_key_exists( 'longitude', $input ) ) {
+			$coordinates = Field_Validator::extract_coordinates( (string) $data['maps_url'] );
+			if ( is_array( $coordinates ) ) {
+				$data['latitude']  = $coordinates['latitude'];
+				$data['longitude'] = $coordinates['longitude'];
+			} elseif ( null === $coordinates ) {
+				// A new URL without explicit coordinates must not retain an old
+				// point that may refer to a different entrance or car park.
+				$data['latitude']  = null;
+				$data['longitude'] = null;
+			}
+		}
 
 		$allowed = Policy::editable_fields( $type );
 		$payload = array_intersect_key( $data, array_flip( $allowed ) );

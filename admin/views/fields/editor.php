@@ -105,7 +105,7 @@ if ( $field_id && $adam_slug ) {
 						<?php endforeach; ?>
 						<label class="adam-field"><span><?php esc_html_e( 'Latitude', 'adam-comunidade' ); ?></span><input type="number" step="0.0000001" min="-90" max="90" name="field[latitude]" value="<?php echo esc_attr( (string) $adam_value( 'latitude' ) ); ?>"></label>
 						<label class="adam-field"><span><?php esc_html_e( 'Longitude', 'adam-comunidade' ); ?></span><input type="number" step="0.0000001" min="-180" max="180" name="field[longitude]" value="<?php echo esc_attr( (string) $adam_value( 'longitude' ) ); ?>"></label>
-						<label class="adam-field adam-field--wide"><span><?php esc_html_e( 'Google Maps URL', 'adam-comunidade' ); ?></span><input type="url" name="field[maps_url]" value="<?php echo esc_attr( (string) $adam_value( 'maps_url' ) ); ?>"></label>
+						<label class="adam-field adam-field--wide"><span><?php esc_html_e( 'Localização do Campo no Google Maps', 'adam-comunidade' ); ?></span><input type="url" name="field[maps_url]" value="<?php echo esc_attr( (string) $adam_value( 'maps_url' ) ); ?>"><small><?php esc_html_e( 'Cole o link Google Maps da entrada, estacionamento ou ponto de encontro. As coordenadas continuam disponíveis para edição manual.', 'adam-comunidade' ); ?></small></label>
 					</div>
 					<p class="adam-notice"><?php esc_html_e( 'As coordenadas alimentam o mapa OpenStreetMap e os futuros mapas do diretório.', 'adam-comunidade' ); ?></p>
 				</section>

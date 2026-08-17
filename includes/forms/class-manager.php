@@ -180,7 +180,10 @@ final class Manager {
 					'notice_text'  => __( 'A ADAM apenas publica campos com autorização ou permissão legal para funcionar. É obrigatório anexar uma cópia legível do documento. Submissões sem comprovativo não serão aprovadas.', 'adam-comunidade' ),
 					'fields'       => array_merge(
 						array_slice( $common, 0, 4, true ),
-						array( 'address' => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ) ),
+						array(
+							'address'   => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ),
+							'maps_url'  => $this->field( 'maps_url', __( 'Localização do Campo no Google Maps', 'adam-comunidade' ), 'url', false, 'https://', __( 'Cole o link da localização no Google Maps. Indique de preferência a entrada, estacionamento ou ponto de encontro utilizado pelos jogadores.' ) ),
+						),
 						array_slice( $common, 4, null, true ),
 						array(
 							'playing_styles' => $this->field( 'playing_styles', __( 'Estilos de jogo', 'adam-comunidade' ), 'playing_styles', false, '', __( 'Selecione todos os estilos aplicáveis ao campo.', 'adam-comunidade' ) ),

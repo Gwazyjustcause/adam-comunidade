@@ -73,6 +73,20 @@ final class Validator {
 		foreach ( array( 'maps_url', 'website', 'facebook', 'instagram' ) as $key ) {
 			$raw          = trim( (string) ( $input[ $key ] ?? '' ) );
 			$urls[ $key ] = esc_url_raw( $raw, array( 'http', 'https' ) );
+			if ( 'maps_url' === $key ) {
+				$maps_result = self::sanitize_maps_url( $raw );
+				if ( is_wp_error( $maps_result ) ) {
+					$current = $field_id ? $this->repository->find( $field_id ) : null;
+					// Do not break an untouched legacy value. It is filtered from
+					// public output and can be replaced or removed by an editor.
+					if ( ! $current || (string) $current->maps_url !== $raw ) {
+						$errors->add( 'invalid_maps_url', $maps_result->get_error_message() );
+					}
+				} else {
+					$urls[ $key ] = $maps_result;
+				}
+				continue;
+			}
 
 			if ( $raw && ! $urls[ $key ] ) {
 				$errors->add(
@@ -88,6 +102,15 @@ final class Validator {
 
 		$latitude  = $this->coordinate( $input['latitude'] ?? '', -90, 90, 'latitude', $errors );
 		$longitude = $this->coordinate( $input['longitude'] ?? '', -180, 180, 'longitude', $errors );
+		if ( $urls['maps_url'] && '' === trim( (string) ( $input['latitude'] ?? '' ) ) && '' === trim( (string) ( $input['longitude'] ?? '' ) ) ) {
+			$coordinates = self::extract_coordinates( $urls['maps_url'] );
+			if ( is_wp_error( $coordinates ) ) {
+				$errors->add( 'invalid_maps_coordinates', $coordinates->get_error_message() );
+			} elseif ( is_array( $coordinates ) ) {
+				$latitude  = $coordinates['latitude'];
+				$longitude = $coordinates['longitude'];
+			}
+		}
 		$minimum   = absint( $input['min_players'] ?? 0 );
 		$maximum   = absint( $input['max_players'] ?? 0 );
 		$recommended = absint( $input['recommended_players'] ?? 0 );
@@ -175,6 +198,69 @@ final class Validator {
 			),
 			$urls
 		);
+	}
+
+	/**
+	 * Sanitizes and strictly validates a Google Maps URL.
+	 *
+	 * @param mixed $value Untrusted URL.
+	 * @return string|\WP_Error
+	 */
+	public static function sanitize_maps_url( mixed $value ): string|\WP_Error {
+		$url = esc_url_raw( trim( (string) $value ), array( 'http', 'https' ) );
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$parts = wp_parse_url( $url );
+		$host  = strtolower( (string) ( $parts['host'] ?? '' ) );
+		$path  = strtolower( (string) ( $parts['path'] ?? '' ) );
+		$port  = absint( $parts['port'] ?? 0 );
+		$valid = in_array( (string) ( $parts['scheme'] ?? '' ), array( 'http', 'https' ), true )
+			&& $host
+			&& empty( $parts['user'] )
+			&& empty( $parts['pass'] )
+			&& ( 0 === $port || ( 'https' === $parts['scheme'] && 443 === $port ) || ( 'http' === $parts['scheme'] && 80 === $port ) );
+
+		$google_host = (bool) preg_match( '/(?:^|\.)google\.[a-z]{2,}(?:\.[a-z]{2})?$/', $host );
+		$valid = $valid && (
+			( $google_host && str_starts_with( $path, '/maps' ) )
+			|| 'maps.google.com' === $host
+			|| 'maps.app.goo.gl' === $host
+			|| ( 'goo.gl' === $host && str_starts_with( $path, '/maps' ) )
+		);
+
+		return $valid
+			? $url
+			: new \WP_Error( 'invalid_maps_url', __( 'Introduza um link válido e reconhecido do Google Maps.', 'adam-comunidade' ) );
+	}
+
+	/**
+	 * Extracts explicit coordinates from common Google Maps URL formats.
+	 *
+	 * @param string $url Validated Google Maps URL.
+	 * @return array{latitude:float,longitude:float}|null|\WP_Error
+	 */
+	public static function extract_coordinates( string $url ): array|null|\WP_Error {
+		$decoded = rawurldecode( $url );
+		$patterns = array(
+			'/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/',
+			'/[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/',
+			'/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/',
+		);
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $decoded, $matches ) ) {
+				$latitude  = (float) $matches[1];
+				$longitude = (float) $matches[2];
+				if ( $latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180 ) {
+					return new \WP_Error( 'invalid_maps_coordinates', __( 'O link do Google Maps contém coordenadas fora dos limites válidos.', 'adam-comunidade' ) );
+				}
+
+				return array( 'latitude' => round( $latitude, 7 ), 'longitude' => round( $longitude, 7 ) );
+			}
+		}
+
+		return null;
 	}
 
 	/**
