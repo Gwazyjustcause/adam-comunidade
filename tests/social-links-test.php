@@ -85,6 +85,7 @@ $fields_view  = (string) file_get_contents( $root . '/templates/fields/single.ph
 $teams_view   = (string) file_get_contents( $root . '/templates/teams/single.php' );
 $fields_admin = (string) file_get_contents( $root . '/admin/views/fields/editor.php' );
 $teams_admin  = (string) file_get_contents( $root . '/admin/views/teams/editor.php' );
+$public_css   = (string) file_get_contents( $root . '/assets/css/public.css' );
 
 foreach ( array( 'whatsapp varchar', "VERSION = '6.3.0'" ) as $contract ) {
 	$assert( str_contains( $fields_schema, $contract ), 'Missing Field schema contract: ' . $contract );
@@ -107,6 +108,8 @@ $assert( str_contains( $fields_view, 'adam-field-hero__details' ) && str_contain
 $assert( str_contains( $teams_view, 'adam-team-hero__details' ) && str_contains( $teams_view, 'adam-hero-social-links' ), 'Team public contacts are not rendered in the hero.' );
 $assert( ! str_contains( $fields_view, 'adam-social-section' ) && ! str_contains( $teams_view, 'adam-social-section' ), 'The standalone public contacts section was not removed.' );
 $assert( ! str_contains( $fields_view, 'Redes e contactos' ) && ! str_contains( $teams_view, 'Redes e contactos' ), 'The standalone public contacts heading remains in a single template.' );
+$assert( str_contains( $public_css, 'color: #b7dc59' ) && str_contains( $public_css, 'height: 52px' ) && str_contains( $public_css, 'height: 28px' ), 'Hero social icons do not have the required contrast and size.' );
+$assert( str_contains( $public_css, 'gap: 16px' ) && str_contains( $public_css, 'drop-shadow' ), 'Hero social icon spacing/hover treatment is missing.' );
 $assert( str_contains( $fields_admin, "'whatsapp' => 'WhatsApp'" ), 'Field admin editor is missing WhatsApp.' );
 $assert( str_contains( $teams_admin, "'whatsapp' => 'WhatsApp'" ), 'Team admin editor is missing WhatsApp.' );
 

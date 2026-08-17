@@ -981,17 +981,27 @@ body.adam-theme-dark .adam-manager-submit-bar [data-adam-save-state] {
 
 .adam-hero-social-links {
 	align-items: center;
-	gap: 12px;
+	gap: 16px;
 }
 
 .adam-hero-social-links .adam-social-link {
 	background: rgba(15, 23, 42, .3);
-	border: 1px solid rgba(190, 242, 100, .5);
-	color: #bef264;
+	border: 1px solid rgba(183, 220, 89, .7);
+	color: #b7dc59;
+	height: 52px;
+	min-width: 52px;
+	width: 52px;
+}
+
+.adam-hero-social-links .adam-social-link svg {
+	height: 28px;
+	width: 28px;
 }
 
 .adam-hero-social-links .adam-social-link:hover,
 .adam-hero-social-links .adam-social-link:focus-visible {
-	background: #bef264;
+	background: rgba(183, 220, 89, .16);
 	color: #0f172a;
+	filter: drop-shadow(0 0 7px rgba(183, 220, 89, .45));
+	transform: translateY(-1px) scale(1.04);
 }
