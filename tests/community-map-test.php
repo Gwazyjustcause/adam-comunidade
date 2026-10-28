@@ -10,7 +10,7 @@ namespace ADAM\Comunidade\Teams {
 			}
 			return array( 'pages' => 2, 'items' => array( (object) array(
 				'id' => $args['page'], 'name' => 'Test <script>alert(1)</script> ' . $args['district'],
-				'district' => $args['district'], 'municipality' => 'Concelho',
+				'district' => $args['district'], 'municipality' => 'Coimbra' === $args['district'] ? 'Montemor-o-Velho' : 'Concelho',
 				'latitude' => 1 === $args['page'] ? 40.2 : null, 'longitude' => 1 === $args['page'] ? -8.4 : null,
 			) ) );
 		}
@@ -43,6 +43,7 @@ namespace {
 	function wp_localize_script( ...$args ): void {}
 	function apply_filters( string $hook, mixed $value ): mixed { return $value; }
 	function __( string $value, string $domain = '' ): string { return $value; }
+	function remove_accents( string $value ): string { return iconv( 'UTF-8', 'ASCII//TRANSLIT', $value ); }
 	function esc_html( string $value ): string { return htmlspecialchars( $value, ENT_QUOTES ); }
 	function esc_attr( string $value ): string { return esc_html( $value ); }
 	function esc_url( string $value ): string { return esc_attr( $value ); }
@@ -62,7 +63,31 @@ namespace {
 	check( count( $records ) === 24, 'Must read both pages of both types across all six districts.' );
 	check( count( array_filter( $records, static fn( array $record ): bool => $record['approximate'] ) ) === 12, 'Records without coordinates must remain on the map.' );
 	$coimbra = array_values( array_filter( $records, static fn( array $record ): bool => 'Coimbra' === $record['district'] && $record['approximate'] ) );
-	check( 40.2033 === $coimbra[0]['latitude'] && -8.4103 === $coimbra[0]['longitude'], 'Coimbra district fallback must be in Coimbra.' );
+	check( 40.17287 === $coimbra[0]['latitude'] && -8.68616 === $coimbra[0]['longitude'], 'Montemor-o-Velho must take precedence over the Coimbra district centre.' );
+	check( 'municipality' === $coimbra[0]['location_scope'] && str_contains( $coimbra[0]['location_note'], 'Montemor-o-Velho' ), 'Both teams and fields must describe the concelho fallback accurately.' );
+	foreach ( array( 'Montemor-o-Velho', ' MONTEMOR O VELHO ', 'Concelho de Montemor-o-Velho' ) as $name ) {
+		$location = Community_Map::location( (object) array( 'district' => 'Coimbra', 'municipality' => $name ) );
+		check( 40.17287 === $location['latitude'] && 'municipality' === $location['scope'], 'Concelho name normalisation failed.' );
+	}
+	$agueda = Community_Map::location( (object) array( 'district' => 'Aveiro', 'municipality' => 'agueda' ) );
+	check( 'municipality' === $agueda['scope'] && str_contains( $agueda['note'], 'Águeda' ), 'Accented concelhos must match unaccented input.' );
+	$unknown = Community_Map::location( (object) array( 'district' => 'Coimbra', 'municipality' => 'Unknown town' ) );
+	check( 'district' === $unknown['scope'] && 40.2033 === $unknown['latitude'], 'Unknown concelhos must retain an honest district fallback.' );
+	$wrong_district = Community_Map::location( (object) array( 'district' => 'Guarda', 'municipality' => 'Montemor-o-Velho' ) );
+	check( 'district' === $wrong_district['scope'], 'Concelho matching must respect district boundaries.' );
+	$precise = Community_Map::location( (object) array( 'district' => 'Coimbra', 'municipality' => 'Montemor-o-Velho', 'latitude' => 40.19, 'longitude' => -8.65 ) );
+	check( 'coordinates' === $precise['scope'] && 40.19 === $precise['latitude'] && '' === $precise['note'], 'Exact locations must override the concelho centre.' );
+	$centres = json_decode( file_get_contents( ADAM_COMUNIDADE_PATH . 'includes/data/municipality-centres.json' ), true );
+	$count = 0;
+	foreach ( $centres as $district => $municipalities ) {
+		foreach ( $municipalities as $municipality ) {
+			$location = Community_Map::location( (object) array( 'district' => $district, 'municipality' => $municipality['name'] ) );
+			check( 'municipality' === $location['scope'] && $location['latitude'] === $municipality['latitude'] && $location['longitude'] === $municipality['longitude'], 'Every bundled concelho must resolve to its own centre.' );
+			check( Community_Map::has_location( (object) array_merge( array( 'district' => $district ), $location ) ), 'Bundled concelhos must be inside the map coverage.' );
+			++$count;
+		}
+	}
+	check( 101 === $count, 'All 101 concelhos must be bundled.' );
 	check( ! $records[0]['approximate'] && 40.2 === $records[0]['latitude'], 'Precise coordinates must be preserved.' );
 	foreach ( array( null, '', 'invalid', 0, 90 ) as $latitude ) {
 		check( ! Community_Map::has_location( (object) array( 'district' => 'Coimbra', 'latitude' => $latitude, 'longitude' => -8.4 ) ), 'Invalid coordinates accepted.' );

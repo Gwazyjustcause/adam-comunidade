@@ -21,6 +21,8 @@ $required = array(
 	'adam-comunidade/includes/teams/class-module.php',
 	'adam-comunidade/includes/fields/class-module.php',
 	'adam-comunidade/includes/directory/class-module.php',
+	'adam-comunidade/includes/data/municipality-centres.json',
+	'adam-comunidade/includes/data/README.md',
 	'adam-comunidade/includes/events/class-module.php',
 	'adam-comunidade/includes/experience/class-module.php',
 	'adam-comunidade/includes/managers/class-module.php',

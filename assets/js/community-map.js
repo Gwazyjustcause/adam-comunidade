@@ -54,7 +54,7 @@
 			content.append(name, location);
 			if (item.approximate) {
 				var note = document.createElement('small');
-				note.textContent = labels.approximate;
+				note.textContent = item.location_note || labels.approximate;
 				content.appendChild(note);
 			}
 			content.appendChild(link);
@@ -101,7 +101,7 @@
 				button.type = 'button';
 				button.textContent = item.name;
 				button.addEventListener('click', function () {
-					map.setView(marker.getLatLng(), (item.approximate ? 10 : Math.max(map.getZoom(), 13)), { animate: false });
+					map.setView(marker.getLatLng(), (item.approximate ? (item.location_scope === 'municipality' ? 12 : 10) : Math.max(map.getZoom(), 13)), { animate: false });
 					marker.openPopup();
 				});
 				marker.on('popupopen', function () {
@@ -116,13 +116,13 @@
 				result.append(button, location);
 				if (item.approximate) {
 					var note = document.createElement('small');
-					note.textContent = labels.approximate;
+					note.textContent = item.location_note || labels.approximate;
 					result.appendChild(note);
 				}
 				result.appendChild(link);
 				results.appendChild(result);
 			});
-			if (items.length) { map.fitBounds(layer.getBounds(), { padding: [36, 36], maxZoom: items.every(function (item) { return item.approximate; }) ? 10 : 13, animate: false }); }
+			if (items.length) { map.fitBounds(layer.getBounds(), { padding: [36, 36], maxZoom: items.every(function (item) { return item.location_scope === 'district'; }) ? 10 : 13, animate: false }); }
 			else { overview(); }
 		}
 		form.addEventListener('submit', function (event) { event.preventDefault(); render(); });

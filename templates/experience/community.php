@@ -16,10 +16,13 @@ get_header();
 			<?php echo do_shortcode( '[adam_community_map]' ); ?>
 		</section>
 		<section class="adam-community-hub__contribute">
-			<div><p class="adam-community-hub__eyebrow"><?php esc_html_e( 'O próximo ponto pode ser o teu', 'adam-comunidade' ); ?></p><h2><?php esc_html_e( 'A tua equipa já está no mapa?', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Dá visibilidade ao teu projeto. A ADAM revê cada submissão antes da publicação.', 'adam-comunidade' ); ?></p></div>
+			<div><p class="adam-community-hub__eyebrow"><?php esc_html_e( 'O próximo ponto pode ser o teu', 'adam-comunidade' ); ?></p><h2><?php esc_html_e( 'A tua equipa já está no mapa?', 'adam-comunidade' ); ?></h2><p><?php esc_html_e( 'Registar a tua equipa é gratuito. A ADAM revê cada submissão antes da publicação.', 'adam-comunidade' ); ?></p></div>
 			<div class="adam-community-hub__actions"><a class="adam-community-hub__button" href="<?php echo esc_url( Portal::submission_url( 'team' ) ); ?>"><?php esc_html_e( 'Adicionar equipa', 'adam-comunidade' ); ?> <span aria-hidden="true">+</span></a><a class="adam-community-hub__button adam-community-hub__button--outline" href="<?php echo esc_url( Portal::submission_url( 'field' ) ); ?>"><?php esc_html_e( 'Adicionar campo', 'adam-comunidade' ); ?> <span aria-hidden="true">+</span></a></div>
 		</section>
-		<nav class="adam-community-hub__network" aria-label="<?php esc_attr_e( 'Rede ADAM', 'adam-comunidade' ); ?>"><span><?php esc_html_e( 'Uma comunidade que vai além do campo.', 'adam-comunidade' ); ?></span><a href="<?php echo esc_url( Managed_Pages::url( 'partners' ) ); ?>"><?php esc_html_e( 'Parceiros', 'adam-comunidade' ); ?> <span aria-hidden="true">↗</span></a><a href="<?php echo esc_url( Managed_Pages::url( 'institutions' ) ); ?>"><?php esc_html_e( 'Instituições', 'adam-comunidade' ); ?> <span aria-hidden="true">↗</span></a></nav>
+		<section class="adam-community-hub__mission" aria-labelledby="adam-community-mission-title">
+			<div><p class="adam-community-hub__eyebrow"><?php esc_html_e( 'Uma iniciativa gratuita', 'adam-comunidade' ); ?></p><h2 id="adam-community-mission-title"><?php esc_html_e( 'Onde jogar. Com quem jogar.', 'adam-comunidade' ); ?></h2></div>
+			<div><p><?php esc_html_e( 'Queremos dar visibilidade às equipas do Centro de Portugal e aproximar quem partilha a mesma vontade de jogar.', 'adam-comunidade' ); ?></p><p><?php esc_html_e( 'Submete a tua equipa no nosso site, sem custos. Cada equipa que se junta ajuda a construir um ponto de encontro onde, cada vez mais, será possível descobrir onde jogar e com quem jogar na região.', 'adam-comunidade' ); ?></p></div>
+		</section>
 	</div>
 </main>
 <?php get_footer(); ?>

@@ -10,7 +10,7 @@
 declare(strict_types=1);
 
 $root    = dirname( __DIR__ );
-$version = '6.32.0';
+$version = '6.32.2';
 $output  = $argv[1] ?? ( $root . '/dist/adam-comunidade-' . $version . '.zip' );
 $output  = str_replace( array( '/', '\\' ), DIRECTORY_SEPARATOR, $output );
 $prefix  = 'adam-comunidade/';
@@ -44,6 +44,8 @@ $required_files = array(
 	'includes/teams/class-module.php',
 	'includes/fields/class-module.php',
 	'includes/directory/class-module.php',
+	'includes/data/municipality-centres.json',
+	'includes/data/README.md',
 	'includes/events/class-module.php',
 	'includes/experience/class-module.php',
 	'includes/managers/class-module.php',

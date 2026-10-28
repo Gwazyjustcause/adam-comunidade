@@ -1,0 +1,620 @@
+{
+  "Aveiro": {
+    "agueda": {
+      "name": "Águeda",
+      "latitude": 40.5772,
+      "longitude": -8.44442,
+      "geonames_id": 2743292
+    },
+    "albergariaavelha": {
+      "name": "Albergaria-a-Velha",
+      "latitude": 40.69318,
+      "longitude": -8.47994,
+      "geonames_id": 2743233
+    },
+    "anadia": {
+      "name": "Anadia",
+      "latitude": 40.43841,
+      "longitude": -8.43352,
+      "geonames_id": 2742908
+    },
+    "arouca": {
+      "name": "Arouca",
+      "latitude": 40.93057,
+      "longitude": -8.24488,
+      "geonames_id": 2742700
+    },
+    "aveiro": {
+      "name": "Aveiro",
+      "latitude": 40.64575,
+      "longitude": -8.64643,
+      "geonames_id": 2742611
+    },
+    "castelodepaiva": {
+      "name": "Castelo de Paiva",
+      "latitude": 41.06301,
+      "longitude": -8.2647,
+      "geonames_id": 2741001
+    },
+    "espinho": {
+      "name": "Espinho",
+      "latitude": 41.00763,
+      "longitude": -8.64125,
+      "geonames_id": 2739868
+    },
+    "estarreja": {
+      "name": "Estarreja",
+      "latitude": 40.75648,
+      "longitude": -8.57207,
+      "geonames_id": 2739837
+    },
+    "ilhavo": {
+      "name": "Ílhavo",
+      "latitude": 40.60188,
+      "longitude": -8.67021,
+      "geonames_id": 2738707
+    },
+    "mealhada": {
+      "name": "Mealhada",
+      "latitude": 40.37806,
+      "longitude": -8.44991,
+      "geonames_id": 2737809
+    },
+    "murtosa": {
+      "name": "Murtosa",
+      "latitude": 40.73695,
+      "longitude": -8.6377,
+      "geonames_id": 2737234
+    },
+    "oliveiradeazemeis": {
+      "name": "Oliveira de Azeméis",
+      "latitude": 40.84101,
+      "longitude": -8.47555,
+      "geonames_id": 2737046
+    },
+    "oliveiradobairro": {
+      "name": "Oliveira do Bairro",
+      "latitude": 40.5146,
+      "longitude": -8.49386,
+      "geonames_id": 2737042
+    },
+    "ovar": {
+      "name": "Ovar",
+      "latitude": 40.85862,
+      "longitude": -8.62513,
+      "geonames_id": 2736930
+    },
+    "santamariadafeira": {
+      "name": "Santa Maria da Feira",
+      "latitude": 40.92535,
+      "longitude": -8.54277,
+      "geonames_id": 2739723
+    },
+    "saojoaodamadeira": {
+      "name": "São João da Madeira",
+      "latitude": 40.9007,
+      "longitude": -8.4902,
+      "geonames_id": 2734484
+    },
+    "severdovouga": {
+      "name": "Sever do Vouga",
+      "latitude": 40.73459,
+      "longitude": -8.36722,
+      "geonames_id": 2734024
+    },
+    "vagos": {
+      "name": "Vagos",
+      "latitude": 40.556,
+      "longitude": -8.68175,
+      "geonames_id": 2733272
+    },
+    "valedecambra": {
+      "name": "Vale de Cambra",
+      "latitude": 40.8497,
+      "longitude": -8.39389,
+      "geonames_id": 2733153
+    }
+  },
+  "Castelo Branco": {
+    "belmonte": {
+      "name": "Belmonte",
+      "latitude": 40.3593,
+      "longitude": -7.34869,
+      "geonames_id": 2742285
+    },
+    "castelobranco": {
+      "name": "Castelo Branco",
+      "latitude": 39.82364,
+      "longitude": -7.49101,
+      "geonames_id": 2269514
+    },
+    "covilha": {
+      "name": "Covilhã",
+      "latitude": 40.28106,
+      "longitude": -7.50504,
+      "geonames_id": 2740313
+    },
+    "fundao": {
+      "name": "Fundão",
+      "latitude": 40.14025,
+      "longitude": -7.50135,
+      "geonames_id": 2739187
+    },
+    "idanhaanova": {
+      "name": "Idanha-a-Nova",
+      "latitude": 39.92316,
+      "longitude": -7.24082,
+      "geonames_id": 2267427
+    },
+    "oleiros": {
+      "name": "Oleiros",
+      "latitude": 39.91893,
+      "longitude": -7.9137,
+      "geonames_id": 2265450
+    },
+    "penamacor": {
+      "name": "Penamacor",
+      "latitude": 40.16895,
+      "longitude": -7.16987,
+      "geonames_id": 2736461
+    },
+    "proencaanova": {
+      "name": "Proença-a-Nova",
+      "latitude": 39.7522,
+      "longitude": -7.9239,
+      "geonames_id": 2264314
+    },
+    "serta": {
+      "name": "Sertã",
+      "latitude": 39.80205,
+      "longitude": -8.09589,
+      "geonames_id": 2262987
+    },
+    "viladerei": {
+      "name": "Vila de Rei",
+      "latitude": 39.67604,
+      "longitude": -8.14577,
+      "geonames_id": 2261649
+    },
+    "vilavelhaderodao": {
+      "name": "Vila Velha de Ródão",
+      "latitude": 39.65646,
+      "longitude": -7.6767,
+      "geonames_id": 2261584
+    }
+  },
+  "Coimbra": {
+    "arganil": {
+      "name": "Arganil",
+      "latitude": 40.21826,
+      "longitude": -8.05403,
+      "geonames_id": 2742757
+    },
+    "cantanhede": {
+      "name": "Cantanhede",
+      "latitude": 40.34671,
+      "longitude": -8.59419,
+      "geonames_id": 2741547
+    },
+    "coimbra": {
+      "name": "Coimbra",
+      "latitude": 40.20686,
+      "longitude": -8.41996,
+      "geonames_id": 2740637
+    },
+    "condeixaanova": {
+      "name": "Condeixa-a-Nova",
+      "latitude": 40.11283,
+      "longitude": -8.49804,
+      "geonames_id": 2740593
+    },
+    "figueiradafoz": {
+      "name": "Figueira da Foz",
+      "latitude": 40.15085,
+      "longitude": -8.86179,
+      "geonames_id": 2739590
+    },
+    "gois": {
+      "name": "Góis",
+      "latitude": 40.15735,
+      "longitude": -8.11007,
+      "geonames_id": 2738974
+    },
+    "lousa": {
+      "name": "Lousã",
+      "latitude": 40.11673,
+      "longitude": -8.24921,
+      "geonames_id": 2738154
+    },
+    "mira": {
+      "name": "Mira",
+      "latitude": 40.42892,
+      "longitude": -8.73746,
+      "geonames_id": 2737651
+    },
+    "mirandadocorvo": {
+      "name": "Miranda do Corvo",
+      "latitude": 40.09318,
+      "longitude": -8.33261,
+      "geonames_id": 2737641
+    },
+    "montemorovelho": {
+      "name": "Montemor-o-Velho",
+      "latitude": 40.17287,
+      "longitude": -8.68616,
+      "geonames_id": 2737437
+    },
+    "oliveiradohospital": {
+      "name": "Oliveira do Hospital",
+      "latitude": 40.3618,
+      "longitude": -7.86014,
+      "geonames_id": 2737038
+    },
+    "pampilhosadaserra": {
+      "name": "Pampilhosa da Serra",
+      "latitude": 40.0462,
+      "longitude": -7.95182,
+      "geonames_id": 2736793
+    },
+    "penacova": {
+      "name": "Penacova",
+      "latitude": 40.26884,
+      "longitude": -8.28237,
+      "geonames_id": 2736473
+    },
+    "penela": {
+      "name": "Penela",
+      "latitude": 40.03333,
+      "longitude": -8.38333,
+      "geonames_id": 2736429
+    },
+    "soure": {
+      "name": "Soure",
+      "latitude": 40.05989,
+      "longitude": -8.62605,
+      "geonames_id": 2733851
+    },
+    "tabua": {
+      "name": "Tábua",
+      "latitude": 40.36207,
+      "longitude": -8.02936,
+      "geonames_id": 2733720
+    },
+    "vilanovadepoiares": {
+      "name": "Vila Nova de Poiares",
+      "latitude": 40.21026,
+      "longitude": -8.25746,
+      "geonames_id": 2736124
+    }
+  },
+  "Guarda": {
+    "aguiardabeira": {
+      "name": "Aguiar da Beira",
+      "latitude": 40.81726,
+      "longitude": -7.54431,
+      "geonames_id": 2743283
+    },
+    "almeida": {
+      "name": "Almeida",
+      "latitude": 40.72573,
+      "longitude": -6.90542,
+      "geonames_id": 2743054
+    },
+    "celoricodabeira": {
+      "name": "Celorico da Beira",
+      "latitude": 40.63723,
+      "longitude": -7.39037,
+      "geonames_id": 2740886
+    },
+    "figueiradecastelorodrigo": {
+      "name": "Figueira de Castelo Rodrigo",
+      "latitude": 40.89262,
+      "longitude": -6.9635,
+      "geonames_id": 2739589
+    },
+    "fornosdealgodres": {
+      "name": "Fornos de Algodres",
+      "latitude": 40.62807,
+      "longitude": -7.54064,
+      "geonames_id": 2739349
+    },
+    "gouveia": {
+      "name": "Gouveia",
+      "latitude": 40.49559,
+      "longitude": -7.59353,
+      "geonames_id": 2738891
+    },
+    "guarda": {
+      "name": "Guarda",
+      "latitude": 40.53754,
+      "longitude": -7.26631,
+      "geonames_id": 2738785
+    },
+    "manteigas": {
+      "name": "Manteigas",
+      "latitude": 40.4028,
+      "longitude": -7.53977,
+      "geonames_id": 2737936
+    },
+    "meda": {
+      "name": "Mêda",
+      "latitude": 40.96635,
+      "longitude": -7.26163,
+      "geonames_id": 2737798
+    },
+    "pinhel": {
+      "name": "Pinhel",
+      "latitude": 40.77403,
+      "longitude": -7.06675,
+      "geonames_id": 2736183
+    },
+    "sabugal": {
+      "name": "Sabugal",
+      "latitude": 40.35127,
+      "longitude": -7.09104,
+      "geonames_id": 2734925
+    },
+    "seia": {
+      "name": "Seia",
+      "latitude": 40.4151,
+      "longitude": -7.70859,
+      "geonames_id": 2734215
+    },
+    "trancoso": {
+      "name": "Trancoso",
+      "latitude": 40.78329,
+      "longitude": -7.35016,
+      "geonames_id": 2733439
+    },
+    "vilanovadefozcoa": {
+      "name": "Vila Nova de Foz Côa",
+      "latitude": 41.08194,
+      "longitude": -7.14146,
+      "geonames_id": 2732546
+    }
+  },
+  "Leiria": {
+    "alcobaca": {
+      "name": "Alcobaça",
+      "latitude": 39.55223,
+      "longitude": -8.97749,
+      "geonames_id": 2272147
+    },
+    "alvaiazere": {
+      "name": "Alvaiázere",
+      "latitude": 39.82256,
+      "longitude": -8.37999,
+      "geonames_id": 2271814
+    },
+    "ansiao": {
+      "name": "Ansião",
+      "latitude": 39.91177,
+      "longitude": -8.43568,
+      "geonames_id": 2271650
+    },
+    "batalha": {
+      "name": "Batalha",
+      "latitude": 39.66025,
+      "longitude": -8.82475,
+      "geonames_id": 2271006
+    },
+    "bombarral": {
+      "name": "Bombarral",
+      "latitude": 39.26723,
+      "longitude": -9.15795,
+      "geonames_id": 2270770
+    },
+    "caldasdarainha": {
+      "name": "Caldas da Rainha",
+      "latitude": 39.40326,
+      "longitude": -9.13839,
+      "geonames_id": 2270437
+    },
+    "castanheiradepera": {
+      "name": "Castanheira de Pêra",
+      "latitude": 40.00717,
+      "longitude": -8.21048,
+      "geonames_id": 2269557
+    },
+    "figueirodosvinhos": {
+      "name": "Figueiró dos Vinhos",
+      "latitude": 39.90413,
+      "longitude": -8.27511,
+      "geonames_id": 2268188
+    },
+    "leiria": {
+      "name": "Leiria",
+      "latitude": 39.74362,
+      "longitude": -8.80705,
+      "geonames_id": 2267095
+    },
+    "marinhagrande": {
+      "name": "Marinha Grande",
+      "latitude": 39.74769,
+      "longitude": -8.93228,
+      "geonames_id": 2266703
+    },
+    "nazare": {
+      "name": "Nazaré",
+      "latitude": 39.60289,
+      "longitude": -9.06836,
+      "geonames_id": 2265552
+    },
+    "obidos": {
+      "name": "Óbidos",
+      "latitude": 39.36055,
+      "longitude": -9.1567,
+      "geonames_id": 2265485
+    },
+    "pedrogaogrande": {
+      "name": "Pedrógão Grande",
+      "latitude": 39.91835,
+      "longitude": -8.1459,
+      "geonames_id": 2265000
+    },
+    "peniche": {
+      "name": "Peniche",
+      "latitude": 39.3558,
+      "longitude": -9.38112,
+      "geonames_id": 2264923
+    },
+    "pombal": {
+      "name": "Pombal",
+      "latitude": 39.91674,
+      "longitude": -8.62847,
+      "geonames_id": 2264575
+    },
+    "portodemos": {
+      "name": "Porto de Mós",
+      "latitude": 39.60191,
+      "longitude": -8.81839,
+      "geonames_id": 2264427
+    }
+  },
+  "Viseu": {
+    "armamar": {
+      "name": "Armamar",
+      "latitude": 41.10765,
+      "longitude": -7.69139,
+      "geonames_id": 2742731
+    },
+    "carregaldosal": {
+      "name": "Carregal do Sal",
+      "latitude": 40.43333,
+      "longitude": -8,
+      "geonames_id": 2741405
+    },
+    "castrodaire": {
+      "name": "Castro Daire",
+      "latitude": 40.8984,
+      "longitude": -7.93381,
+      "geonames_id": 2740974
+    },
+    "cinfaes": {
+      "name": "Cinfães",
+      "latitude": 41.07197,
+      "longitude": -8.08999,
+      "geonames_id": 2733963
+    },
+    "lamego": {
+      "name": "Lamego",
+      "latitude": 41.09741,
+      "longitude": -7.80991,
+      "geonames_id": 2738459
+    },
+    "mangualde": {
+      "name": "Mangualde",
+      "latitude": 40.60425,
+      "longitude": -7.76115,
+      "geonames_id": 2737949
+    },
+    "moimentadabeira": {
+      "name": "Moimenta da Beira",
+      "latitude": 40.98383,
+      "longitude": -7.61765,
+      "geonames_id": 2737581
+    },
+    "mortagua": {
+      "name": "Mortágua",
+      "latitude": 40.39675,
+      "longitude": -8.23234,
+      "geonames_id": 2737375
+    },
+    "nelas": {
+      "name": "Nelas",
+      "latitude": 40.53216,
+      "longitude": -7.85152,
+      "geonames_id": 2737184
+    },
+    "oliveiradefrades": {
+      "name": "Oliveira de Frades",
+      "latitude": 40.73357,
+      "longitude": -8.17481,
+      "geonames_id": 2737043
+    },
+    "penalvadocastelo": {
+      "name": "Penalva do Castelo",
+      "latitude": 40.67654,
+      "longitude": -7.69661,
+      "geonames_id": 2736462
+    },
+    "penedono": {
+      "name": "Penedono",
+      "latitude": 40.98875,
+      "longitude": -7.39386,
+      "geonames_id": 2736434
+    },
+    "resende": {
+      "name": "Resende",
+      "latitude": 41.10582,
+      "longitude": -7.9665,
+      "geonames_id": 2735243
+    },
+    "santacombadao": {
+      "name": "Santa Comba Dão",
+      "latitude": 40.39856,
+      "longitude": -8.1316,
+      "geonames_id": 2734747
+    },
+    "saojoaodapesqueira": {
+      "name": "São João da Pesqueira",
+      "latitude": 41.14805,
+      "longitude": -7.40489,
+      "geonames_id": 2734483
+    },
+    "saopedrodosul": {
+      "name": "São Pedro do Sul",
+      "latitude": 40.75537,
+      "longitude": -8.07265,
+      "geonames_id": 2734351
+    },
+    "satao": {
+      "name": "Sátão",
+      "latitude": 40.74177,
+      "longitude": -7.73285,
+      "geonames_id": 2734246
+    },
+    "sernancelhe": {
+      "name": "Sernancelhe",
+      "latitude": 40.89871,
+      "longitude": -7.49342,
+      "geonames_id": 2734074
+    },
+    "tabuaco": {
+      "name": "Tabuaço",
+      "latitude": 41.11615,
+      "longitude": -7.56793,
+      "geonames_id": 2733716
+    },
+    "tarouca": {
+      "name": "Tarouca",
+      "latitude": 41.01763,
+      "longitude": -7.77547,
+      "geonames_id": 2733669
+    },
+    "tondela": {
+      "name": "Tondela",
+      "latitude": 40.51682,
+      "longitude": -8.08087,
+      "geonames_id": 2733533
+    },
+    "vilanovadepaiva": {
+      "name": "Vila Nova de Paiva",
+      "latitude": 40.85291,
+      "longitude": -7.72791,
+      "geonames_id": 2732539
+    },
+    "viseu": {
+      "name": "Viseu",
+      "latitude": 40.66165,
+      "longitude": -7.90905,
+      "geonames_id": 2732265
+    },
+    "vouzela": {
+      "name": "Vouzela",
+      "latitude": 40.72361,
+      "longitude": -8.11283,
+      "geonames_id": 2732233
+    }
+  }
+}

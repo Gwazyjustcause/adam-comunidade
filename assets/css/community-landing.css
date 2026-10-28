@@ -263,8 +263,10 @@
 .adam-community-hub__actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
 .adam-community-hub a.adam-community-hub__button { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; background: #97c44b; color: #0b100d; border: 1px solid #97c44b; border-radius: 7px; padding: 13px 18px; font-size: .8rem; font-weight: 750; }
 .adam-community-hub a.adam-community-hub__button--outline { background: transparent; color: #c6ed9b; border-color: #43543a; }
-.adam-community-hub__network { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; border-top: 1px solid #293626; padding: 20px 0 28px; font-size: .75rem; }
-.adam-community-hub__network > span { color: #9caa94; margin-right: auto; }
+.adam-community-hub__mission { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px 48px; border-top: 1px solid #293626; padding: 30px 0 36px; }
+.adam-community-hub__mission h2 { color: #eaf0e6; font-size: clamp(1.2rem, 2vw, 1.65rem); line-height: 1.25; letter-spacing: -.025em; margin: 0; }
+.adam-community-hub__mission > div > p:not(.adam-community-hub__eyebrow) { color: #a8b6a1; font-size: .85rem; line-height: 1.7; margin: 0 0 12px; }
+.adam-community-hub__mission > div > p:last-child { margin-bottom: 0; }
 .adam-community-hub :is(a, button, input, select):focus-visible { outline: 3px solid #d9ffb8; outline-offset: 4px; }
 @media (max-width: 760px) {
  .adam-community-hub { padding: 28px 14px 0; }
@@ -282,6 +284,7 @@
  .adam-community-hub .adam-map-legend { padding-left: 12px; gap: 12px; }
  .adam-community-hub .adam-map-status { padding-right: 12px; }
  .adam-community-hub__contribute { align-items: start; flex-direction: column; padding: 28px 0; gap: 18px; }
+ .adam-community-hub__mission { grid-template-columns: 1fr; gap: 16px; padding: 26px 0 30px; }
  .adam-community-hub__actions { width: 100%; }
  .adam-community-hub__actions a { flex: 1; }
 }

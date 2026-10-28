@@ -40,6 +40,7 @@ final class Community_Map {
 							'id' => (int) $item->id, 'type' => $type, 'name' => $item->name,
 							'latitude' => $location['latitude'], 'longitude' => $location['longitude'],
 							'approximate' => $location['approximate'],
+							'location_scope' => $location['scope'], 'location_note' => $location['note'],
 							'district' => $district, 'municipality' => $item->municipality ?? '',
 							'url' => 'team' === $type ? Team_Router::team_url( $item ) : Field_Router::field_url( $item ),
 						);
@@ -51,17 +52,35 @@ final class Community_Map {
 		return $markers;
 	}
 
-	/** Use precise coordinates when present, otherwise the district capital. */
+	/** Prefer precise coordinates, then the concelho seat, then the district capital. */
 	public static function location( object $item ): ?array {
 		$centre = self::CENTRES[ $item->district ?? '' ] ?? null;
 		if ( null === $centre ) {
 			return null;
 		}
 		$precise = self::has_location( $item );
+		$scope = $precise ? 'coordinates' : 'district';
+		$note = $precise ? '' : __( 'Localização aproximada · centro do distrito', 'adam-comunidade' );
+		if ( ! $precise && '' !== trim( (string) ( $item->municipality ?? '' ) ) ) {
+			static $municipalities = null;
+			if ( null === $municipalities ) {
+				$municipalities = json_decode( (string) file_get_contents( ADAM_COMUNIDADE_PATH . 'includes/data/municipality-centres.json' ), true ) ?: array();
+			}
+			$key = strtolower( remove_accents( trim( (string) $item->municipality ) ) );
+			$key = preg_replace( '/^(?:concelho|municipio|cidade)\s+(?:de\s+)?/', '', $key );
+			$key = preg_replace( '/[^a-z0-9]/', '', $key );
+			$municipality = $municipalities[ $item->district ][ $key ] ?? null;
+			if ( $municipality ) {
+				$centre = array( $municipality['latitude'], $municipality['longitude'] );
+				$scope = 'municipality';
+				$note = sprintf( __( 'Localização aproximada · centro do concelho de %s', 'adam-comunidade' ), $municipality['name'] );
+			}
+		}
 		return array(
 			'latitude' => $precise ? (float) $item->latitude : $centre[0],
 			'longitude' => $precise ? (float) $item->longitude : $centre[1],
 			'approximate' => ! $precise,
+			'scope' => $scope, 'note' => $note,
 		);
 	}
 
