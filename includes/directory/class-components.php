@@ -32,6 +32,7 @@ final class Components {
 		add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_assets' ), 25 );
 		add_action( 'adam_comunidade_team_after_content', array( $this, 'team_connections' ) );
 		add_action( 'adam_comunidade_field_after_content', array( $this, 'field_connections' ) );
+		add_filter( 'the_content', array( $this, 'community_map_content' ), 12 );
 	}
 
 	public function register_shortcodes(): void {
@@ -52,14 +53,15 @@ final class Components {
 	public function maybe_enqueue_assets(): void {
 		global $post;
 		$content = $post instanceof \WP_Post ? $post->post_content : '';
-		$has_component = (bool) get_query_var( 'adam_team_slug' )
+		$community = \ADAM\Comunidade\Managed_Pages::is_current( 'community' );
+		$has_component = $community || (bool) get_query_var( 'adam_team_slug' )
 			|| (bool) get_query_var( 'adam_field_slug' )
 			|| str_contains( $content, '[adam_' )
 			|| has_block( 'adam-comunidade/community-section', $content )
 			|| has_block( 'adam-comunidade/community-highlight', $content )
 			|| has_block( 'adam-comunidade/community-map', $content );
 		if ( $has_component ) {
-			$has_map = str_contains( $content, '[adam_community_map' ) || has_block( 'adam-comunidade/community-map', $content );
+			$has_map = $community || str_contains( $content, '[adam_community_map' ) || has_block( 'adam-comunidade/community-map', $content );
 			$this->assets( $has_map );
 		}
 	}
@@ -209,25 +211,20 @@ final class Components {
 
 	public function map(): string {
 		$this->assets( true );
-		$markers = array();
-		$sets = array(
-			array( 'team', ( new Team_Repository() )->query( array( 'status' => 'published', 'per_page' => 100 ) )['items'] ),
-			array( 'field', ( new Field_Repository() )->query( array( 'status' => 'published', 'per_page' => 100 ) )['items'] ),
-			array( 'partner', $this->repository->query( 'partner', array( 'status' => 'published', 'per_page' => 100 ) )['items'] ),
-			array( 'institution', $this->repository->query( 'institution', array( 'status' => 'published', 'per_page' => 100 ) )['items'] ),
-		);
-		foreach ( $sets as $set ) {
-			list( $type, $items ) = $set;
-			foreach ( $items as $item ) {
-				if ( null === $item->latitude || null === $item->longitude ) {
-					continue;
-				}
-				$url = 'team' === $type ? Team_Router::team_url( $item ) : ( 'field' === $type ? Field_Router::field_url( $item ) : Router::entry_url( $item ) );
-				$markers[] = array( 'id' => (int) $item->id, 'type' => $type, 'name' => $item->name, 'latitude' => (float) $item->latitude, 'longitude' => (float) $item->longitude, 'district' => $item->district ?? '', 'municipality' => $item->municipality ?? '', 'url' => $url );
-			}
+		return Community_Map::render();
+	}
+
+	/** Add the map without rewriting existing editorial blocks. */
+	public function community_map_content( string $content ): string {
+		if ( is_admin() || ! is_main_query() || ! in_the_loop() || ! \ADAM\Comunidade\Managed_Pages::is_current( 'community' ) ) {
+			return $content;
 		}
-		$id = wp_unique_id( 'adam-community-map-' );
-		return '<section class="adam-map-widget adam-advanced-map" id="' . esc_attr( $id ) . '" data-adam-advanced-map data-markers=\'' . esc_attr( wp_json_encode( $markers ) ) . '\'><header><div><span>' . esc_html__( 'Em direto', 'adam-comunidade' ) . '</span><h2>' . esc_html__( 'Mapa da Comunidade', 'adam-comunidade' ) . '</h2></div><div class="adam-map-legend"><i data-type="team"></i>' . esc_html__( 'Equipas', 'adam-comunidade' ) . '<i data-type="field"></i>' . esc_html__( 'Campos', 'adam-comunidade' ) . '<i data-type="partner"></i>' . esc_html__( 'Parceiros', 'adam-comunidade' ) . '<i data-type="institution"></i>' . esc_html__( 'Instituições', 'adam-comunidade' ) . '</div></header><form class="adam-map-filters adam-directory-filters" data-adam-map-filters><label>' . esc_html__( 'Distrito', 'adam-comunidade' ) . '<input name="district" type="text"></label><label>' . esc_html__( 'Concelho', 'adam-comunidade' ) . '<input name="municipality" type="text"></label><label>' . esc_html__( 'Estilo de jogo', 'adam-comunidade' ) . '<input name="playing_style" type="text"></label></form><div class="adam-map-layout"><div class="adam-map-canvas" data-adam-map-canvas role="region" aria-label="' . esc_attr__( 'Mapa interativo da comunidade', 'adam-comunidade' ) . '"></div><div class="adam-map-results" data-adam-map-results aria-live="polite"></div></div></section>';
+		if ( str_contains( $content, 'data-adam-map=' ) || str_contains( $content, 'data-adam-advanced-map' ) ) {
+			return $content;
+		}
+		$map = $this->map();
+		$position = strpos( $content, '<div class="wp-block-group alignfull adam-community-landing__cta' );
+		return false === $position ? $content . $map : substr_replace( $content, $map, $position, 0 );
 	}
 
 	public function team_connections( object $team ): void {
@@ -268,12 +265,23 @@ final class Components {
 		wp_enqueue_style( 'adam-comunidade' );
 		wp_enqueue_style( 'adam-comunidade-directory', Helpers::url( 'assets/css/directory-public.css' ), array( 'adam-comunidade' ), ADAM_COMUNIDADE_VERSION );
 		if ( $map ) {
-			wp_enqueue_style( 'adam-comunidade-map', Helpers::url( 'assets/css/community-map.css' ), array( 'adam-comunidade-directory' ), ADAM_COMUNIDADE_VERSION );
-			wp_enqueue_script( 'adam-comunidade-map', Helpers::url( 'assets/js/community-map.js' ), array(), ADAM_COMUNIDADE_VERSION, true );
+			wp_enqueue_style( 'adam-leaflet', Helpers::url( 'assets/vendor/leaflet/leaflet.css' ), array(), '1.9.4' );
+			wp_enqueue_script( 'adam-leaflet', Helpers::url( 'assets/vendor/leaflet/leaflet.js' ), array(), '1.9.4', true );
+			wp_enqueue_style( 'adam-comunidade-map', Helpers::url( 'assets/css/community-map.css' ), array( 'adam-comunidade-directory', 'adam-leaflet' ), ADAM_COMUNIDADE_VERSION );
+			wp_enqueue_script( 'adam-comunidade-map', Helpers::url( 'assets/js/community-map.js' ), array( 'adam-leaflet' ), ADAM_COMUNIDADE_VERSION, true );
 			wp_localize_script(
 				'adam-comunidade-map',
 				'adamCommunityMap',
 				array(
+					'tileUrl' => apply_filters( 'adam_comunidade_map_tile_url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' ),
+					'tileAttribution' => apply_filters( 'adam_comunidade_map_tile_attribution', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' ),
+					'closePopup' => __( 'Fechar localização', 'adam-comunidade' ),
+					'zoomIn' => __( 'Aproximar', 'adam-comunidade' ),
+					'zoomOut' => __( 'Afastar', 'adam-comunidade' ),
+					'noResults' => __( 'Nenhuma localização corresponde aos filtros.', 'adam-comunidade' ),
+					'count' => __( '%d localizações disponíveis', 'adam-comunidade' ),
+					'error' => __( 'Não foi possível carregar o mapa. Consulta as localizações na lista.', 'adam-comunidade' ),
+					'tileError' => __( 'O mapa de base está indisponível. Podes continuar a consultar as localizações na lista.', 'adam-comunidade' ),
 					'details' => __( 'Ver detalhes', 'adam-comunidade' ),
 					'empty'   => __( 'Ainda não existe conteúdo da comunidade com localização disponível.', 'adam-comunidade' ),
 					'types'   => array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ),

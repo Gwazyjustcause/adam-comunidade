@@ -44,6 +44,21 @@ The ADAM Bot should query these endpoints instead of copying directory data.
 Equivalent dynamic Gutenberg blocks are registered for community sections,
 spotlights, maps, live statistics, and latest news.
 
+The Community page automatically includes the interactive regional map before
+the starter participation section (or after custom page content). Existing
+editorial blocks are preserved. An explicit `[adam_community_map]` shortcode or
+Community Map block takes precedence, so the automatic map is not duplicated.
+The map includes published teams and fields in Aveiro, Viseu, Guarda, Coimbra,
+Castelo Branco and Leiria with valid coordinates. All repository pages are read;
+records without coordinates are omitted rather than placed at a district centre.
+Type, district and name/municipality filters run locally. A server-rendered list
+remains available without JavaScript or when map loading fails.
+
+Leaflet 1.9.4 is bundled in `assets/vendor/leaflet/` with its BSD licence. The
+default basemap uses OpenStreetMap tiles with visible attribution and normal
+browser caching. Deployments can change the tile provider using
+`adam_comunidade_map_tile_url` and `adam_comunidade_map_tile_attribution`.
+
 ## Templates
 
 Copy a plugin template into the active theme under:
