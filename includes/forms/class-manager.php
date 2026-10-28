@@ -48,6 +48,9 @@ final class Manager {
 
 		$form           = wp_parse_args( $stored[ $type ], $defaults[ $type ] );
 		$form['fields'] = $this->merge_fields( (array) ( $stored[ $type ]['fields'] ?? array() ), $defaults[ $type ]['fields'] );
+		if ( 'field' === $type ) {
+			$form['fields']['address']['required'] = false;
+		}
 		foreach ( $this->semantic_types() as $key => $field_type ) {
 			if ( isset( $form['fields'][ $key ] ) ) {
 				$form['fields'][ $key ]['type'] = $field_type;
@@ -181,7 +184,7 @@ final class Manager {
 					'fields'       => array_merge(
 						array_slice( $common, 0, 4, true ),
 						array(
-							'address'   => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', true, __( 'Morada completa do campo', 'adam-comunidade' ) ),
+							'address'   => $this->field( 'address', __( 'Morada', 'adam-comunidade' ), 'text', false, __( 'Morada completa do campo', 'adam-comunidade' ) ),
 							'maps_url'  => $this->field( 'maps_url', __( 'Localização do Campo no Google Maps', 'adam-comunidade' ), 'url', false, 'https://', __( 'Cole o link da localização no Google Maps. Indique de preferência a entrada, estacionamento ou ponto de encontro utilizado pelos jogadores.' ) ),
 							'opening_hours' => $this->field( 'opening_hours', __( 'Funcionamento', 'adam-comunidade' ), 'textarea', false, __( 'Ex.: Jogos normalmente aos domingos, em datas anunciadas previamente nas nossas redes sociais.', 'adam-comunidade' ), __( 'Indica quando costumam realizar-se jogos ou como são anunciadas as datas. Não é necessário indicar um horário fixo.', 'adam-comunidade' ) ),
 							'whatsapp'  => $this->field( 'whatsapp', __( 'WhatsApp', 'adam-comunidade' ), 'url', false, 'https://', __( 'Opcional.' ) ),
