@@ -10,7 +10,8 @@ namespace ADAM\Comunidade\Teams {
 			}
 			return array( 'pages' => 2, 'items' => array( (object) array(
 				'id' => $args['page'], 'name' => 'Test <script>alert(1)</script> ' . $args['district'],
-				'district' => $args['district'], 'municipality' => 'Concelho', 'latitude' => 40.2, 'longitude' => -8.4,
+				'district' => $args['district'], 'municipality' => 'Concelho',
+				'latitude' => 1 === $args['page'] ? 40.2 : null, 'longitude' => 1 === $args['page'] ? -8.4 : null,
 			) ) );
 		}
 	}
@@ -21,8 +22,13 @@ namespace ADAM\Comunidade\Fields {
 	class Router { public static function field_url( object $item ): string { return 'https://example.org/field/' . $item->id; } }
 }
 namespace ADAM\Comunidade {
-	class Managed_Pages { public static function is_current( string $type ): bool { return $GLOBALS['community']; } }
+	class Managed_Pages { public static function is_current( string $type ): bool { return $GLOBALS['community']; } public static function url( string $type ): string { return 'https://example.org/' . $type . '/'; } }
 	class Helpers { public static function url( string $path ): string { return $path; } }
+}
+namespace ADAM\Comunidade\Experience {
+	class Discovery {}
+	class Templates { public static function locate( string $path ): string { return $path; } }
+	class Portal { public static function submission_url( string $type ): string { return 'https://example.org/submeter-' . $type . '/'; } }
 }
 namespace ADAM\Comunidade\Directory {
 	class Repository {}
@@ -54,23 +60,41 @@ namespace {
 	function check( bool $condition, string $message ): void { if ( ! $condition ) { throw new RuntimeException( $message ); } }
 	$records = Community_Map::markers();
 	check( count( $records ) === 24, 'Must read both pages of both types across all six districts.' );
+	check( count( array_filter( $records, static fn( array $record ): bool => $record['approximate'] ) ) === 12, 'Records without coordinates must remain on the map.' );
+	$coimbra = array_values( array_filter( $records, static fn( array $record ): bool => 'Coimbra' === $record['district'] && $record['approximate'] ) );
+	check( 40.2033 === $coimbra[0]['latitude'] && -8.4103 === $coimbra[0]['longitude'], 'Coimbra district fallback must be in Coimbra.' );
+	check( ! $records[0]['approximate'] && 40.2 === $records[0]['latitude'], 'Precise coordinates must be preserved.' );
 	foreach ( array( null, '', 'invalid', 0, 90 ) as $latitude ) {
 		check( ! Community_Map::has_location( (object) array( 'district' => 'Coimbra', 'latitude' => $latitude, 'longitude' => -8.4 ) ), 'Invalid coordinates accepted.' );
+		check( Community_Map::location( (object) array( 'district' => 'Coimbra', 'latitude' => $latitude, 'longitude' => -8.4 ) )['approximate'], 'Invalid coordinates must fall back to the district.' );
 	}
 	check( ! Community_Map::has_location( (object) array( 'district' => 'Lisboa', 'latitude' => 40.2, 'longitude' => -8.4 ) ), 'Outside district accepted.' );
+	check( null === Community_Map::location( (object) array( 'district' => 'Lisboa' ) ), 'Outside district must not receive a fallback.' );
 	check( Community_Map::has_location( (object) array( 'district' => 'Leiria', 'latitude' => 39.267, 'longitude' => -9.15 ) ), 'Southern Leiria excluded.' );
 	$html = Community_Map::render();
 	check( ! str_contains( $html, '<script>' ) && str_contains( $html, '&lt;script&gt;' ), 'Names must be escaped.' );
 	check( str_contains( $html, 'data-map-results' ) && str_contains( $html, 'https://example.org/team/2' ), 'Server fallback must include later pages.' );
-	$components = new \ADAM\Comunidade\Directory\Components( new \ADAM\Comunidade\Directory\Repository(), new \ADAM\Comunidade\Directory\Relationship_Repository() );
+	check( str_contains( $html, 'Localização aproximada' ), 'Approximate locations must be explained without JavaScript.' );
+	function get_header(): void {}
+	function get_footer(): void {}
+	function do_shortcode( string $shortcode ): string { return Community_Map::render(); }
+	ob_start();
+	include ADAM_COMUNIDADE_PATH . 'templates/experience/community.php';
+	$hub = (string) ob_get_clean();
+	check( substr_count( $hub, 'data-adam-map=' ) === 1, 'The community hub must render exactly one map.' );
+	check( strpos( $hub, 'data-adam-map=' ) < strpos( $hub, 'adam-community-hub__contribute' ), 'The map must precede contribution content.' );
+	check( str_contains( $hub, 'https://example.org/teams/' ) && str_contains( $hub, 'https://example.org/submeter-team/' ), 'Directory and submission links missing.' );
+	check( ! str_contains( $hub, 'wp-block-cover' ) && ! str_contains( $hub, 'adam-live-stats' ), 'Promotional hero and statistics must not precede the map.' );
+	function get_query_var( string $key ): mixed { return $GLOBALS['hub_query'][$key] ?? ''; }
+	require ADAM_COMUNIDADE_PATH . 'includes/experience/class-router.php';
+	$router = new \ADAM\Comunidade\Experience\Router( new \ADAM\Comunidade\Experience\Discovery() );
 	$GLOBALS['community'] = true;
-	check( $components->community_map_content( $html ) === $html, 'Existing map duplicated.' );
-	$content = '<p>Editorial introduction</p><div class="wp-block-group alignfull adam-community-landing__cta"><p>Join us</p></div>';
-	$inserted = $components->community_map_content( $content );
-	check( str_starts_with( $inserted, '<p>Editorial introduction</p>' ) && str_ends_with( $inserted, '<p>Join us</p></div>' ), 'Editorial content must be preserved.' );
-	check( strpos( $inserted, 'data-adam-map=' ) < strpos( $inserted, 'adam-community-landing__cta' ), 'Map must appear before the participation CTA.' );
-	check( substr_count( $components->community_map_content( $inserted ), 'data-adam-map=' ) === 1, 'Automatically inserted map duplicated.' );
-	$GLOBALS['community'] = false;
-	check( $components->community_map_content( '<p>Existing page</p>' ) === '<p>Existing page</p>', 'Non-community content changed.' );
+	check( $router->template( 'theme.php' ) === 'experience/community.php', 'Managed community route must show the redesigned page.' );
+	$GLOBALS['hub_query'] = array( 'adam_compare' => 1 );
+	check( $router->template( 'theme.php' ) === 'experience/compare.php', 'Comparison route must retain precedence.' );
+	$GLOBALS['hub_query'] = array( 'adam_region' => 'coimbra' );
+	check( $router->template( 'theme.php' ) === 'experience/region.php', 'Region route must retain precedence.' );
+	$GLOBALS['hub_query'] = array(); $GLOBALS['community'] = false;
+	check( $router->template( 'theme.php' ) === 'theme.php', 'Unrelated pages must keep their theme template.' );
 	echo "Community map tests passed.\n";
 }

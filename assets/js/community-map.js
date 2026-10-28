@@ -51,7 +51,13 @@
 			location.textContent = [labels.types[item.type], item.municipality, item.district].filter(Boolean).join(' · ');
 			link.href = safeUrl(item.url);
 			link.textContent = labels.details;
-			content.append(name, location, link);
+			content.append(name, location);
+			if (item.approximate) {
+				var note = document.createElement('small');
+				note.textContent = labels.approximate;
+				content.appendChild(note);
+			}
+			content.appendChild(link);
 			return content;
 		}
 		function render() {
@@ -66,12 +72,26 @@
 			layer.clearLayers();
 			results.replaceChildren();
 			status.textContent = items.length ? labels.count.replace('%d', items.length) : (records.length ? labels.noResults : labels.empty);
+			var grouped = {};
 			items.forEach(function (item) {
+				var key = item.latitude + ',' + item.longitude;
+				if (!grouped[key]) { grouped[key] = []; }
+				grouped[key].push(item);
+			});
+			var markers = {};
+			Object.keys(grouped).forEach(function (key) {
+				var group = grouped[key];
+				var item = group[0];
 				var icon = L.divIcon({ className: 'adam-map-pin adam-map-pin--' + item.type,
-					html: '<span aria-hidden="true">' + (item.type === 'team' ? 'E' : 'C') + '</span>',
-					iconSize: [32, 40], iconAnchor: [16, 40], popupAnchor: [0, -38] });
-				var marker = L.marker([item.latitude, item.longitude], { icon: icon, title: item.name, alt: item.name })
-					.bindPopup(popup(item)).addTo(layer);
+					html: '<span aria-hidden="true">' + (group.length > 1 ? group.length : (item.type === 'team' ? 'E' : 'C')) + '</span>',
+					iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18] });
+				var content = document.createElement('div');
+				group.forEach(function (record) { content.appendChild(popup(record)); });
+				markers[key] = L.marker([item.latitude, item.longitude], { icon: icon, title: group.map(function (record) { return record.name; }).join(', '), alt: item.name })
+					.bindPopup(content, { maxHeight: 260 }).addTo(layer);
+			});
+			items.forEach(function (item) {
+				var marker = markers[item.latitude + ',' + item.longitude];
 				var result = document.createElement('article');
 				var button = document.createElement('button');
 				var location = document.createElement('p');
@@ -81,7 +101,7 @@
 				button.type = 'button';
 				button.textContent = item.name;
 				button.addEventListener('click', function () {
-					map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13), { animate: false });
+					map.setView(marker.getLatLng(), (item.approximate ? 10 : Math.max(map.getZoom(), 13)), { animate: false });
 					marker.openPopup();
 				});
 				marker.on('popupopen', function () {
@@ -93,10 +113,16 @@
 				location.textContent = [labels.types[item.type], item.municipality, item.district].filter(Boolean).join(' · ');
 				link.textContent = labels.details;
 				link.href = safeUrl(item.url);
-				result.append(button, location, link);
+				result.append(button, location);
+				if (item.approximate) {
+					var note = document.createElement('small');
+					note.textContent = labels.approximate;
+					result.appendChild(note);
+				}
+				result.appendChild(link);
 				results.appendChild(result);
 			});
-			if (items.length) { map.fitBounds(layer.getBounds(), { padding: [36, 36], maxZoom: 13, animate: false }); }
+			if (items.length) { map.fitBounds(layer.getBounds(), { padding: [36, 36], maxZoom: items.every(function (item) { return item.approximate; }) ? 10 : 13, animate: false }); }
 			else { overview(); }
 		}
 		form.addEventListener('submit', function (event) { event.preventDefault(); render(); });

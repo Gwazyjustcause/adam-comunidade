@@ -67,6 +67,9 @@ final class Router {
 		if ( get_query_var( 'adam_region' ) ) {
 			return Templates::locate( 'experience/region.php' );
 		}
+		if ( Managed_Pages::is_current( 'community' ) ) {
+			return Templates::locate( 'experience/community.php' );
+		}
 		return $template;
 	}
 

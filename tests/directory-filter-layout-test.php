@@ -27,8 +27,7 @@ $views = array(
 	'templates/teams/archive.php'       => 'adam-team-filters adam-directory-filters',
 	'templates/fields/archive.php'      => 'adam-field-filters adam-directory-filters',
 	'templates/directory/archive.php'   => 'adam-community-filters adam-directory-filters',
-	'templates/experience/community.php' => 'adam-map-filters adam-directory-filters',
-	'includes/directory/class-components.php' => 'adam-map-filters adam-directory-filters',
+	'templates/directory/community-map.php' => 'class="adam-map-filters"',
 );
 foreach ( $views as $file => $class_contract ) {
 	$assert( str_contains( $read( $file ), $class_contract ), $file . ' must use the shared filter layout.' );

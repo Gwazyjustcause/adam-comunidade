@@ -44,13 +44,17 @@ The ADAM Bot should query these endpoints instead of copying directory data.
 Equivalent dynamic Gutenberg blocks are registered for community sections,
 spotlights, maps, live statistics, and latest news.
 
-The Community page automatically includes the interactive regional map before
-the starter participation section (or after custom page content). Existing
-editorial blocks are preserved. An explicit `[adam_community_map]` shortcode or
-Community Map block takes precedence, so the automatic map is not duplicated.
+The managed Community route uses `templates/experience/community.php`: a compact
+introduction, the regional map, contribution links and a secondary network footer.
+The previous promotional sections are no longer rendered. Saved editorial blocks
+are retained in WordPress but are not displayed on this route; theme overrides
+can customise the page through the standard template mechanism. The reusable
+`[adam_community_map]` shortcode and Community Map block remain available elsewhere.
 The map includes published teams and fields in Aveiro, Viseu, Guarda, Coimbra,
-Castelo Branco and Leiria with valid coordinates. All repository pages are read;
-records without coordinates are omitted rather than placed at a district centre.
+Castelo Branco and Leiria. All repository pages are read. Valid coordinates
+are used when available; otherwise the district capital is used and labelled
+as approximate. Listings at the same coordinates share a count marker and
+a popup listing every record. The basemap and controls use a black/green palette.
 Type, district and name/municipality filters run locally. A server-rendered list
 remains available without JavaScript or when map loading fails.
 

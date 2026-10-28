@@ -31,7 +31,6 @@ $templates = array(
 	'templates/teams/single.php',
 	'templates/directory/archive.php',
 	'templates/directory/single.php',
-	'templates/experience/community.php',
 	'templates/experience/region.php',
 	'templates/experience/news-single.php',
 );
@@ -40,6 +39,9 @@ foreach ( $templates as $template ) {
 	$source = (string) file_get_contents( $root . '/' . $template );
 	$assert( str_contains( $source, 'Public_Hero::root' ), 'Public hero is not using the shared component: ' . $template );
 }
+
+$hub = (string) file_get_contents( $root . '/templates/experience/community.php' );
+$assert( str_contains( $hub, 'adam-community-hub__intro' ) && ! str_contains( $hub, 'Public_Hero::root' ), 'Community should use a compact introduction above the map.' );
 
 foreach ( array( 'assets/css/fields-public.css', 'assets/css/teams-public.css' ) as $feature_style ) {
 	$source = (string) file_get_contents( $root . '/' . $feature_style );

@@ -462,7 +462,7 @@ final class Managed_Pages {
 		}
 		if ( 'community' === $module ) {
 			echo '<div class="notice notice-success"><p>'
-				. esc_html__( 'Esta landing page é totalmente editável. Pode alterar, mover ou remover os blocos e inserir os componentes dinâmicos da Comunidade onde quiser.', 'adam-comunidade' )
+				. esc_html__( 'Esta página apresenta o mapa da Comunidade através do modelo do plugin. Os blocos anteriores ficam guardados, mas não são apresentados. Para alterar o desenho, personalize o modelo experience/community.php no tema.', 'adam-comunidade' )
 				. '</p></div>';
 			return;
 		}

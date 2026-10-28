@@ -32,7 +32,6 @@ final class Components {
 		add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_assets' ), 25 );
 		add_action( 'adam_comunidade_team_after_content', array( $this, 'team_connections' ) );
 		add_action( 'adam_comunidade_field_after_content', array( $this, 'field_connections' ) );
-		add_filter( 'the_content', array( $this, 'community_map_content' ), 12 );
 	}
 
 	public function register_shortcodes(): void {
@@ -214,19 +213,6 @@ final class Components {
 		return Community_Map::render();
 	}
 
-	/** Add the map without rewriting existing editorial blocks. */
-	public function community_map_content( string $content ): string {
-		if ( is_admin() || ! is_main_query() || ! in_the_loop() || ! \ADAM\Comunidade\Managed_Pages::is_current( 'community' ) ) {
-			return $content;
-		}
-		if ( str_contains( $content, 'data-adam-map=' ) || str_contains( $content, 'data-adam-advanced-map' ) ) {
-			return $content;
-		}
-		$map = $this->map();
-		$position = strpos( $content, '<div class="wp-block-group alignfull adam-community-landing__cta' );
-		return false === $position ? $content . $map : substr_replace( $content, $map, $position, 0 );
-	}
-
 	public function team_connections( object $team ): void {
 		echo $this->backlinks( 'team', (int) $team->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
@@ -283,7 +269,8 @@ final class Components {
 					'error' => __( 'Não foi possível carregar o mapa. Consulta as localizações na lista.', 'adam-comunidade' ),
 					'tileError' => __( 'O mapa de base está indisponível. Podes continuar a consultar as localizações na lista.', 'adam-comunidade' ),
 					'details' => __( 'Ver detalhes', 'adam-comunidade' ),
-					'empty'   => __( 'Ainda não existe conteúdo da comunidade com localização disponível.', 'adam-comunidade' ),
+					'approximate' => __( 'Localização aproximada · centro do distrito', 'adam-comunidade' ),
+					'empty'   => __( 'Ainda não existem equipas ou campos publicados nestes distritos.', 'adam-comunidade' ),
 					'types'   => array( 'team' => __( 'Equipa', 'adam-comunidade' ), 'field' => __( 'Campo', 'adam-comunidade' ), 'partner' => __( 'Parceiro', 'adam-comunidade' ), 'institution' => __( 'Instituição', 'adam-comunidade' ) ),
 				)
 			);

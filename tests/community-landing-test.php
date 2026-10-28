@@ -1,6 +1,6 @@
 <?php
 /**
- * Static contracts for the editable Community landing page.
+ * Static contracts for the map-first Community page and archived starter blocks.
  */
 
 declare(strict_types=1);
@@ -26,7 +26,7 @@ $blocks  = $read( 'includes/experience/class-smart-blocks.php' );
 $editor  = $read( 'assets/js/community-blocks.js' );
 $style   = $read( 'assets/css/community-landing.css' );
 
-$assert( ! str_contains( $router, "Templates::locate( 'experience/community.php' )" ), 'The Community page is still replaced by a fixed plugin template.' );
+$assert( str_contains( $router, "Templates::locate( 'experience/community.php' )" ), 'The map-first Community template must be used on the managed route.' );
 $assert( str_contains( $pages, "'' !== trim( (string) \$page->post_content )" ), 'The starter composition does not protect existing editorial content.' );
 foreach ( array( 'wp:cover', 'wp:heading', 'wp:paragraph', 'wp:columns', 'wp:buttons' ) as $native_block ) {
 	$assert( str_contains( $pages, $native_block ), 'The starter composition is missing editable native block: ' . $native_block );
