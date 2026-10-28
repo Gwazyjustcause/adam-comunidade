@@ -260,6 +260,7 @@ final class Components {
 				'adamCommunityMap',
 				array(
 					'tileUrl' => apply_filters( 'adam_comunidade_map_tile_url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' ),
+					'locationAttribution' => '<a href="https://www.geonames.org/">GeoNames</a>',
 					'tileAttribution' => apply_filters( 'adam_comunidade_map_tile_attribution', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' ),
 					'closePopup' => __( 'Fechar localização', 'adam-comunidade' ),
 					'zoomIn' => __( 'Aproximar', 'adam-comunidade' ),

@@ -21,6 +21,6 @@ use ADAM\Comunidade\Directory\Community_Map;
 			<?php foreach ( $markers as $marker ) : ?><article><a href="<?php echo esc_url( $marker['url'] ); ?>"><?php echo esc_html( $marker['name'] ); ?></a><p><?php echo esc_html( $marker['municipality'] . ' · ' . $marker['district'] ); ?></p><?php if ( $marker['approximate'] ) : ?><small><?php echo esc_html( $marker['location_note'] ); ?></small><?php endif; ?></article><?php endforeach; ?>
 		</div>
 	</div>
-	<p class="adam-map-note"><?php esc_html_e( 'Sem coordenadas, o ponto indica o centro do concelho ou, se não estiver identificado, do distrito. Contacta os responsáveis para confirmar a morada.', 'adam-comunidade' ); ?> <span><?php esc_html_e( 'Centros de concelho:', 'adam-comunidade' ); ?> <a href="https://www.geonames.org/" rel="external">GeoNames</a>.</span></p>
+	<p class="adam-map-note"><?php esc_html_e( 'Sem coordenadas, o ponto indica o centro do concelho ou, se não estiver identificado, do distrito. Contacta os responsáveis para confirmar a morada.', 'adam-comunidade' ); ?></p>
 	<noscript><p class="adam-map-note"><?php esc_html_e( 'Ativa o JavaScript para explorar o mapa. Podes consultar as localizações na lista.', 'adam-comunidade' ); ?></p></noscript>
 </section>

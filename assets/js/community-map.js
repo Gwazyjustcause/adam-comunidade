@@ -34,6 +34,7 @@
 		var map = L.map(canvas, { scrollWheelZoom: false, zoomControl: false, minZoom: 7, maxZoom: 19,
 			maxBounds: region.pad(0.2), maxBoundsViscosity: 0.8 });
 		map.attributionControl.setPrefix(false);
+		if (labels.locationAttribution) { map.attributionControl.addAttribution(labels.locationAttribution); }
 		L.control.zoom({ zoomInTitle: labels.zoomIn, zoomOutTitle: labels.zoomOut }).addTo(map);
 		var tiles = L.tileLayer(labels.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			maxZoom: 19, attribution: labels.tileAttribution || '&copy; OpenStreetMap'
