@@ -45,8 +45,8 @@ Equivalent dynamic Gutenberg blocks are registered for community sections,
 spotlights, maps, live statistics, and latest news.
 
 The managed Community route uses `templates/experience/community.php`: a compact
-introduction, the regional map, contribution links and a short explanation of
-the free initiative to connect teams and players in central Portugal. Partnership
+introduction, a short explanation of the free initiative to connect teams and
+players in central Portugal, the regional map and contribution links. Partnership
 and institution promotions are omitted from this page.
 The previous promotional sections are no longer rendered. Saved editorial blocks
 are retained in WordPress but are not displayed on this route; theme overrides

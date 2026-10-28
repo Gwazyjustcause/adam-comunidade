@@ -10,7 +10,7 @@
 declare(strict_types=1);
 
 $root    = dirname( __DIR__ );
-$version = '6.32.2';
+$version = '6.32.3';
 $output  = $argv[1] ?? ( $root . '/dist/adam-comunidade-' . $version . '.zip' );
 $output  = str_replace( array( '/', '\\' ), DIRECTORY_SEPARATOR, $output );
 $prefix  = 'adam-comunidade/';
